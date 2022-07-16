@@ -2,8 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - bitnami.yaml
+  - cilium.yaml
   - emberstack.yaml
   - external-dns.yaml
+  - grafana.yaml
   - hajimari.yaml
   - ingress-nginx.yaml
   - jetstack.yaml
@@ -11,5 +13,6 @@ resources:
   - k8s-gateway.yaml
   - metallb.yaml
   - metrics-server.yaml
+  - prometheus-community.yaml
   - stakater.yaml
   - weaveworks-kured.yaml
