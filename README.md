@@ -493,13 +493,13 @@ The benefits of a public repository include:
       ```sh
       sops --decrypt cluster/flux/flux-system/github-deploy-key.sops.yaml | kubectl apply -f -
       ```
-  6.  Update `cluster/flux/flux-system/flux-cluster.yaml`:
+  6.  Update `cluster/flux/flux-system/home-ops.yaml`:
       ```yaml
       ---
       apiVersion: source.toolkit.fluxcd.io/v1beta2
       kind: GitRepository
       metadata:
-        name: flux-cluster
+        name: home-ops
         namespace: flux-system
       spec:
         interval: 10m
