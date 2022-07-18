@@ -4,6 +4,11 @@ kind: HelmRelease
 metadata:
   name: metrics-server
   namespace: kube-system
+  annotations:
+    meta.helm.sh/release-name: metric-server
+    meta.helm.sh/release-namespace: kube-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
 spec:
   interval: 15m
   chart:
