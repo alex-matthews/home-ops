@@ -5,7 +5,21 @@ metadata:
   name: cluster-settings
   namespace: flux-system
 data:
+  # Basic info
+  CLUSTER_NAME: cluster-0
+  CLUSTER_ID: "1"
   TIMEZONE: Australia/Melbourne
-  METALLB_LB_RANGE: 10.0.0.200-10.0.0.250
-  METALLB_K8S_GATEWAY_ADDR: 10.0.0.200
-  METALLB_INGRESS_ADDR: 10.0.0.250
+  CONTROLPLANE_ENDPOINT: "kube.${CLUSTER_NAME}.${SECRET_DOMAIN}"
+
+  # Networks
+  K8S_POD_CIDR: 10.244.0.0/16
+  K8S_SVC_CIDR: 10.96.0.0/12
+
+  # Loadbalancer IPs
+  LB_IP_RANGE: 10.0.0.200-10.0.0.250
+  LB_K8S_GATEWAY_IP: 10.0.0.200
+  LB_INGRESS_IP: 10.0.0.250
+
+  # Other IPs
+  GATEWAY_IP: 10.0.0.1
+  API_SERVER_IP: 10.0.0.150
