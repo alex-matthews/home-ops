@@ -1,0 +1,14 @@
+---
+kubernetes:
+  children:
+    controllers:
+      hosts:
+        "m1-pi":
+          ansible_user: "alex"
+          ansible_host: "192.168.1.241"
+        "m2-pi":
+          ansible_user: "alex"
+          ansible_host: "192.168.1.242"
+        "m3-pi":
+          ansible_user: "alex"
+          ansible_host: "192.168.1.243"
