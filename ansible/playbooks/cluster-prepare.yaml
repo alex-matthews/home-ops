@@ -61,6 +61,8 @@
             mode: '0644'
             dest: /etc/resolv.conf
             content: |
+              nameserver 1.1.1.1
+              nameserver 1.0.0.1
               search .
 
     - name: System Configuration
