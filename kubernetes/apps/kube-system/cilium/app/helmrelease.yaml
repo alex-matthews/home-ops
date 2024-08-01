@@ -43,6 +43,8 @@ spec:
     # devices: eno+ eth+
     endpointRoutes:
       enabled: true
+    envoy:
+      enabled: false
     hubble:
       enabled: true
       metrics:
