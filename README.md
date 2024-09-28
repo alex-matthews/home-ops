@@ -17,14 +17,14 @@ This is a mono repository for my home Kubernetes cluster. Multi-cluster and mult
 ## To do
 
 - [ ] (gh) Create a custom bot for Renovate and make email notifications less noisy
-- [ ] (pi-cluster) Deploy `external-secrets`
+- [x] (pi-cluster) Deploy `external-secrets`
 - [ ] (nas) Deploy `minio`
 - [ ] (pi-cluster) Deploy persistent storage (`longhorn`, `volsync`)
-- [ ] (infra @ site 1) Segment home network - create separate vlans etc
+- [x] (infra @ site 1) Segment home network - create separate vlans etc
 - [ ] (infra @ site 2) Upgrade network infrastructure (router, PoE switch, access point/s); migrate pi-cluster
 - [ ] (pi-cluster) Deploy `home-assistant` and related apps/services
 - [ ] (gh) Refactor repo to support multi-cluster
-- [ ] (infra @ site 1) Provision AMD64 machines with Talos Linux
+- [x] (infra @ site 1) Provision AMD64 machines with Talos Linux
 - [ ] (main-cluster) Deploy `external-secrets`
 - [ ] (main-cluster) Deploy persistent storage (`rook-ceph`, `volsync`)
 - [ ] (main-cluster) Deploy observability apps (`kube-prometheus-stack`, `grafana`, `gatus` etc)
