@@ -25,7 +25,7 @@ This is a mono repository for my home Kubernetes cluster. Multi-cluster and mult
 - [ ] (pi-cluster) Deploy `home-assistant` and related apps/services
 - [ ] (gh) Refactor repo to support multi-cluster
 - [x] (infra @ site 1) Provision AMD64 machines with Talos Linux
-- [ ] (main-cluster) Deploy `external-secrets`
+- [x] (main-cluster) Deploy `external-secrets`
 - [ ] (main-cluster) Deploy persistent storage (`rook-ceph`, `volsync`)
 - [ ] (main-cluster) Deploy observability apps (`kube-prometheus-stack`, `grafana`, `gatus` etc)
 - [ ] (pi-cluster) Deploy observability apps (`kube-prometheus-stack`, `gatus` etc)
