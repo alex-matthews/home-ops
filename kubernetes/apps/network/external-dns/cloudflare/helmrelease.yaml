@@ -25,7 +25,8 @@ spec:
       retries: 3
   values:
     fullnameOverride: *app
-    provider: cloudflare
+    provider:
+      name: cloudflare
     env:
       - name: CF_API_TOKEN
         valueFrom:
@@ -42,8 +43,8 @@ spec:
       - --ingress-class=external
     policy: sync
     sources: ["crd", "ingress"]
-    txtPrefix: k8s.
     txtOwnerId: default
+    txtPrefix: k8s.
     domainFilters: ["${SECRET_DOMAIN}"]
     serviceMonitor:
       enabled: true
