@@ -12,7 +12,9 @@ resources:
   - ./k8s-gateway.yaml
   - ./metrics-server.yaml
   - ./openebs.yaml
+  - ./piraeus.yaml
   - ./postfinance.yaml
   - ./prometheus-community.yaml
+  - ./rook-ceph.yaml
   - ./spegel.yaml
   - ./stakater.yaml
