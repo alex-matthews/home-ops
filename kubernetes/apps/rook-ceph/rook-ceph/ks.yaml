@@ -33,6 +33,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  components:
+    - ../../../../flux/components/gatus/guarded
   path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   prune: false
   sourceRef:
@@ -41,4 +43,7 @@ spec:
   wait: false
   interval: 30m
   timeout: 15m
-
+  postBuild:
+    substitute:
+      APP: *app
+      GATUS_SUBDOMAIN: rook
