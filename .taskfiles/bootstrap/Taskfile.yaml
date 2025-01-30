@@ -2,9 +2,6 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 version: '3'
 
-vars:
-  GITHUB_DEPLOY_KEY_FILE: '{{.KUBERNETES_DIR}}/bootstrap/flux/github-deploy-key.sops.yaml'
-
 tasks:
 
   talos:
@@ -24,25 +21,32 @@ tasks:
       - test -f {{.ROOT_DIR}}/.sops.yaml
       - test -f {{.SOPS_AGE_KEY_FILE}}
       - test -f {{.TALHELPER_DIR}}/talconfig.yaml
-      - which talhelper sops
+      - which sops talhelper
 
   apps:
     desc: Bootstrap apps into the Talos cluster
     cmds:
       - until kubectl wait --for=condition=Ready=False nodes --all --timeout=600s; do sleep 10; done
       - kubectl create namespace flux-system --dry-run=client -o yaml | kubectl apply --server-side --filename -
-      - '{{if eq .GITHUB_DEPLOY_KEY_EXISTS "true"}}sops exec-file {{.GITHUB_DEPLOY_KEY_FILE}} "kubectl apply --server-side --filename {}"{{end}}'
       - '{{if eq .SOPS_SECRET_EXISTS "false"}}cat {{.SOPS_AGE_KEY_FILE}} | kubectl --namespace flux-system create secret generic sops-age --from-file=age.agekey=/dev/stdin{{end}}'
       - sops exec-file {{.KUBERNETES_DIR}}/flux/meta/settings/cluster-secrets.sops.yaml "kubectl apply --server-side --filename {}"
       - kubectl apply --server-side --filename {{.KUBERNETES_DIR}}/flux/meta/settings/cluster-settings.yaml
-      - helmfile --file {{.KUBERNETES_DIR}}/bootstrap/helmfile.yaml apply --skip-diff-on-install --suppress-diff
+      - op run --env-file {{.BOOTSTRAP_DIR}}/apps/.secrets.env --no-masking -- minijinja-cli {{.BOOTSTRAP_DIR}}/apps/templates/resources.yaml.j2 | kubectl apply --server-side --filename -
+      - helmfile --file {{.BOOTSTRAP_DIR}}/apps/helmfile.yaml apply --skip-diff-on-install --suppress-diff
+      - helmfile --file {{.BOOTSTRAP_DIR}}/apps/helmfile.yaml destroy --selector name=wipe-rook
+    env:
+      NODE_COUNT:
+        sh: talosctl config info --output json | jq --raw-output '.nodes | length'
+      VAULT: kubernetes
     vars:
-      GITHUB_DEPLOY_KEY_EXISTS:
-        sh: test -f {{.GITHUB_DEPLOY_KEY_FILE}} && echo true || echo false
       SOPS_SECRET_EXISTS:
         sh: kubectl --namespace flux-system get secret sops-age &>/dev/null && echo true || echo false
     preconditions:
+      - op user get --me
+      - talosctl config info
+      - test -f {{.BOOTSTRAP_DIR}}/apps/helmfile.yaml
+      - test -f {{.BOOTSTRAP_DIR}}/apps/templates/resources.yaml.j2
+      - test -f {{.BOOTSTRAP_DIR}}/apps/templates/wipe-rook.yaml.gotmpl
       - test -f {{.KUBECONFIG}}
-      - test -f {{.KUBERNETES_DIR}}/bootstrap/helmfile.yaml
       - test -f {{.SOPS_AGE_KEY_FILE}}
-      - which helmfile kubectl sops
+      - which curl helmfile jq kubectl minijinja-cli op talosctl
