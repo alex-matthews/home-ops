@@ -28,3 +28,12 @@ spec:
   valuesFrom:
     - kind: ConfigMap
       name: flux-instance-helm-values
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |
+              - op: replace
+                path: /spec/sync/interval
+                value: 30m
+            target:
+              kind: FluxInstance

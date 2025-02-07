@@ -7,12 +7,13 @@ shopt: [globstar]
 
 vars:
   KUBERNETES_DIR: '{{.ROOT_DIR}}/kubernetes'
-  BOOTSTRAP_DIR: '{{.KUBERNETES_DIR}}/bootstrap'
   TALHELPER_DIR: '{{.ROOT_DIR}}/kubernetes/bootstrap/talos'
   TALOSCONFIG: '{{.ROOT_DIR}}/kubernetes/bootstrap/talos/clusterconfig/talosconfig'
 
 env:
   KUBECONFIG: '{{.ROOT_DIR}}/kubeconfig'
+  KUBERNETES_DIR: '{{.KUBERNETES_DIR}}'
+  MINIJINJA_CONFIG_FILE: '{{.ROOT_DIR}}/.minijinja.toml'
   SOPS_AGE_KEY_FILE: '{{.ROOT_DIR}}/age.key'
   TALOSCONFIG: '{{.TALOSCONFIG}}'
 
@@ -23,10 +24,3 @@ includes:
 tasks:
 
   default: task --list
-
-  reconcile:
-    desc: Force Flux to pull in changes from your Git repository
-    cmd: flux --namespace flux-system reconcile kustomization flux-system --with-source
-    preconditions:
-      - test -f {{.KUBECONFIG}}
-      - which flux
