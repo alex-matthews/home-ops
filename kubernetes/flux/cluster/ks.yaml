@@ -6,8 +6,6 @@ metadata:
   name: cluster-meta
   namespace: &namespace flux-system
 spec:
-  components:
-    - ../components/common/substitutions
   decryption:
     provider: sops
     secretRef:
