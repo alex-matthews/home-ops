@@ -6,4 +6,5 @@ resources:
   - ./cluster-settings.yaml
   - ./cluster-secrets.sops.yaml
   - ./namespace.yaml
+  - ./sops-age.sops.yaml
   - ./alerts
