@@ -1,6 +1,5 @@
 [env]
 KUBECONFIG = "{{config_root}}/kubeconfig"
 KUBERNETES_DIR = '{{config_root}}/kubernetes'
-MINIJINJA_CONFIG_FILE = '{{config_root}}/.minijinja.toml'
 SOPS_AGE_KEY_FILE = "{{config_root}}/age.key"
 TALOSCONFIG = "{{config_root}}/kubernetes/bootstrap/talos/clusterconfig/talosconfig"

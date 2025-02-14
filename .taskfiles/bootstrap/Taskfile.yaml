@@ -22,20 +22,13 @@ tasks:
   apps:
     desc: Bootstrap apps into the Talos cluster
     cmds:
-      - until kubectl wait --for=condition=Ready=False nodes --all --timeout=600s; do sleep 10; done
-      - op run --env-file {{.KUBERNETES_DIR}}/bootstrap/apps/.secrets.env --no-masking -- minijinja-cli {{.KUBERNETES_DIR}}/bootstrap/apps/templates/resources.yaml.j2 | kubectl apply --server-side --filename -
+      - bash {{.KUBERNETES_DIR}}/bootstrap/apps/resources/prepare.sh
       - helmfile --file {{.KUBERNETES_DIR}}/bootstrap/apps/helmfile.yaml apply --skip-diff-on-install --suppress-diff
-      - for: ['prometheus-operator-crds', 'wipe-rook']
-        cmd: helmfile --file {{.KUBERNETES_DIR}}/bootstrap/apps/helmfile.yaml destroy --selector name={{.ITEM}}
-    env:
-      NODE_COUNT:
-        sh: talosctl config info --output json | jq --raw-output '.nodes | length'
     preconditions:
       - op user get --me
       - talosctl config info
-      - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/helmfile.yaml
-      - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/templates/resources.yaml.j2
-      - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/templates/wipe-rook.yaml.gotmpl
       - test -f {{.KUBECONFIG}}
+      - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/helmfile.yaml
+      - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/resources/prepare.sh
       - test -f {{.SOPS_AGE_KEY_FILE}}
-      - which curl helmfile jq kubectl minijinja-cli op talosctl
+      - which gum helmfile jq kubectl kustomize op sops talosctl yq
