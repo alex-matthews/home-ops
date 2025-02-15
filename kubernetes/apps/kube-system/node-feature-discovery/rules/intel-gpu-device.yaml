@@ -5,7 +5,7 @@ metadata:
   name: intel-gpu-device
 spec:
   rules:
-      name: intel.gpu
+    - name: intel.gpu
       labels:
         intel.feature.node.kubernetes.io/gpu: "true"
       matchFeatures:
