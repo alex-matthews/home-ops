@@ -31,4 +31,4 @@ tasks:
       - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/helmfile.yaml
       - test -f {{.KUBERNETES_DIR}}/bootstrap/apps/resources/prepare.sh
       - test -f {{.SOPS_AGE_KEY_FILE}}
-      - which gum helmfile jq kubectl kustomize op sops talosctl yq
+      - which helmfile op talosctl

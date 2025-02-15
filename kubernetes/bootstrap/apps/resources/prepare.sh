@@ -5,6 +5,29 @@ set -euo pipefail
 # Set default values for the 'gum log' command
 readonly LOG_ARGS=("log" "--time=rfc3339" "--formatter=text" "--structured" "--level")
 
+# Verify required CLI tools are installed
+function check_dependencies() {
+    local deps=("gum" "jq" "kubectl" "kustomize" "op" "sops" "talosctl" "yq")
+    local missing=()
+
+    for dep in "${deps[@]}"; do
+        if ! command -v "${dep}" &>/dev/null; then
+            missing+=("${dep}")
+        fi
+    done
+
+    if [ ${#missing[@]} -ne 0 ]; then
+        if ! command -v gum &>/dev/null; then
+            printf "%s \033[1;95m%s\033[0m Missing required dependencies \033[0;30mdependencies=\033[0m\"%s\"\n" \
+                "$(date --iso-8601=seconds)" "FATAL" "${missing[*]}"
+            exit 1
+        fi
+        gum "${LOG_ARGS[@]}" fatal "Missing required dependencies" dependencies "${missing[*]}"
+    fi
+
+    gum "${LOG_ARGS[@]}" debug "Dependencies are installed" dependencies "${deps[*]}"
+}
+
 # Talos requires the nodes to be 'Ready=False' before applying resources
 function wait_for_nodes() {
     gum "${LOG_ARGS[@]}" debug "Waiting for nodes to be available"
@@ -83,9 +106,9 @@ function apply_namespaces() {
     done
 }
 
-# Foundational secrets to be applied before the helmfile charts are installed
-function apply_foundational_secrets() {
-    gum "${LOG_ARGS[@]}" debug "Applying foundational secrets"
+# Core secrets to be applied before the helmfile charts are installed
+function apply_core_secrets() {
+    gum "${LOG_ARGS[@]}" debug "Applying core secrets"
 
     local -r secrets_file="${KUBERNETES_DIR}/bootstrap/apps/resources/secrets.yaml.tpl"
     local resources
@@ -94,22 +117,22 @@ function apply_foundational_secrets() {
         gum "${LOG_ARGS[@]}" fatal "File does not exist" file "${secrets_file}"
     fi
 
-    # Hydrate secrets template using the 'op inject' command
+    # Inject secrets into the template
     if ! resources=$(op inject --in-file "${secrets_file}" 2>/dev/null) || [[ -z "${resources}" ]]; then
         gum "${LOG_ARGS[@]}" fatal "Failed to inject secrets" file "${secrets_file}"
     fi
 
     # Check if the resources are up-to-date
     if echo "${resources}" | kubectl diff --filename - &>/dev/null; then
-        gum "${LOG_ARGS[@]}" info "Foundational secrets are up-to-date"
+        gum "${LOG_ARGS[@]}" info "Core secrets are up-to-date"
         return
     fi
 
-    # Apply secrets
+    # Apply the resources
     if echo "${resources}" | kubectl apply --server-side --filename - &>/dev/null; then
-        gum "${LOG_ARGS[@]}" info "Foundational secrets applied"
+        gum "${LOG_ARGS[@]}" info "Core secrets applied successfullly"
     else
-        gum "${LOG_ARGS[@]}" fatal "Failed to apply foundational secrets"
+        gum "${LOG_ARGS[@]}" fatal "Failed to apply core secrets"
     fi
 }
 
@@ -177,20 +200,20 @@ function wipe_rook_disks() {
         gum "${LOG_ARGS[@]}" fatal "No Talos nodes found"
     fi
 
-    gum "${LOG_ARGS[@]}" debug "Discovered Talos nodes" nodes "${nodes}"
+    gum "${LOG_ARGS[@]}" debug "Talos nodes discovered" nodes "${nodes}"
 
-    # Hardcoded disk path
-    disk="/dev/nvme0n1"
+    # Hardcoded disk ID
+    disk="nvme0n1"
 
-    # Wipe the specified disk on each node
+    # Wipe 'nvme0n1' on each node
     for node in ${nodes}; do
         if ! talosctl --nodes "${node}" get disks --output json | jq --exit-status --raw-output \
-            --arg disk "${disk}" 'select(.metadata.dev_path == $disk)' &>/dev/null; then
+            --arg disk "${disk}" 'select(.metadata.id == $disk)' &>/dev/null; then
             gum "${LOG_ARGS[@]}" warn "Disk ${disk} not found on node, skipping" node "${node}"
             continue
         fi
 
-        gum "${LOG_ARGS[@]}" debug "Discovered Talos node and disk" node "${node}" disk "${disk}"
+        gum "${LOG_ARGS[@]}" debug "Talos node and disk discovered" node "${node}" disk "${disk}"
 
         if talosctl --nodes "${node}" wipe disk "${disk}" &>/dev/null; then
             gum "${LOG_ARGS[@]}" info "Disk wiped" node "${node}" disk "${disk}"
@@ -200,14 +223,20 @@ function wipe_rook_disks() {
     done
 }
 
+function success() {
+    gum "${LOG_ARGS[@]}" info "Cluster is ready for installing helmfile apps"
+}
+
 function main() {
+    check_dependencies
     wait_for_nodes
     apply_prometheus_crds
     apply_namespaces
-    apply_foundational_secrets
+    apply_core_secrets
     apply_configmaps
     apply_sops_secrets
     wipe_rook_disks
+    success
 }
 
 main "$@"
