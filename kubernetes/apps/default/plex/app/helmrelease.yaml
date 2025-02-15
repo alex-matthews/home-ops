@@ -126,7 +126,7 @@ spec:
         server: nas.internal
         path: /volume1/data
         globalMounts:
-          - path: /data
+          - path: /data/media
             subPath: media
             readOnly: true
       tmp:
