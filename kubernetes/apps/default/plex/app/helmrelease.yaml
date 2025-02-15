@@ -127,6 +127,7 @@ spec:
         path: /volume1/data
         globalMounts:
           - path: /data
+            subPath: media
             readOnly: true
       tmp:
         type: emptyDir
