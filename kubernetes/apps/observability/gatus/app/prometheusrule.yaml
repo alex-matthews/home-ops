@@ -12,7 +12,7 @@ spec:
             sum(rate(gatus_results_total{group="external",success="false"}[1m])) by (group, name, type) / sum(rate(gatus_results_total{group="external"}[1m])) by (group, name, type) > 0
           for: 5m
           annotations:
-            summary: >
+            summary: >-
               The Gatus endpoint {{ $labels.name }} is down
           labels:
             severity: critical
@@ -22,7 +22,7 @@ spec:
             sum(rate(gatus_results_total{group="guarded",success="false"}[1m])) by (group, name, type) / sum(rate(gatus_results_total{group="guarded"}[1m])) by (group, name, type) > 0
           for: 5m
           annotations:
-            summary: >
+            summary: >-
               The Gatus endpoint {{ $labels.name }} has a public DNS record and is exposed
           labels:
             severity: critical
