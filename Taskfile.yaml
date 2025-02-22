@@ -6,19 +6,23 @@ set: [pipefail]
 shopt: [globstar]
 
 vars:
+  BOOTSTRAP_DIR: '{{.ROOT_DIR}}/bootstrap'
   KUBERNETES_DIR: '{{.ROOT_DIR}}/kubernetes'
-  TALHELPER_DIR: '{{.ROOT_DIR}}/kubernetes/bootstrap/talos'
-  TALOSCONFIG: '{{.ROOT_DIR}}/kubernetes/bootstrap/talos/clusterconfig/talosconfig'
+  SCRIPTS_DIR: '{{.ROOT_DIR}}/scripts'
+  TALOS_DIR: '{{.ROOT_DIR}}/talos'
+
+dotenv:
+  - '{{.KUBERNETES_DIR}}/apps/system-upgrade/.env'
 
 env:
   KUBECONFIG: '{{.ROOT_DIR}}/kubeconfig'
-  KUBERNETES_DIR: '{{.KUBERNETES_DIR}}'
   MINIJINJA_CONFIG_FILE: '{{.ROOT_DIR}}/.minijinja.toml'
   SOPS_AGE_KEY_FILE: '{{.ROOT_DIR}}/age.key'
-  TALOSCONFIG: '{{.TALOSCONFIG}}'
+  TALOSCONFIG: '{{.ROOT_DIR}}/talosconfig'
 
 includes:
   bootstrap: .taskfiles/bootstrap
+  kubernetes: .taskfiles/kubernetes
   talos: .taskfiles/talos
   volsync: .taskfiles/volsync
   workstation: .taskfiles/workstation
