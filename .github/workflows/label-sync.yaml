@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync Labels
+      - name: Sync labels
         uses: EndBug/label-sync@v2
         with:
           config-file: .github/labels.yaml

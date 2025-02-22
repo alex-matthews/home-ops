@@ -12,7 +12,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - name: Get Previous Release Tag and Determine Next Tag
+      - name: Get previous release tag and determine next tag
         id: determine-next-tag
         uses: actions/github-script@v7
         with:
@@ -47,7 +47,7 @@ jobs:
 
             return `${nextMajorMinor}.${nextPatch}`;
 
-      - name: Create Release
+      - name: Create release
         uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
