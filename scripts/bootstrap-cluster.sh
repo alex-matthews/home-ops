@@ -135,94 +135,6 @@ function apply_resources() {
     fi
 }
 
-# The application namespaces are created before applying the resources
-function apply_namespaces() {
-    log debug "Applying namespaces"
-
-    local -r apps_dir="${ROOT_DIR}/kubernetes/apps"
-
-    if [[ ! -d "${apps_dir}" ]]; then
-        log error "Directory does not exist" "directory=${apps_dir}"
-    fi
-
-    for app in "${apps_dir}"/*/; do
-        namespace=$(basename "${app}")
-
-        # Check if the namespace resources are up-to-date
-        if kubectl get namespace "${namespace}" &>/dev/null; then
-            log info "Namespace resource is up-to-date" "resource=${namespace}"
-            continue
-        fi
-
-        # Apply the namespace resources
-        if kubectl create namespace "${namespace}" --dry-run=client --output=yaml \
-            | kubectl apply --server-side --filename - &>/dev/null;
-        then
-            log info "Namespace resource applied" "resource=${namespace}"
-        else
-            log error "Failed to apply namespace resource" "resource=${namespace}"
-        fi
-    done
-}
-
-# ConfigMaps to be applied before the helmfile charts are installed
-function apply_configmaps() {
-    log debug "Applying ConfigMaps"
-
-    local -r configmaps=(
-        "${ROOT_DIR}/kubernetes/components/common/cluster-settings.yaml"
-    )
-
-    for configmap in "${configmaps[@]}"; do
-        if [ ! -f "${configmap}" ]; then
-            log warn "File does not exist" file "${configmap}"
-            continue
-        fi
-
-        # Check if the configmap resources are up-to-date
-        if kubectl --namespace flux-system diff --filename "${configmap}" &>/dev/null; then
-            log info "ConfigMap resource is up-to-date" "resource=$(basename "${configmap}" ".yaml")"
-            continue
-        fi
-
-        # Apply configmap resources
-        if kubectl --namespace flux-system apply --server-side --filename "${configmap}" &>/dev/null; then
-            log info "ConfigMap resource applied successfully" "resource=$(basename "${configmap}" ".yaml")"
-        else
-            log error "Failed to apply ConfigMap resource" "resource=$(basename "${configmap}" ".yaml")"
-        fi
-    done
-}
-
-# SOPS secrets to be applied before the helmfile charts are installed
-function apply_sops_secrets() {
-    log debug "Applying secrets"
-
-    local -r secrets=(
-        "${ROOT_DIR}/kubernetes/components/common/cluster-secrets.sops.yaml"
-    )
-
-    for secret in "${secrets[@]}"; do
-        if [ ! -f "${secret}" ]; then
-            log warn "File does not exist" "file=${secret}"
-            continue
-        fi
-
-        # Check if the secret resources are up-to-date
-        if sops exec-file "${secret}" "kubectl --namespace flux-system diff --filename {}" &>/dev/null; then
-            log info "Secret resource is up-to-date" "resource=$(basename "${secret}" ".sops.yaml")"
-            continue
-        fi
-
-        # Apply secret resources
-        if sops exec-file "${secret}" "kubectl --namespace flux-system apply --server-side --filename {}" &>/dev/null; then
-            log info "Secret resource applied successfully" "resource=$(basename "${secret}" ".sops.yaml")"
-        else
-            log error "Failed to apply secret resource" "resource=$(basename "${secret}" ".sops.yaml")"
-        fi
-    done
-}
-
 # Disks in use by rook-ceph must be wiped before Rook is installed
 function wipe_rook_disks() {
     log debug "Wiping Rook disks"
@@ -243,9 +155,9 @@ function wipe_rook_disks() {
     # Wipe disks matching the ROOK_DISK environment variable
     for node in ${nodes}; do
         if ! disks=$(talosctl --nodes "${node}" get disk --output json 2>/dev/null \
-            | jq --exit-status --raw-output --slurp '. | map(select(.spec.model == env.ROOK_DISK) | .metadata.id) | join(" ")') || [[ -z "${nodes}" ]];
+            | jq --exit-status --raw-output --slurp '. | map(select(.spec.id == env.ROOK_DISK) | .metadata.id) | join(" ")') || [[ -z "${nodes}" ]];
         then
-            log error "No disks found" node "${node}" "model=${ROOK_DISK}"
+            log error "No disks found" node "${node}" "id=${ROOK_DISK}"
         fi
 
         log debug "Talos node and disk discovered" "node=${node}" "disks=${disks}"
@@ -294,9 +206,6 @@ function main() {
     # Apply resources and Helm releases
     wait_for_nodes
     apply_resources
-    apply_namespaces
-    apply_configmaps
-    apply_sops_secrets
     wipe_rook_disks
     apply_helm_releases
 

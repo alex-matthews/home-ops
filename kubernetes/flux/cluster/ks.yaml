@@ -17,8 +17,7 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  # Flux repositories under this need flux-system hardcoded as namespace for Renovate lookups
-  targetNamespace: *namespace
+  targetNamespace: *namespace # Flux repositories under this need flux-system hardcoded as namespace for Renovate lookups
   wait: true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
@@ -41,8 +40,10 @@ spec:
     substituteFrom:
       - name: cluster-settings
         kind: ConfigMap
+        optional: true
       - name: cluster-secrets
         kind: Secret
+        optional: true
   prune: true
   sourceRef:
     kind: GitRepository
@@ -64,9 +65,11 @@ spec:
             substituteFrom:
               - name: cluster-settings
                 kind: ConfigMap
+                optional: true
               - name: cluster-secrets
                 kind: Secret
+                optional: true
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization
-        labelSelector: substitution.flux.home.arpa/disabled notin (true)
+        labelSelector: substitution.flux/enabled!=false
