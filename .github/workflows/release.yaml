@@ -12,11 +12,18 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+      - name: Generate token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: "${{ secrets.BOT_APP_ID }}"
+          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+
       - name: Get previous release tag and determine next tag
         id: determine-next-tag
         uses: actions/github-script@v7
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          github-token: "${{ steps.app-token.outputs.token }}"
           result-encoding: string
           script: |
             const { data: releases } = await github.rest.repos.listReleases({
@@ -52,4 +59,4 @@ jobs:
         with:
           generateReleaseNotes: true
           tag: "${{ steps.determine-next-tag.outputs.result }}"
-          token: "${{ secrets.GITHUB_TOKEN }}"
+          token: "${{ steps.app-token.outputs.token }}"
