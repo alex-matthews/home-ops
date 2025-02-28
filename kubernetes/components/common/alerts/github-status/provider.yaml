@@ -2,9 +2,9 @@
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Provider
 metadata:
-  name: github
+  name: github-status
 spec:
   type: github
   address: https://github.com/alex-matthews/home-ops
   secretRef:
-    name: github-alert-token-secret
+    name: github-status-token-secret
