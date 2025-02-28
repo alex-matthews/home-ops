@@ -3,8 +3,8 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app unpoller
-  namespace: &namespace observability
+  name: &app flux-instance
+  namespace: flux-system
 spec:
   commonMetadata:
     labels:
@@ -13,13 +13,13 @@ spec:
     - name: onepassword
       namespace: external-secrets
   interval: 1h
-  path: ./kubernetes/apps/observability/unpoller/app
-  prune: true
+  path: ./kubernetes/apps/flux-system/flux-instance/app
+  prune: false # Let's not make happy accidents
   retryInterval: 2m
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
+  targetNamespace: flux-system
   timeout: 5m
   wait: false
