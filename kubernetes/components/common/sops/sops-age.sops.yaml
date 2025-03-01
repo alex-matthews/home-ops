@@ -3,7 +3,7 @@ kind: Secret
 metadata:
     name: sops-age
 stringData:
-    age.agekey: ENC[AES256_GCM,data:ofzhrNwhvkdu1Gaz9N0IJcmp+dSmRH7ex7vcb+KLBV5Qn+i1WB6Gpi8nw6BW5LEj4+W8q3nn1pQKFjkvuD8PA11NjNQEB/wFO3yb,iv:/DNroYzWM7yyEEcP8OshSqJzlbVH9R1zmSx0OOxAsZQ=,tag:wstcRdkiUqS5FMtnWVjuPA==,type:str]
+    age.agekey: ENC[AES256_GCM,data:i8bmAgv0lX/dKIMmBEgcqob4pbMFsp9w0RFX0moFlDJj+EewzQVdDCMuwRxgKNgcKfi3LP1T0ak1GbXcIVB4ycM3fBOYPV2OwSI=,iv:c97WW2dcwAkjATvAtm6iLvl3DCMM9zSdZrcWeZ0KaRc=,tag:VEHcPQl80TohIgpaasEYEg==,type:str]
 sops:
     kms: []
     gcp_kms: []
@@ -19,8 +19,8 @@ sops:
             eEZvNmNmSHhSa2FzdGFiclBMT2xVVHcKJlAETyviLT50tZ9WyPGerP/JLuMksN+o
             WC40mb16UVsaODumNLnwQ3xU35Y/j6gh2DcLLn8PxpOLuL8CjovXbQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-02-05T04:11:27Z"
-    mac: ENC[AES256_GCM,data:BzqyQMICSJe23AZAWOms7czjnkH87nzKiYrzZBcO8thvM95KVugUncr5y0xvE4z0g48x0YlQXskHWaFfsU03JFcS5fo7hD0Yyo/46p3HCNczStYUVa1pc/rxUPX6VK22rY4caveflfT2uViuJA5Vy3c2MXE4ZEr4U24l3jGhvJ8=,iv:h5XHBOuBFsBpqGxKbzMN4DckkJehVZUT4x/CM9p9cMg=,tag:F1T0Y9qFIhxJ3LuRRbV6Qg==,type:str]
+    lastmodified: "2025-02-28T08:45:13Z"
+    mac: ENC[AES256_GCM,data:cpCA5S7OdvpY+Erved03w6N4mcX09qfGeJ7Zbhz6mP8gjD8WY23wucEe9N773KqxOvBybYx33hvvxpZ+PYYxXnQMtPkKwcICT1jDx0lpMANPqZEDTZ5aJ6HSAt5XFrBWbmBwwb8hskggH7e2aaW3BP6jDmTfD7BoPIGX4r33UjI=,iv:tzoMVfMcecTbyqp6UDt0Fy+bmGsIrxCx7pZdwETP5kg=,tag:T+ANoB951Y6YXZW1K+2CMA==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     mac_only_encrypted: true
