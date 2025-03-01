@@ -155,7 +155,7 @@ function wipe_rook_disks() {
     # Wipe disks matching the ROOK_DISK environment variable
     for node in ${nodes}; do
         if ! disks=$(talosctl --nodes "${node}" get disk --output json 2>/dev/null \
-            | jq --exit-status --raw-output --slurp '. | map(select(.spec.id == env.ROOK_DISK) | .metadata.id) | join(" ")') || [[ -z "${nodes}" ]];
+            | jq --exit-status --raw-output --slurp '. | map(select(.spec.dev_path == env.ROOK_DISK) | .metadata.id) | join(" ")') || [[ -z "${nodes}" ]];
         then
             log error "No disks found" node="${node}" "id=${ROOK_DISK}"
         fi

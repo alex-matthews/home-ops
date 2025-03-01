@@ -8,7 +8,7 @@ tasks:
     desc: Bootstrap Talos nodes and cluster apps
     cmd: bash {{.SCRIPTS_DIR}}/bootstrap-cluster.sh
     env:
-      ROOK_DISK: nvme0n1
+      ROOK_DISK: /dev/nvme0n1
     preconditions:
       - talosctl config info
       - test -f {{.ROOT_DIR}}/talosconfig
