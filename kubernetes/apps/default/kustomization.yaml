@@ -8,6 +8,8 @@ components:
 resources:
   - ./echo-server/ks.yaml
   - ./plex/ks.yaml
+  - ./prowlarr/ks.yaml
   - ./radarr/ks.yaml
+  - ./recyclarr/ks.yaml
   - ./sonarr/ks.yaml
   - ./tautulli/ks.yaml
