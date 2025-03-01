@@ -8,4 +8,5 @@ components:
 resources:
   - ./echo-server/ks.yaml
   - ./plex/ks.yaml
+  - ./sonarr/ks.yaml
   - ./tautulli/ks.yaml
