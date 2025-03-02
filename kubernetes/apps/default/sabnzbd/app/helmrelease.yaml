@@ -41,6 +41,7 @@ spec:
                 sabnzbd.default.svc,
                 sabnzbd.default.svc.cluster,
                 sabnzbd.default.svc.cluster.local,
+                {{ .Release.Name }}.${SECRET_DOMAIN},
                 sab.${SECRET_DOMAIN}
             envFrom:
               - secretRef:
@@ -84,12 +85,14 @@ spec:
       app:
         className: internal
         hosts:
-          - host: sab.${SECRET_DOMAIN}
-            paths:
+          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
+            paths: &paths
               - path: /
                 service:
                   identifier: app
                   port: http
+          - host: sab.${SECRET_DOMAIN}
+            paths: *paths
     persistence:
       config:
         existingClaim: sabnzbd
