@@ -6,7 +6,7 @@ namespace: default
 components:
   - ../../components/common
 resources:
-  - ./echo-server/ks.yaml
+  - ./echo/ks.yaml
   - ./jellyseerr/ks.yaml
   - ./plex/ks.yaml
   - ./prowlarr/ks.yaml
