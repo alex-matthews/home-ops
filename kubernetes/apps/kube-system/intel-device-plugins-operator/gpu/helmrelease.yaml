@@ -13,7 +13,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: intel
-        namespace: flux-system
+        namespace: kube-system
   install:
     remediation:
       retries: 3
@@ -22,10 +22,7 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: intel-device-plugins-operator
-      namespace: kube-system
   values:
-    name: intel-gpu-plugin
+    name: i915
     nodeFeatureRule: false
     sharedDevNum: 99

@@ -4,7 +4,7 @@ apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: &app flux-instance
-  namespace: flux-system
+  namespace: &namespace flux-system
 spec:
   commonMetadata:
     labels:
@@ -12,9 +12,11 @@ spec:
   dependsOn:
     - name: onepassword
       namespace: external-secrets
+    - name: flux-operator
+      namespace: *namespace
   interval: 1h
   path: ./kubernetes/apps/flux-system/flux-instance/app
-  prune: false # Let's not make happy accidents
+  prune: true
   retryInterval: 2m
   sourceRef:
     kind: GitRepository
