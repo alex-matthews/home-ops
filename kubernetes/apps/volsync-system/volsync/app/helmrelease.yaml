@@ -1,4 +1,15 @@
 ---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrepository-source-v1.json
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: backube
+  namespace: volsync-system # Required for Renovate lookups
+spec:
+  interval: 12h
+  url: https://backube.github.io/helm-charts/
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -12,7 +23,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: backube
-        namespace: flux-system
+        namespace: volsync-system
   install:
     remediation:
       retries: 3
@@ -21,9 +32,6 @@ spec:
     remediation:
       strategy: rollback
       retries: 3
-  dependsOn:
-    - name: snapshot-controller
-      namespace: kube-system
   values:
     manageCRDs: true
     replicaCount: 1

@@ -12,6 +12,11 @@ spec:
   dependsOn:
     - name: onepassword
       namespace: external-secrets
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: *app
+      namespace: *namespace
   healthCheckExprs:
     - apiVersion: cert-manager.io/v1
       kind: ClusterIssuer
