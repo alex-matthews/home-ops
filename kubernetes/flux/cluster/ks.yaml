@@ -39,9 +39,6 @@ spec:
   path: ./kubernetes/apps
   postBuild:
     substituteFrom:
-      - name: cluster-settings
-        kind: ConfigMap
-        optional: true
       - name: cluster-secrets
         kind: Secret
         optional: true
@@ -65,9 +62,6 @@ spec:
               name: sops-age
           postBuild:
             substituteFrom:
-              - name: cluster-settings
-                kind: ConfigMap
-                optional: true
               - name: cluster-secrets
                 kind: Secret
                 optional: true
