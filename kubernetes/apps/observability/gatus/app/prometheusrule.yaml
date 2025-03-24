@@ -13,7 +13,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              The Gatus endpoint {{ $labels.name }} is down
+              The external Gatus endpoint {{ $labels.name }} is down or failing based on the failure rate.
           labels:
             severity: critical
 
@@ -23,6 +23,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              The Gatus endpoint {{ $labels.name }} has a public DNS record and is exposed
+              The guarded Gatus endpoint {{ $labels.name }} has a public DNS record and is exposed.
           labels:
             severity: critical

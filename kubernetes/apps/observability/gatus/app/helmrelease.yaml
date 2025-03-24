@@ -88,6 +88,11 @@ spec:
         ports:
           http:
             port: *port
+    serviceMonitor:
+      app:
+        serviceName: gatus
+        endpoints:
+          - port: http
     ingress:
       app:
         className: external
