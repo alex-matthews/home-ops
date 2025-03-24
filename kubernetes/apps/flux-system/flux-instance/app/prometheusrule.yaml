@@ -14,7 +14,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Flux instance metric is missing
+              Flux instance metric is absent. Check if Flux is running or if there are issues with Prometheus scraping.
           labels:
             severity: critical
 
@@ -24,6 +24,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Flux instance {{ $labels.name }} is not ready
+              Flux instance {{ $labels.name }} is not ready. This could indicate issues with deployments or sync state.
           labels:
             severity: critical

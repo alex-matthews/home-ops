@@ -13,7 +13,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              {{ $labels.job }} has registry errors for more than 5 minutes
+              {{ $labels.job }} has registry errors (e.g., failed communication with DNS registry) for more than 5 minutes.
           labels:
             severity: critical
 
@@ -23,7 +23,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              {{ $labels.job }} has source errors for more than 5 minutes
+              {{ $labels.job }} has source errors (e.g., issues fetching source DNS records) for more than 5 minutes.
           labels:
             severity: critical
 
@@ -33,7 +33,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              {{ $labels.job }} has failed to apply changes for more than 5 minutes
+              {{ $labels.job }} has failed to apply DNS changes for more than 5 minutes.
           labels:
             severity: critical
 
@@ -43,6 +43,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              {{ $labels.job }} has failed to gather records for more than 5 minutes
+              {{ $labels.job }} has failed to gather DNS records from the source for more than 5 minutes.
           labels:
             severity: critical

@@ -13,17 +13,17 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} has a temperature higher than 65°C
+              Drive {{ $labels.device }} on {{ $labels.instance }} has exceeded 65°C.
           labels:
             severity: critical
 
         - alert: SmartDeviceTestFailed
           expr: |
-            (smartctl_device_smart_status != 1 or smartctl_device_status != 1)
+            (smartctl_device_smart_status == 0 or smartctl_device_status == 0)
           for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} did not pass its SMART test
+              SMART test failed for drive {{ $labels.device }} on {{ $labels.instance }}.
           labels:
             severity: critical
 
@@ -33,7 +33,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} is in a critical state
+              Drive {{ $labels.device }} on {{ $labels.instance }} has a SMART critical warning.
           labels:
             severity: critical
 
@@ -43,7 +43,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} has media errors
+              Drive {{ $labels.device }} on {{ $labels.instance }} has reported media errors.
           labels:
             severity: critical
 
@@ -53,16 +53,16 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} is under available spare threshold
+              Drive {{ $labels.device }} on {{ $labels.instance }} has low available spare capacity.
           labels:
             severity: critical
 
         - alert: SmartDeviceInterfaceSlow
           expr: |
-            smartctl_device_interface_speed{speed_type="current"} != on(device, instance, namespace, pod) smartctl_device_interface_speed{speed_type="max"}
+            smartctl_device_interface_speed{speed_type="current"} < (smartctl_device_interface_speed{speed_type="max"} * 0.9)
+          for: 5m
           annotations:
             summary: >-
-              Device {{ $labels.device }} on instance {{ $labels.instance }} interface is slower then it should be
-          for: 5m
+              Drive {{ $labels.device }} on {{ $labels.instance }} has a slower interface speed than expected.
           labels:
             severity: critical
