@@ -15,8 +15,8 @@ spec:
   verify:
     provider: cosign
     matchOIDCIdentity:
-      - issuer: "^https://token.actions.githubusercontent.com$"
-        subject: "^https://github.com/home-operations/charts-mirror.*$"
+      - issuer: ^https://token.actions.githubusercontent.com$
+        subject: ^https://github.com/home-operations/charts-mirror.*$
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -31,16 +31,14 @@ spec:
   install:
     disableSchemaValidation: true # Ref: https://github.com/kubernetes-sigs/external-dns/issues/5206
     remediation:
-      retries: 3
+      retries: -1
   upgrade:
     cleanupOnFail: true
     disableSchemaValidation: true # Ref: https://github.com/kubernetes-sigs/external-dns/issues/5206
     remediation:
-      strategy: rollback
       retries: 3
   values:
     fullnameOverride: *app
-    # logLevel: debug
     provider:
       name: webhook
       webhook:
@@ -55,8 +53,6 @@ spec:
               secretKeyRef:
                 name: &secret internal-external-dns-secret
                 key: UNIFI_API_KEY
-          # - name: LOG_LEVEL
-          #   value: "debug"
         livenessProbe:
           httpGet:
             path: /healthz
