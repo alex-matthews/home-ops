@@ -8,7 +8,6 @@ resources:
 configMapGenerator:
   - name: recyclarr-configmap
     files:
-      # - recyclarr.yml=./resources/recyclarr.yml
       - ./resources/radarr.yml
       - ./resources/radarr-se.yml
       - ./resources/sonarr.yml
