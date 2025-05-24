@@ -70,7 +70,9 @@ spec:
               requests:
                 cpu: 100m
               limits:
-                memory: 256Mi
+                memory:
+        serviceAccount:
+          identifier: gatus
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -100,8 +102,7 @@ spec:
                   identifier: app
                   port: http
     serviceAccount:
-      create: true
-      name: gatus
+      gatus: {}
     persistence:
       config:
         existingClaim: gatus
