@@ -5,7 +5,6 @@ helmDefaults:
   cleanupOnFail: true
   wait: true
   waitForJobs: true
-  # waitRetries: 3 # Not supported by Helm yet
 
 releases:
   - name: cilium
