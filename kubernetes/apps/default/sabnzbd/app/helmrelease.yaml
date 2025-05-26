@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: sabnzbd
+  name: &app sabnzbd
 spec:
   interval: 1h
   chartRef:
@@ -71,22 +71,23 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        controller: sabnzbd
+        controller: *app
         ports:
           http:
             port: *port
-    ingress:
+    route:
       app:
-        className: internal
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths: &paths
-              - path: /
-                service:
-                  identifier: app
-                  port: http
-          - host: sab.${SECRET_DOMAIN}
-            paths: *paths
+        hostnames:
+          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - sab.${SECRET_DOMAIN}
+        parentRefs:
+          - name: internal
+            namespace: kube-system
+            sectionName: https
+        rules:
+          - backendRefs:
+              - name: *app
+                port: *port
     persistence:
       config:
         existingClaim: sabnzbd

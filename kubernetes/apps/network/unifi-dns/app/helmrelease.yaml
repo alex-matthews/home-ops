@@ -3,7 +3,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: OCIRepository
 metadata:
-  name: external-external-dns
+  name: unifi-dns
 spec:
   interval: 5m
   layerSelector:
@@ -17,12 +17,12 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app external-external-dns
+  name: &app unifi-dns
 spec:
   interval: 1h
   chartRef:
     kind: OCIRepository
-    name: external-external-dns
+    name: unifi-dns
   install:
     disableSchemaValidation: true # Ref: https://github.com/kubernetes-sigs/external-dns/issues/5206
     remediation:
@@ -35,25 +35,36 @@ spec:
   values:
     fullnameOverride: *app
     provider:
-      name: cloudflare
-    env:
-      - name: &name CF_API_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: &secret external-external-dns-secret
-            key: *name
-    extraArgs:
-      - --cloudflare-dns-records-per-page=1000
-      - --cloudflare-proxied
-      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
-      - --crd-source-kind=DNSEndpoint
-      - --events
-      - --ignore-ingress-tls-spec
-      - --ingress-class=external
+      name: webhook
+      webhook:
+        image:
+          repository: ghcr.io/kashalls/external-dns-unifi-webhook
+          tag: v0.6.0@sha256:dd71adb88b64174b158481fb359dfe985d8bea1cad8cefba36209c8fc9eb03d3
+        env:
+          - name: UNIFI_HOST
+            value: https://192.168.1.1
+          - name: UNIFI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: &secret unifi-dns-secret
+                key: UNIFI_API_KEY
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http-webhook
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+    triggerLoopOnEvent: true
     policy: sync
-    sources: ["crd", "ingress"]
-    txtPrefix: k8s.
+    sources: ["gateway-httproute", "service"]
     txtOwnerId: default
+    txtPrefix: k8s.
     domainFilters: ["${SECRET_DOMAIN}"]
     serviceMonitor:
       enabled: true
