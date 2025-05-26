@@ -74,16 +74,17 @@ spec:
         ports:
           http:
             port: *port
-    ingress:
+    route:
       app:
-        className: internal
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
+        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        parentRefs:
+          - name: internal
+            namespace: kube-system
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
     persistence:
       config:
         existingClaim: sonarr
@@ -91,17 +92,6 @@ spec:
         existingClaim: sonarr-cache
         globalMounts:
           - path: /config/MediaCover
-      scripts:
-        type: configMap
-        name: sonarr-configmap
-        defaultMode: 0775
-        globalMounts:
-          - path: /scripts/pushover-notifier.sh
-            subPath: pushover-notifier.sh
-            readOnly: true
-          - path: /scripts/tba-refresher.sh
-            subPath: tba-refresher.sh
-            readOnly: true
       data:
         type: nfs
         server: nas.internal

@@ -1,9 +1,9 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: tautulli
+  name: cloudflare-tunnel
 spec:
   interval: 1h
   chartRef:
@@ -18,25 +18,33 @@ spec:
       retries: 3
   values:
     controllers:
-      tautulli:
+      cloudflare-tunnel:
+        strategy: RollingUpdate
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/tautulli
-              tag: 2.15.2@sha256:cb8e3a4c2873edf7baa433e126f022f19eb43f256b65b2de3e8525dc2e4dc18e
+              repository: docker.io/cloudflare/cloudflared
+              tag: 2025.5.0
             env:
-              TZ: Pacific/Auckland
-              TAUTULLI__PORT: &port 80
+              NO_AUTOUPDATE: true
+              TUNNEL_METRICS: 0.0.0.0:8080
+              TUNNEL_ORIGIN_ENABLE_HTTP2: true
+              TUNNEL_POST_QUANTUM: true
+              TUNNEL_TRANSPORT_PROTOCOL: quic
+            envFrom:
+              - secretRef:
+                  name: cloudflare-tunnel-secret
+            args: ["tunnel", "run"]
             probes:
               liveness: &probes
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
-                    path: /status
-                    port: *port
+                    path: /ready
+                    port: &port 8080
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
@@ -50,44 +58,33 @@ spec:
               requests:
                 cpu: 10m
               limits:
-                memory: 1Gi
+                memory: 256Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
-        controller: tautulli
+        controller: cloudflare-tunnel
         ports:
           http:
             port: *port
-    route:
+    serviceMonitor:
       app:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
-        parentRefs:
-          - name: internal
-            namespace: kube-system
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
+        serviceName: cloudflare-tunnel
+        endpoints:
+          - port: http
+            scheme: http
+            path: /metrics
+            interval: 1m
+            scrapeTimeout: 10s
     persistence:
-      config:
-        existingClaim: tautulli
-      config-cache:
-        existingClaim: tautulli-cache
+      config-file:
+        type: configMap
+        name: cloudflare-tunnel-configmap
         globalMounts:
-          - path: /config/cache
-      tmpfs:
-        type: emptyDir
-        advancedMounts:
-          tautulli:
-            app:
-              - path: /config/logs
-                subPath: logs
-              - path: /tmp
-                subPath: tmp
+          - path: /etc/cloudflared/config.yaml
+            subPath: config.yaml
+            readOnly: true
