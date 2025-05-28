@@ -17,5 +17,5 @@ _.file = [
 
 [tools]
 # NOTE: Keep the below versions pinned until Helm 3.18 can successfully pull charts that include a .prov file (provenance signature) as a separate OCI artifact layer
-"helm" = "3.17.3"
+"helm" = "3.18.1"
 "helmfile" = "1.0.0"
