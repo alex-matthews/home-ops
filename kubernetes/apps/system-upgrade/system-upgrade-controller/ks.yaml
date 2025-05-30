@@ -9,8 +9,16 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   interval: 1h
   path: ./kubernetes/apps/system-upgrade/system-upgrade-controller/app
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:
@@ -25,14 +33,16 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  labels:
-    substitution.flux/enabled: false
   name: &app system-upgrade-controller-plans
   namespace: &namespace system-upgrade
 spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: system-upgrade-controller
       namespace: system-upgrade
@@ -42,6 +52,8 @@ spec:
     substituteFrom:
       - kind: ConfigMap
         name: versions
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:

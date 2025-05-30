@@ -12,6 +12,10 @@ spec:
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/volsync
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
@@ -21,6 +25,9 @@ spec:
     substitute:
       APP: *app
       VOLSYNC_CAPACITY: 1Gi
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:

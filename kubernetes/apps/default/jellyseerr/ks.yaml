@@ -12,6 +12,10 @@ spec:
   components:
     - ../../../../components/gatus/external
     - ../../../../components/volsync
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: onepassword
       namespace: external-secrets
@@ -25,6 +29,9 @@ spec:
       GATUS_PATH: /api/v1/status
       GATUS_SUBDOMAIN: requests
       VOLSYNC_CAPACITY: 5Gi
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:

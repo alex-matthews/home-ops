@@ -12,6 +12,10 @@ spec:
   components:
     - ../../../../components/gatus/external
     - ../../../../components/volsync
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: onepassword
       namespace: external-secrets
@@ -27,6 +31,9 @@ spec:
       GATUS_PATH: /web/index.html
       VOLSYNC_CACHE_CAPACITY: 25Gi
       VOLSYNC_CAPACITY: 50Gi
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:

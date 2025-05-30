@@ -11,12 +11,19 @@ spec:
       app.kubernetes.io/name: *app
   components:
     - ../../../../components/gatus/external
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   interval: 1h
   path: ./kubernetes/apps/network/echo/app
   postBuild:
     substitute:
       APP: *app
       GATUS_PATH: /healthz
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   retryInterval: 2m
   sourceRef:
