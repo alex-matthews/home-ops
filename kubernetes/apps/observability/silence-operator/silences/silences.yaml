@@ -19,7 +19,7 @@ spec:
     - name: alertname
       value: CephNodeDiskspaceWarning
     - name: device
-      value: /dev/sda.*
+      value: /dev/sd.*
       matchType: "=~"
 ---
 apiVersion: observability.giantswarm.io/v1alpha2
