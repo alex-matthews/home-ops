@@ -3,10 +3,6 @@
   # Fix: https://github.com/onedr0p/home-ops/commit/f6bbef667b69d218101ba3d18fe1a810527378d3
 web:
   port: $${GATUS_WEB_PORT}
-storage:
-  type: sqlite
-  path: /config/sqlite.db
-  caching: true
 metrics: true
 ui:
   title: Status | Gatus
