@@ -2,16 +2,22 @@
 # Note: Gatus vars should be escaped with $${VAR_NAME} to avoid interpolation by Flux
   # Fix: https://github.com/onedr0p/home-ops/commit/f6bbef667b69d218101ba3d18fe1a810527378d3
 web:
-  port: $${WEB_PORT}
+  port: $${GATUS_WEB_PORT}
 storage:
   type: sqlite
   path: /config/sqlite.db
   caching: true
 metrics: true
-debug: false
 ui:
   title: Status | Gatus
   header: Status
+  logo: https://avatars.githubusercontent.com/u/96397723
+  link: https://github.com/alex-matthews
+  buttons:
+    - name: GitHub
+      link: https://github.com/alex-matthews
+    - name: Homelab
+      link: https://github.com/alex-matthews/home-ops
 connectivity:
   checker:
     target: 1.1.1.1:53
