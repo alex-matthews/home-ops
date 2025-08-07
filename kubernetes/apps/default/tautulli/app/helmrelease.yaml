@@ -29,6 +29,9 @@ spec:
             env:
               TZ: Pacific/Auckland
               TAUTULLI__PORT: &port 80
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-secret"
             probes:
               liveness: &probes
                 enabled: true
