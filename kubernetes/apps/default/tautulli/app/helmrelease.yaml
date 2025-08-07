@@ -31,7 +31,7 @@ spec:
               TAUTULLI__PORT: &port 80
             envFrom:
               - secretRef:
-                  name: "{{ .Release.Name }}-secret"
+                  name: tautulli-secret
             probes:
               liveness: &probes
                 enabled: true
