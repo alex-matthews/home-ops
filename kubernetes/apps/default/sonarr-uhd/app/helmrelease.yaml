@@ -38,7 +38,7 @@ spec:
               TZ: Pacific/Auckland
             envFrom:
               - secretRef:
-                  name: sonarr-uhd-secret
+                  name: "{{ .Release.Name }}-secret"
             probes:
               liveness: &probes
                 enabled: true
@@ -70,7 +70,6 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        controller: sonarr-uhd
         ports:
           http:
             port: *port
@@ -81,15 +80,11 @@ spec:
           - name: internal
             namespace: kube-system
             sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
     persistence:
       config:
-        existingClaim: sonarr-uhd
+        existingClaim: "{{ .Release.Name }}"
       config-cache:
-        existingClaim: sonarr-uhd-cache
+        existingClaim: "{{ .Release.Name }}-cache"
         globalMounts:
           - path: /config/MediaCover
       data:

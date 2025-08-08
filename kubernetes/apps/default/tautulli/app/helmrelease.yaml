@@ -31,7 +31,7 @@ spec:
               TAUTULLI_HTTP_PORT: &port 80
             envFrom:
               - secretRef:
-                  name: tautulli-secret
+                  name: "{{ .Release.Name }}-secret"
             probes:
               liveness: &probes
                 enabled: true
@@ -63,7 +63,6 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        controller: tautulli
         ports:
           http:
             port: *port
@@ -74,15 +73,11 @@ spec:
           - name: internal
             namespace: kube-system
             sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
     persistence:
       config:
-        existingClaim: tautulli
+        existingClaim: "{{ .Release.Name }}"
       config-cache:
-        existingClaim: tautulli-cache
+        existingClaim: "{{ .Release.Name }}-cache"
         globalMounts:
           - path: /config/cache
       tmpfs:

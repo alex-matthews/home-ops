@@ -26,7 +26,7 @@ spec:
               repository: ghcr.io/mendhak/http-https-echo
               tag: 37
             env:
-              HTTP_PORT: &port 8080
+              HTTP_PORT: &port 80
               LOG_WITHOUT_NEWLINE: true
               LOG_IGNORE_PATH: /healthz
               PROMETHEUS_ENABLED: true
@@ -59,13 +59,11 @@ spec:
         runAsGroup: 1000
     service:
       app:
-        controller: echo
         ports:
           http:
             port: *port
     serviceMonitor:
       app:
-        serviceName: echo
         endpoints:
           - port: http
     route:
@@ -75,7 +73,3 @@ spec:
           - name: external
             namespace: kube-system
             sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port
