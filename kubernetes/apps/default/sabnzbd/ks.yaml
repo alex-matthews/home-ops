@@ -18,7 +18,9 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    - name: onepassword
+    - name: keda
+      namespace: observability
+    - name: onepassword-store
       namespace: external-secrets
     - name: rook-ceph-cluster
       namespace: rook-ceph

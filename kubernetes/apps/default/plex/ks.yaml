@@ -18,10 +18,10 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    - name: onepassword
-      namespace: external-secrets
     - name: intel-device-plugins-gpu
       namespace: kube-system
+    - name: keda
+      namespace: observability
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h
