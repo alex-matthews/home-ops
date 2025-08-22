@@ -20,7 +20,6 @@ spec:
     controllers:
       onepassword:
         strategy: RollingUpdate
-        replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
