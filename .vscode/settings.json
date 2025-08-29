@@ -10,10 +10,12 @@
   "editor.stickyScroll.enabled": false,
   "explorer.autoReveal": false,
   "files.associations": {
-    "**/*.json5": "json5"
+    "**/*.json5": "json5",
+    "**/*.yaml.j2": "yaml"
   },
   "files.trimTrailingWhitespace": true,
   "material-icon-theme.files.associations": {
+    "*.gotmpl": "smarty",
     "*.sops.yaml": "lock",
     "helmfile.yaml": "helm",
     "kubeconfig": "kubernetes",
@@ -25,6 +27,7 @@
     ".private": "archive",
     ".renovate": "robot",
     "bootstrap": "seeders",
+    "bootstrap/helmfile.d": "helm",
     "flux": "pipe",
     "talos": "linux",
     // namespaces
