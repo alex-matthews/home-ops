@@ -1,6 +1,7 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siderolabs/talos/refs/heads/release-1.10/website/content/v1.10/schemas/config.schema.json
 version: v1alpha1
 debug: false
-persist: true
 machine:
   token: op://kubernetes/talos/MACHINE_TOKEN
   ca:
@@ -135,7 +136,7 @@ cluster:
   apiServer:
     image: registry.k8s.io/kube-apiserver:{{ ENV.KUBERNETES_VERSION }}
     extraArgs:
-      enable-aggregator-routing: true
+      enable-aggregator-routing: "true"
     certSANs: ["127.0.0.1", "192.168.1.200"]
     disablePodSecurityPolicy: true
     auditPolicy:
