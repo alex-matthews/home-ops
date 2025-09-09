@@ -9,10 +9,11 @@
     "github>alex-matthews/home-ops//.renovate/grafanaDashboards.json5",
     "github>alex-matthews/home-ops//.renovate/groups.json5",
     "github>alex-matthews/home-ops//.renovate/labels.json5",
+    "github>alex-matthews/home-ops//.renovate/overrides.json5",
     "github>alex-matthews/home-ops//.renovate/semanticCommits.json5",
     ":automergeBranch",
-    ":disableRateLimiting",
     ":dependencyDashboard",
+    ":disableRateLimiting",
     ":semanticCommits",
     ":timezone(Pacific/Auckland)",
   ],
@@ -26,12 +27,9 @@
     "**/resources/**",
   ],
   flux: {
-    managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"]
-  },
-  "helm-values": {
-    managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"]
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"],
   },
   kubernetes: {
-    managerFilePatterns: ["/(^|/)kubernetes/.+\\.ya?ml$/"]
+    managerFilePatterns: ["/\\.yaml(?:\\.j2)?$/"],
   },
 }
