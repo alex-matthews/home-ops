@@ -16,8 +16,6 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    # - name: keda
-    #   namespace: observability
     # - name: openebs
     #   namespace: openebs-system
     - name: snapshot-controller
