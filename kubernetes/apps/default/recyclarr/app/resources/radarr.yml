@@ -8,31 +8,21 @@ radarr:
     replace_existing_custom_formats: true
     quality_profiles:
       - name: SQP-1 (2160p)
-        min_format_score: 10
     include:
       - template: radarr-quality-definition-sqp-streaming
       - template: radarr-quality-profile-sqp-1-2160p-default
       - template: radarr-custom-formats-sqp-1-2160p
     custom_formats:
-      # Preferred movie versions
-      - trash_ids:
-          - e0c07d59beb37348e975a930d5e50319 # Criterion Collection
-        assign_scores_to:
-          - name: SQP-1 (2160p)
-      # Miscellaneous UHD
+      # Allow x265 HD releases even without HDR formats
       - trash_ids:
           - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
         assign_scores_to:
           - name: SQP-1 (2160p)
             score: 0
-      - trash_ids:
-          - dc98083864ea246d05a42df0d05f81cc # x265 (HD)
-          - 25c12f78430a3a23413652cbd1d48d77 # SDR (no WEBDL)
-        assign_scores_to:
-          - name: SQP-1 (2160p)
       # Unwanted
       - trash_ids:
           - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+          - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
           - d6e9318c875905d6cfb5bee961afcea9 # Language: Not Original
           - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
           - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
@@ -40,3 +30,8 @@ radarr:
           - f537cf427b64c38c8e36298f657e4828 # Scene
         assign_scores_to:
           - name: SQP-1 (2160p)
+    media_naming:
+      folder: default
+      movie:
+        rename: true
+        standard: default

@@ -8,17 +8,26 @@ sonarr:
     replace_existing_custom_formats: true
     include:
       - template: sonarr-quality-definition-series
-      - template: sonarr-v4-quality-profile-web-1080p
+      - template: sonarr-v4-quality-profile-web-1080p-alternative
       - template: sonarr-v4-custom-formats-web-1080p
     quality_profiles:
       - name: WEB-1080p
     custom_formats:
+      # Unwanted
       - trash_ids:
           - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
-          - ae575f95ab639ba5d15f663bf019e3e8 # Language: Not Original
+          - d6e9318c875905d6cfb5bee961afcea9 # Language: Not Original
           - 82d40da2bc6923f41e14394075dd4b03 # No-RlsGroup
           - e1a997ddb54e3ecbfe06341ad323c458 # Obfuscated
           - 06d66ab109d4d2eddb2794d21526d140 # Retags
           - 1b3994c551cbb92a2c781af061f4ab44 # Scene
         assign_scores_to:
           - name: WEB-1080p
+    media_naming:
+      series: plex-tvdb
+      season: default
+      episodes:
+        rename: true
+        standard: default
+        daily: default
+        anime: default
