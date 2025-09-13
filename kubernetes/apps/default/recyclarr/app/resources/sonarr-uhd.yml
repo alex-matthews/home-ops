@@ -30,10 +30,10 @@ sonarr:
         assign_scores_to:
           - name: WEB-2160p
     media_naming:
-      series: plex-tvdb
+      series: default
       season: default
       episodes:
         rename: true
-        standard: default
+        standard: p2p-scene
         daily: default
         anime: default
