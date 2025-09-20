@@ -30,6 +30,7 @@
     "bootstrap/helmfile.d": "helm",
     "flux": "pipe",
     "talos": "linux",
+    "volsync": "aws",
     // namespaces
     "actions-runner-system": "github",
     "cert-manager": "guard",
@@ -54,5 +55,8 @@
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
     "kubernetes": "./kubernetes/**/*.yaml"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "bluebrown.yamlfmt"
   }
 }
