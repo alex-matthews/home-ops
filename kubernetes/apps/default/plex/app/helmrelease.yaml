@@ -28,7 +28,7 @@ spec:
               tag: 1.42.2.10156@sha256:9ad8a3506e1d8ebda873a668603c1a2c10e6887969564561be669efd65ae8871
             env:
               TZ: Pacific/Auckland
-              PLEX_ADVERTISE_URL: https://plex.${SECRET_DOMAIN}:443,http://192.168.1.230:32400,http://plex.default.svc.cluster.local:32400
+              PLEX_ADVERTISE_URL: https://plex.${SECRET_DOMAIN}:443,http://plex.default.svc.cluster.local:32400
               PLEX_NO_AUTH_NETWORKS: 192.168.1.0/24
             probes:
               liveness: &probes
@@ -67,9 +67,6 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        type: LoadBalancer
-        annotations:
-          lbipam.cilium.io/ips: 192.168.1.230
         ports:
           http:
             port: *port
