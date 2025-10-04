@@ -13,10 +13,6 @@ spec:
     - ../../../../components/gatus/guarded
     - ../../../../components/keda/nfs-scaler
     - ../../../../components/volsync
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
