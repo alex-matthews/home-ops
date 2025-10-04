@@ -11,10 +11,6 @@ spec:
       app.kubernetes.io/name: *app
   # components:
   #   - ../../../../components/keda/nfs-scaler
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
   dependsOn:
     # - name: openebs
     #   namespace: openebs-system
