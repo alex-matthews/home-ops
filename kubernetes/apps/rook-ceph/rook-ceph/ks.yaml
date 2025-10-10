@@ -3,17 +3,8 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app rook-ceph
-  namespace: &namespace rook-ceph
+  name: rook-ceph
 spec:
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2
-      kind: HelmRelease
-      name: *app
-      namespace: *namespace
   interval: 1h
   path: ./kubernetes/apps/rook-ceph/rook-ceph/app
   postBuild:
@@ -26,35 +17,30 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
   timeout: 5m
+  wait: true
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/kustomization-kustomize-v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app rook-ceph-cluster
-  namespace: &namespace rook-ceph
+  name: rook-ceph-cluster
 spec:
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
   components:
     - ../../../../components/gatus/guarded
   dependsOn:
     - name: rook-ceph
-      namespace: *namespace
     - name: volsync
       namespace: volsync-system
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: *app
-      namespace: *namespace
+      name: rook-ceph-cluster
+      namespace: rook-ceph
     - apiVersion: ceph.rook.io/v1
       kind: CephCluster
       name: rook-ceph
-      namespace: *namespace
+      namespace: rook-ceph
   healthCheckExprs:
     - apiVersion: ceph.rook.io/v1
       kind: CephCluster
@@ -64,7 +50,7 @@ spec:
   path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   postBuild:
     substitute:
-      APP: *app
+      APP: rook-ceph-cluster
       GATUS_SUBDOMAIN: rook
     substituteFrom:
       - kind: Secret
@@ -75,5 +61,4 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
   timeout: 15m

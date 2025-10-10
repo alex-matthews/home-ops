@@ -3,12 +3,8 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app radarr-se
-  namespace: &namespace default
+  name: radarr-se
 spec:
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
   components:
     - ../../../../components/gatus/guarded
     - ../../../../components/keda/nfs-scaler
@@ -20,7 +16,7 @@ spec:
   path: ./kubernetes/apps/default/radarr-se/app
   postBuild:
     substitute:
-      APP: *app
+      APP: radarr-se
       VOLSYNC_CAPACITY: 5Gi
     substituteFrom:
       - kind: Secret
@@ -31,6 +27,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
   timeout: 5m
   wait: false
