@@ -5,17 +5,10 @@ kind: HelmRelease
 metadata:
   name: cloudflare-tunnel
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: cloudflare-tunnel
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     controllers:
       cloudflare-tunnel:
@@ -25,7 +18,7 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/cloudflare/cloudflared
+              repository: mirror.gcr.io/cloudflare/cloudflared
               tag: 2025.9.1@sha256:4604b477520dc8322af5427da68b44f0bf814938e9d2e4814f2249ee4b03ffdf
             env:
               NO_AUTOUPDATE: true
