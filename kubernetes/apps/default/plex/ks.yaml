@@ -3,20 +3,12 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app plex
-  namespace: &namespace default
+  name: plex
 spec:
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
   components:
     - ../../../../components/gatus/external
     - ../../../../components/keda/nfs-scaler
     - ../../../../components/volsync
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
   dependsOn:
     - name: intel-device-plugins-gpu
       namespace: kube-system
@@ -26,7 +18,7 @@ spec:
   path: ./kubernetes/apps/default/plex/app
   postBuild:
     substitute:
-      APP: *app
+      APP: plex
       GATUS_PATH: /identity
       VOLSYNC_CACHE_CAPACITY: 25Gi
       VOLSYNC_CAPACITY: 50Gi
@@ -34,11 +26,7 @@ spec:
       - kind: Secret
         name: cluster-secrets
   prune: true
-  retryInterval: 2m
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: *namespace
-  timeout: 5m
-  wait: false

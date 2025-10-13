@@ -5,17 +5,10 @@ kind: HelmRelease
 metadata:
   name: recyclarr
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: recyclarr
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     controllers:
       recyclarr:
@@ -35,11 +28,12 @@ spec:
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
-            args: ["sync"]
+            args:
+              - "sync"
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
-              capabilities: { drop: ["ALL"] }
+              capabilities: {drop: ["ALL"]}
             resources:
               requests:
                 cpu: 10m

@@ -5,6 +5,8 @@ kind: Kustomization
 namespace: default
 components:
   - ../../components/common
+replacements:
+  - path: ../../components/replacements/ks.yaml
 resources:
   - ./fusion/ks.yaml
   - ./jellyseerr/ks.yaml
