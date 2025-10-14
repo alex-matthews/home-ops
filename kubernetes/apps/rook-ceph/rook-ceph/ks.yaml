@@ -43,8 +43,6 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  components:
-    - ../../../../components/gatus/guarded
   decryption:
     provider: sops
     secretRef:
@@ -71,9 +69,6 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/rook-ceph/rook-ceph/cluster
   postBuild:
-    substitute:
-      APP: *app
-      GATUS_SUBDOMAIN: rook
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
