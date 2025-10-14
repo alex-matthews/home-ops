@@ -10,7 +10,6 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   components:
-    - ../../../../components/gatus/guarded
     - ../../../../components/keda/nfs-scaler
     - ../../../../components/volsync
   decryption:
@@ -25,7 +24,6 @@ spec:
   postBuild:
     substitute:
       APP: *app
-      GATUS_SUBDOMAIN: sab
       VOLSYNC_CAPACITY: 1Gi
     substituteFrom:
       - kind: Secret
