@@ -6,7 +6,6 @@ metadata:
   name: jellyseerr
 spec:
   components:
-    - ../../../../components/gatus/external
     - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster
@@ -16,8 +15,6 @@ spec:
   postBuild:
     substitute:
       APP: jellyseerr
-      GATUS_PATH: /api/v1/status
-      GATUS_SUBDOMAIN: requests
       VOLSYNC_CAPACITY: 5Gi
     substituteFrom:
       - kind: Secret
@@ -27,3 +24,4 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: default

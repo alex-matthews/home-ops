@@ -6,8 +6,7 @@ metadata:
   name: sabnzbd
 spec:
   components:
-    - ../../../../components/gatus/guarded
-    - ../../../../components/keda/nfs-scaler
+    - ../../../../components/nfs-scaler
     - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster
@@ -17,7 +16,6 @@ spec:
   postBuild:
     substitute:
       APP: sabnzbd
-      GATUS_SUBDOMAIN: sab
       VOLSYNC_CAPACITY: 1Gi
     substituteFrom:
       - kind: Secret
@@ -27,3 +25,4 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: default

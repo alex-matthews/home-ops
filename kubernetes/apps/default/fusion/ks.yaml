@@ -6,7 +6,6 @@ metadata:
   name: fusion
 spec:
   components:
-    - ../../../../components/gatus/guarded
     - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster
@@ -25,3 +24,4 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  targetNamespace: default
