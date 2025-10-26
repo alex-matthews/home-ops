@@ -13,9 +13,6 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/observability/kube-prometheus-stack/app
   postBuild:
-    substitute:
-      APP: kube-prometheus-stack
-      GATUS_SUBDOMAIN: prometheus
     substituteFrom:
       - kind: Secret
         name: cluster-secrets

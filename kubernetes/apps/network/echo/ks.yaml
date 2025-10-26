@@ -5,6 +5,13 @@ kind: Kustomization
 metadata:
   name: echo
 spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   interval: 1h
   path: ./kubernetes/apps/network/echo/app
   postBuild:

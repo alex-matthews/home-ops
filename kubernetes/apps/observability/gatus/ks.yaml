@@ -8,9 +8,6 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/observability/gatus/app
   postBuild:
-    substitute:
-      APP: gatus
-      GATUS_SUBDOMAIN: status
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
