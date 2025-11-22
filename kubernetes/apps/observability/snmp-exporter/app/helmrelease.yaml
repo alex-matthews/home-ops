@@ -5,26 +5,21 @@ kind: HelmRelease
 metadata:
   name: &app snmp-exporter
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: snmp-exporter
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     fullnameOverride: *app
     serviceMonitor:
       enabled: true
       params:
         - name: nas
-          auth: [public_v2]
-          module: [synology]
+          auth:
+            - public_v2
+          module:
+            - synology
           target: nas.internal
       scrapeTimeout: 10s
       relabelings:
-        - { sourceLabels: ["__param_target"], targetLabel: instance }
+        - {sourceLabels: ["__param_target"], targetLabel: instance}
