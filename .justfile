@@ -3,10 +3,10 @@
 set quiet := true
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
-mod bootstrap
-mod kubernetes
-mod talos
-mod volsync
+mod bootstrap "bootstrap"
+mod kube "kubernetes"
+mod talos "talos"
+mod volsync "volsync"
 
 [private]
 default:

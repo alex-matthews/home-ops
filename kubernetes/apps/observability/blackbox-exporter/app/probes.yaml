@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
-  name: devices
+  name: lan-imcp
 spec:
   module: icmp
   prober:
@@ -11,11 +11,15 @@ spec:
     staticConfig:
       static:
         - nas.internal
+  metricRelabelings:
+    - targetLabel: service
+      replacement: blackbox-exporter
+      action: replace
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
 metadata:
-  name: nfs
+  name: lan-tcp
 spec:
   module: tcp_connect
   prober:
@@ -24,3 +28,7 @@ spec:
     staticConfig:
       static:
         - nas.internal:2049
+  metricRelabelings:
+    - targetLabel: service
+      replacement: blackbox-exporter
+      action: replace

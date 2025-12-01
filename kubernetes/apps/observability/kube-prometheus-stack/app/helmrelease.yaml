@@ -5,38 +5,24 @@ kind: HelmRelease
 metadata:
   name: kube-prometheus-stack
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: kube-prometheus-stack
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
-    crds:
-      enabled: true
-      upgradeJob:
-        enabled: true
-        forceConflicts: true
     cleanPrometheusOperatorObjectNames: true
     alertmanager:
       route:
         main:
           enabled: true
-          hostnames: ["alertmanager.${SECRET_DOMAIN}"]
+          hostnames:
+            - alertmanager.${SECRET_DOMAIN}
           parentRefs:
             - name: envoy-internal
               namespace: network
-              sectionName: https
       alertmanagerSpec:
         alertmanagerConfiguration:
           name: alertmanager
-          global:
-            resolveTimeout: 5m
         externalUrl: https://alertmanager.${SECRET_DOMAIN}
         storage:
           volumeClaimTemplate:
@@ -55,16 +41,18 @@ spec:
       route:
         main:
           enabled: true
-          hostnames: ["prometheus.${SECRET_DOMAIN}"]
+          hostnames:
+            - prometheus.${SECRET_DOMAIN}
           parentRefs:
             - name: envoy-internal
               namespace: network
-              sectionName: https
       prometheusSpec:
+        externalUrl: https://prometheus.${SECRET_DOMAIN}
+        version: v2.55.1 # override 'unsupported Prometheus version' error
         image:
           registry: docker.io
           repository: prompp/prompp
-          tag: 2.53.2-0.4.0
+          tag: 0.6.4
         securityContext:
           runAsNonRoot: true
           runAsUser: 64535
@@ -91,23 +79,8 @@ spec:
                   storage: 50Gi
     prometheus-node-exporter:
       fullnameOverride: node-exporter
-      prometheus: &prometheus
-        monitor:
-          enabled: true
-          relabelings:
-            - action: replace
-              regex: (.*)
-              replacement: $1
-              sourceLabels: ["__meta_kubernetes_pod_node_name"]
-              targetLabel: kubernetes_node
     kube-state-metrics:
       fullnameOverride: kube-state-metrics
-      metricLabelsAllowlist:
-        - pods=[*]
-        - deployments=[*]
-        - persistentvolumeclaims=[*]
-      prometheus:
-        <<: *prometheus
     grafana:
       enabled: false
       forceDeployDashboards: true
@@ -118,7 +91,7 @@ spec:
             rules:
               - alert: DockerhubRateLimitRisk
                 annotations:
-                  summary: Kubernetes cluster Dockerhub rate limit risk
+                  summary: There are {{ $value }} containers pulling from Docker Hub. This may lead to rate limiting.
                 expr: count(time() - container_last_seen{image=~"(docker.io).*",container!=""} < 30) > 100
                 labels:
                   severity: critical

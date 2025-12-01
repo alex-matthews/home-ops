@@ -66,7 +66,10 @@ machine:
       - destination: /var/openebs/local
         type: bind
         source: /var/openebs/local
-        options: ["bind", "rshared", "rw"]
+        options:
+          - bind
+          - rshared
+          - rw
     image: ghcr.io/siderolabs/kubelet:v1.34.2
     nodeIP:
       validSubnets:
@@ -91,7 +94,9 @@ machine:
     net.ipv4.neigh.default.gc_thresh3: "16384"
     net.ipv4.tcp_congestion_control: bbr
     net.ipv4.tcp_fastopen: "3"
+    net.ipv4.tcp_notsent_lowat: "131072"
     net.ipv4.tcp_rmem: 4096 87380 33554432
+    net.ipv4.tcp_slow_start_after_idle: "0"
     net.ipv4.tcp_window_scaling: "1"
     net.ipv4.tcp_wmem: 4096 65536 33554432
     user.max_user_namespaces: "11255"

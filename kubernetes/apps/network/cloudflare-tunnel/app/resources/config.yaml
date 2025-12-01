@@ -1,9 +1,0 @@
----
-ingress:
-  - hostname: "*.${SECRET_DOMAIN}"
-    originRequest:
-      http2Origin: true
-      originServerName: external.${SECRET_DOMAIN}
-    service: https://envoy-external.network.svc.cluster.local
-
-  - service: http_status:404
