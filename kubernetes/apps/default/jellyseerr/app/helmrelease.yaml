@@ -5,17 +5,10 @@ kind: HelmRelease
 metadata:
   name: jellyseerr
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: jellyseerr
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     controllers:
       jellyseerr:
@@ -78,7 +71,6 @@ spec:
         parentRefs:
           - name: envoy-external
             namespace: network
-            sectionName: https
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"

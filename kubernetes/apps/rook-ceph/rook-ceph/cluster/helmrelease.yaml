@@ -5,18 +5,10 @@ kind: HelmRelease
 metadata:
   name: rook-ceph-cluster
 spec:
-  interval: 1h
-  timeout: 15m
   chartRef:
     kind: OCIRepository
     name: rook-ceph-cluster
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     monitoring:
       enabled: true
@@ -32,7 +24,6 @@ spec:
         parentRefs:
           - name: envoy-internal
             namespace: network
-            sectionName: https
     cephClusterSpec:
       cephConfig:
         global:
@@ -66,6 +57,10 @@ spec:
         provider: host
         connections:
           requireMsgr2: true
+      resources:
+        osd:
+          limits:
+            memory: 8Gi
       storage:
         useAllNodes: true
         useAllDevices: false
@@ -85,7 +80,8 @@ spec:
           reclaimPolicy: Delete
           allowVolumeExpansion: true
           volumeBindingMode: Immediate
-          mountOptions: ["discard"]
+          mountOptions:
+            - discard
           parameters:
             # TODO: Consider enabling compression on cluster rebuild
             # compression_mode: aggressive

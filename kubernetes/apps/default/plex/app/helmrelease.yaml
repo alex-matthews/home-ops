@@ -5,17 +5,10 @@ kind: HelmRelease
 metadata:
   name: plex
 spec:
-  interval: 1h
   chartRef:
     kind: OCIRepository
     name: plex
-  install:
-    remediation:
-      retries: -1
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
+  interval: 1h
   values:
     controllers:
       plex:
@@ -83,16 +76,16 @@ spec:
         parentRefs:
           - name: envoy-external
             namespace: network
-            sectionName: https
         rules:
-          - backendRefs:
+          - # Ref: https://forums.plex.tv/t/external-srt-subtitles-are-not-working-w-reverse-proxy/886540
+            backendRefs:
               - identifier: app
                 port: *port
             filters:
               - type: RequestHeaderModifier
                 requestHeaderModifier:
                   remove:
-                    - "Range"
+                    - Range
             matches:
               - path:
                   type: PathPrefix
