@@ -8,6 +8,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15761/revisions/20/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -19,6 +22,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15762/revisions/22/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -30,6 +36,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15757/revisions/43/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -41,6 +50,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15758/revisions/42/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -52,6 +64,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15759/revisions/37/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -63,6 +78,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/15760/revisions/36/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
@@ -74,6 +92,9 @@ spec:
   instanceSelector:
     matchLabels:
       grafana.internal/instance: grafana
+  datasources:
+    - datasourceName: prometheus
+      inputName: DS_PROMETHEUS
   url: https://grafana.com/api/dashboards/11454/revisions/14/download
 ---
 apiVersion: grafana.integreatly.org/v1beta1
