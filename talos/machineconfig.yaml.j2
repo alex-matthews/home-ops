@@ -14,7 +14,7 @@ machine:
     diskQuotaSupport: true
     hostDNS:
       enabled: true
-      forwardKubeDNSToHost: false
+      forwardKubeDNSToHost: true # Requires Cilium socketLB features
       resolveMemberNames: true
     kubePrism:
       enabled: true
@@ -111,6 +111,13 @@ cluster:
   clusterName: main
   controlPlane:
     endpoint: https://192.168.1.200:6443
+  discovery:
+    enabled: true
+    registries:
+      kubernetes:
+        disabled: true
+      service:
+        disabled: false
   id: op://kubernetes/talos/CLUSTER_ID
   network:
     cni:
