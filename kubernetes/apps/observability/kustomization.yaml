@@ -9,6 +9,7 @@ components:
 resources:
   - ./namespace.yaml
   - ./blackbox-exporter/ks.yaml
+  - ./fluent-bit/ks.yaml
   - ./gatus/ks.yaml
   - ./grafana/ks.yaml
   - ./keda/ks.yaml
@@ -17,3 +18,4 @@ resources:
   - ./smartctl-exporter/ks.yaml
   - ./snmp-exporter/ks.yaml
   - ./unpoller/ks.yaml
+  - ./victoria-logs/ks.yaml
