@@ -8,6 +8,7 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
+  - ./autobrr/ks.yaml
   - ./bazarr/ks.yaml
   - ./fusion/ks.yaml
   - ./jellyseerr/ks.yaml
