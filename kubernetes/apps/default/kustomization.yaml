@@ -23,4 +23,5 @@ resources:
   - ./sonarr/ks.yaml
   - ./sonarr-uhd/ks.yaml
   - ./tautulli/ks.yaml
+  - ./thelounge/ks.yaml
   - ./tqm/ks.yaml
