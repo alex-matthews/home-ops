@@ -20,7 +20,7 @@ spec:
           app:
             image:
               repository: ghcr.io/alex-matthews/costanza
-              tag: latest
+              tag: main@sha256:e945dc3d6fff36658a257708791024a334e1a42fa49223c2166d03fb8e537343
             env:
               PORT: &port 80
             envFrom:
