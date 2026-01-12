@@ -1,13 +1,10 @@
 # home-ops/scripts
 
-This directory contains Kubernetes- and cluster-adjacent helper commands.
+Cluster-only helper commands (anything that needs `kubectl`, cluster secrets, port-forwards, or in-cluster debugging).
 
-Design intent:
+**Boundary rule:** if it touches Kubernetes, it lives here. If it touches app source code or local `.env`, it lives in the app repo.
 
-- **Cluster context stays here**: anything that relies on `kubectl`, cluster secrets, port-forwards, etc.
-- **App repo stays app-local**: anything that relies on app source code, local `.env`, local Python tooling, etc.
-
-Most helpers are exposed via `just` modules from the repo root.
+Recipes are exposed via `just` modules from the repo root.
 
 ## Discoverability
 
@@ -47,6 +44,22 @@ Trigger a Jellyseerr `TEST_NOTIFICATION` via port-forward using the **cluster** 
 
 ```bash
 just scripts costanza-webhook-test
+```
+
+### Overrides
+
+All Costanza helpers have sensible defaults, but you can override them via environment variables:
+
+- `COSTANZA_NS` (default: `default`) — Namespace containing the Service/Secret
+- `COSTANZA_SVC` (default: `costanza`) — Kubernetes Service name
+- `COSTANZA_SECRET` (default: `costanza-secret`) — Secret containing `JELLYSEERR_WEBHOOK_TOKEN`
+- `COSTANZA_LOCAL_PORT` (default: `8001`) — Local port used for `kubectl port-forward`
+- `COSTANZA_TARGET_PORT` (default: `80`) — Target Service port
+
+Example (non-default namespace and local port):
+
+```bash
+COSTANZA_NS=media COSTANZA_LOCAL_PORT=18001 just scripts costanza-webhook-test
 ```
 
 ### Notes
