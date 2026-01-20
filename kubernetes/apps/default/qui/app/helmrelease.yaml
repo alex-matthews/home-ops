@@ -71,3 +71,10 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
+      downloads:
+        type: nfs
+        server: nas.internal
+        path: /volume1/data
+        globalMounts:
+          - path: /data/torrents
+            subPath: torrents
