@@ -72,7 +72,7 @@ radarr:
           # HDR10+ Boost - Uncomment the HDR10+ Boost line if you want to prefer HDR10+ releases
           # Uncomment both lines if you want to prefer both (DV HDR10+)
           - b337d6812e06c200ec9a2d3cfa9d20a7 # DV Boost
-          - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
+          # - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
         assign_scores_to:
           - name: SQP-4 (MA Hybrid)
 
@@ -88,8 +88,8 @@ radarr:
           # Optional RlsGrp
           - e098247bc6652dd88c76644b275260ed # FLUX
           - 8cd3ac70db7ac318cf9a0e01333940a4 # SiC
-          - 9681750c690210f0936faed781bb7f06 # 126811 - ⚠ Don't forget to read the notes in the guide related to this RlsGrp ⚠
-          - 8016f2f66e751dea613e6b5b94bf633c # Mainframe
+          # - 9681750c690210f0936faed781bb7f06 # 126811 - ⚠ Don't forget to read the notes in the guide related to this RlsGrp ⚠
+          - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
         assign_scores_to:
           - name: SQP-4 (MA Hybrid)
 
