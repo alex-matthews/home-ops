@@ -20,7 +20,7 @@ radarr:
     # Custom quality profile as we follow 'SQP-3 (Audio)'
     # https://discord.com/channels/492590071455940612/1385343352563826748
     quality_profiles:
-      - name: SQP-3 (Audio)
+      - name: SQP-3
         reset_unmatched_scores:
           enabled: true
           except:
@@ -30,7 +30,7 @@ radarr:
           until_quality: WEB|Remux|2160p
           until_score: 10000
         min_format_score: 3350
-        score_set: sqp-3-audio
+        score_set: sqp-3
         quality_sort: top
         qualities:
           - name: WEB|Remux|2160p
@@ -58,13 +58,13 @@ radarr:
           - eecf3a857724171f968a66cb5719e152 # IMAX
           - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
 
       # Misc
       - trash_ids:
           - 2899d84dc9372de3408e6d8cc18e9666 # x264
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
             # score: 0 # Uncomment this line to enable x264 releases
 
       # Unwanted
@@ -72,12 +72,12 @@ radarr:
           # Uncomment the next six lines to block all x265 HD releases
           - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
             score: 0
       - trash_ids:
           - dc98083864ea246d05a42df0d05f81cc # x265 (HD)
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
             score: 0
 
       # Optional
@@ -100,7 +100,7 @@ radarr:
           - f537cf427b64c38c8e36298f657e4828 # Scene
           - f700d29429c023a5734505e77daeaea7 # DV (Disk)
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
 
       # Optional SDR
       # Only ever use ONE of the following custom formats:
@@ -110,7 +110,7 @@ radarr:
           - 9c38ebb7384dada637be8899efa68e6f # SDR
           # - 25c12f78430a3a23413652cbd1d48d77 # SDR (no WEBDL)
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
 
       # Release groups with some extra points
       - trash_ids:
@@ -120,4 +120,4 @@ radarr:
           - 7a0d1ad358fee9f5b074af3ef3f9d9ef # hallowed
           - d66d26d37c32b0137cd26f42abaa7c2e # TheFarm
         assign_scores_to:
-          - name: SQP-3 (Audio)
+          - name: SQP-3
