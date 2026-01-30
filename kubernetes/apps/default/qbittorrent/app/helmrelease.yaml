@@ -98,12 +98,11 @@ spec:
         globalMounts:
           - path: /config/.qbt.toml
             subPath: .qbt.toml
-      downloads:
+      media:
         type: nfs
         server: nas.internal
         path: /volume1/data
         globalMounts:
-          - path: /data/torrents
-            subPath: torrents
+          - path: /data
       tmp:
         type: emptyDir
