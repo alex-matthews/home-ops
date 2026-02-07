@@ -5,7 +5,6 @@ set shell := ['bash', '-euo', 'pipefail', '-c']
 
 mod bootstrap "bootstrap"
 mod kube "kubernetes"
-mod scripts "scripts"
 mod talos "talos"
 mod volsync "volsync"
 
