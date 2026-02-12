@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: cloudflare-dns-rules
+  name: cloudflare-dns
 spec:
   groups:
     - name: cloudflare-dns.rules
@@ -13,6 +13,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              ExternalDNS controller ({{ $labels.job }}) has not synced in over 5 minutes.
+              ExternalDNS controller ({{ $labels.job }}) has not synced in over 5 minutes
           labels:
             severity: critical

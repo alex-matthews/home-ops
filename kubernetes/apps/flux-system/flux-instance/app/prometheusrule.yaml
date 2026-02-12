@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: flux-instance-rules
+  name: flux-instance
   namespace: flux-system
 spec:
   groups:
@@ -14,7 +14,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Flux instance metric is absent. Check if Flux is running or if there are issues with Prometheus scraping.
+              Flux instance metric is absent
           labels:
             severity: critical
 
@@ -24,7 +24,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Flux instance {{ $labels.name }} is not ready. This could indicate issues with deployments or sync state.
+              Flux instance {{ $labels.name }} is not ready
           labels:
             severity: critical
 
@@ -34,7 +34,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              HelmRelease {{ $labels.name }} in {{ $labels.exported_namespace }} is not ready. Check resource status, events, and Helm controller logs.
+              HelmRelease {{ $labels.name }} in {{ $labels.exported_namespace }} is not ready
           labels:
             severity: critical
 
@@ -44,6 +44,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Kustomization {{ $labels.name }} in {{ $labels.exported_namespace }} is not ready. Check status, events, source access, and controller logs.
+              Kustomization {{ $labels.name }} in {{ $labels.exported_namespace }} is not ready
           labels:
             severity: critical

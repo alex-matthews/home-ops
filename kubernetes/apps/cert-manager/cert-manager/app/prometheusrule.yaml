@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: cert-manager-rules
+  name: cert-manager
 spec:
   groups:
     - name: cert-manager.rules
@@ -13,7 +13,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              cert-manager has disappeared from Prometheus service discovery.
+              cert-manager has disappeared from Prometheus service discovery
           labels:
             severity: critical
 
@@ -23,7 +23,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              The certificate {{ $labels.name }} is not ready to serve traffic. This may cause disruptions if it remains unresolved.
+              The certificate {{ $labels.name }} is not ready to serve traffic
           labels:
             severity: critical
 
@@ -33,6 +33,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              cert-manager is hitting Let's Encrypt rate limits. New certificate requests may be temporarily blocked. Check ACME logs for more details.
+              cert-manager is hitting Let's Encrypt rate limits
           labels:
             severity: critical
