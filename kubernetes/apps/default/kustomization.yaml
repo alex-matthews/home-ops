@@ -10,8 +10,7 @@ resources:
   - ./namespace.yaml
   - ./autobrr/ks.yaml
   - ./bazarr/ks.yaml
-  - ./costanza/ks.yaml
-  - ./jellyseerr/ks.yaml
+  # - ./costanza/ks.yaml
   - ./plex/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
@@ -21,6 +20,7 @@ resources:
   - ./recyclarr/ks.yaml
   - ./sabnzbd/ks.yaml
   - ./seasonpackarr/ks.yaml
+  - ./seerr/ks.yaml
   - ./sonarr/ks.yaml
   - ./sonarr-uhd/ks.yaml
   - ./tautulli/ks.yaml
