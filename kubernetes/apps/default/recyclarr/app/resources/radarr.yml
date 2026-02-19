@@ -5,21 +5,29 @@ radarr:
     base_url: http://radarr.default.svc.cluster.local
     api_key: !env_var RADARR_API_KEY
 
+    # SQP streaming quality definitions are incompatible with SQP-4 (MA Hybrid),
+    # so all profiles must share one movie quality definition
     quality_definition:
       type: movie
 
+    include:
+      # SQP-1 (2160p)
+      - template: radarr-quality-profile-sqp-1-2160p-default
+      - template: radarr-custom-formats-sqp-1-2160p
+
     media_naming:
-      folder: default
+      folder: plex-tmdb
       movie:
         rename: true
         standard: p2p-scene
 
     quality_profiles:
-      - name: SQP-4 (MA Hybrid)
+      - name: &sqp1_2160_profile SQP-1 (2160p)
+      - name: &sqp4_profile SQP-4 (MA Hybrid)
         reset_unmatched_scores:
           enabled: true
           except:
-            - "P2P Internal"
+            - "!P2P Internal"
         upgrade:
           allowed: true
           until_quality: Bluray|WEB-2160p
@@ -43,7 +51,27 @@ radarr:
     replace_existing_custom_formats: true
 
     custom_formats:
-      # Audio Formats
+      # Shared unwanted for all profiles
+      - trash_ids:
+          - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+          - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
+          - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+          - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+          - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+          - f537cf427b64c38c8e36298f657e4828 # Scene
+        assign_scores_to:
+          - name: *sqp4_profile
+          - name: *sqp1_2160_profile
+
+      # SQP-1 (2160p) unwanted
+      - trash_ids:
+          - 957d0f44b592285f26449575e8b1167e # Special Edition
+        assign_scores_to:
+          - name: *sqp1_2160_profile
+
+      # ==================== SQP-4 (MA Hybrid)-ONLY RULES ====================
+      # Everything below is assigned only to SQP-4 (MA Hybrid) via *sqp4_only
+      # Audio formats (required)
       - trash_ids:
           - 496f355514737f7d83bf7aa4d24f8169 # TrueHD Atmos
           - 2f22d89048b01681dde8afe203bf2e95 # DTS X
@@ -59,10 +87,10 @@ radarr:
           - 1c1a4c5e823891c75bc50380a6866f73 # DTS
           - 240770601cc226190c367ef59aba7463 # AAC
           - c2998bd0d90ed5621d8df281e839436e # DD
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: &sqp4_only
+          - name: *sqp4_profile
 
-      # HDR Formats Setup
+      # HDR handling (recommended; not strictly required)
       - trash_ids:
           - 493b6d1dbec3c3364c59d7607f7e3405 # HDR
           # ⚠ Check the guide for alternative scoring If you don't share your media with others or only have devices in your chain that support DV ⚠
@@ -73,10 +101,20 @@ radarr:
           # Uncomment both lines if you want to prefer both (DV HDR10+)
           - b337d6812e06c200ec9a2d3cfa9d20a7 # DV Boost
           # - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
 
-      # High-Quality Release Groups
+      # Optional: disallow x265 unless HDR
+      - trash_ids:
+          - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
+        assign_scores_to: *sqp4_only
+
+      # Optional: downscore SDR releases
+      # Uncomment this if you prefer a lossy DV/HDR release over a lossless-audio SDR release
+      - trash_ids:
+          - 9c38ebb7384dada637be8899efa68e6f # SDR
+        assign_scores_to: *sqp4_only
+
+      # High-quality release groups (required)
       - trash_ids:
           - 7a0d1ad358fee9f5b074af3ef3f9d9ef # hallowed
           - 5153ec7413d9dae44e24275589b5e944 # BHDStudio
@@ -85,23 +123,27 @@ radarr:
           - 403816d65392c79236dcb6dd591aeda4 # WEB Tier 02
           - af94e0fe497124d1f9ce732069ec8c3b # WEB Tier 03
           - 8df7fe4569063d39319f07e69707285a # WEBDL Boost
-          # Optional RlsGrp
+          # Optional preferred release groups
           - e098247bc6652dd88c76644b275260ed # FLUX
           - 8cd3ac70db7ac318cf9a0e01333940a4 # SiC
           # - 9681750c690210f0936faed781bb7f06 # 126811 - ⚠ Don't forget to read the notes in the guide related to this RlsGrp ⚠
           - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
 
-      # Miscellaneous (Required)
+      # Prevent 2.0 WEBDL over 5.1 BHDStudio/hallowed (required)
+      - trash_ids:
+          - 89dac1be53d5268a7e10a19d3c896826 # 2.0 Stereo
+          - b124be9b146540f8e62f98fe32e49a2a # 1.0 Mono
+        assign_scores_to: *sqp4_only
+
+      # Repack/Proper scoring (required)
       - trash_ids:
           - e7718d7a3ce595f289bfee26adc178f5 # Repack/Proper
           - ae43b294509409a6a13919dedd4764c4 # Repack2
           - 5caaaa1c08c1742aa4342d8c4cc463f2 # Repack3
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
 
-      # Unwanted
+      # Unwanted formats (required)
       - trash_ids:
           - ed38b889b31be83fda192888e2286d83 # BR-DISK
           - e6886871085226c3da1830830146846c # Generated Dynamic HDR
@@ -113,23 +155,9 @@ radarr:
           - 712d74cd88bceb883ee32f773656b1f5 # Sing-Along Versions
           - a5d148168c4506b55cf53984107c396e # Hi10P
           - cae4ca30163749b891686f95532519bd # AV1
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
 
-      # To Prevent 2.0 WEBDL over 5.1 BHDStudio/hallowed
-      - trash_ids:
-          - 89dac1be53d5268a7e10a19d3c896826 # 2.0 Stereo
-          - b124be9b146540f8e62f98fe32e49a2a # 1.0 Mono
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
-
-      # Optional
-      - trash_ids:
-          - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
-
-      # Streaming Services
+      # Streaming services (required)
       - trash_ids:
           - b3b3a6ac74ecbd56bcdbefa4799fb9df # AMZN
           - 40e9380490e748672c2522eaaeb692f7 # ATVP
@@ -148,28 +176,11 @@ radarr:
           - 350e9170619683a55cb9191d0b1ababa # PLAY
           - 44c2b54d7c81c1a442a8b2cabeaef54f # ROKU
           - c2863d2a50c9acad1fb50e53ece60817 # STAN
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
 
-      # Miscellaneous (Optional)
-      - trash_ids:
-          - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
-          - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
-          - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
-          - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
-          - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
-          - f537cf427b64c38c8e36298f657e4828 # Scene
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
-
-      # Optional SDR
-      # In some rare cases, the lossless audio release may be available only as SDR, and you may prefer the lossy audio with DV/HDR10.
-      - trash_ids:
-          - 9c38ebb7384dada637be8899efa68e6f # SDR
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
-
-      # Movie Versions (Optional) - WEBDL releases rarely or never include the edition so we don't recommend to enable them, except for the IMAX-Enhanced
+      # Optional: Preferred movie versions/editions
+      # WEBDL releases rarely include editions, so most are intentionally left disabled
+      # (except IMAX Enhanced in this setup)
       - trash_ids:
       # Uncomment any of the following lines to prefer these movie versions
           # - 0f12c086e289cf966fa5948eac571f44 # Hybrid - ⚠ NOT RECOMMENDED ⚠
@@ -181,5 +192,4 @@ radarr:
           # - 957d0f44b592285f26449575e8b1167e # Special Edition
           # - eecf3a857724171f968a66cb5719e152 # IMAX - ⚠ READ INFO IN THE GUIDE ⚠
           - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
-        assign_scores_to:
-          - name: SQP-4 (MA Hybrid)
+        assign_scores_to: *sqp4_only
