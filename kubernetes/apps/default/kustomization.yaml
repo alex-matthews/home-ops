@@ -22,6 +22,5 @@ resources:
   - ./seasonpackarr/ks.yaml
   - ./seerr/ks.yaml
   - ./sonarr/ks.yaml
-  - ./sonarr-uhd/ks.yaml
   - ./tautulli/ks.yaml
   - ./thelounge/ks.yaml

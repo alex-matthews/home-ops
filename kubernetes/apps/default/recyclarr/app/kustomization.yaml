@@ -12,6 +12,5 @@ configMapGenerator:
       - ./resources/radarr.yml
       - ./resources/radarr-se.yml
       - ./resources/sonarr.yml
-      - ./resources/sonarr-uhd.yml
 generatorOptions:
   disableNameSuffixHash: true
