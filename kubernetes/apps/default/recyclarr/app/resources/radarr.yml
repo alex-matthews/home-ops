@@ -15,24 +15,10 @@ radarr:
         standard: p2p-scene
 
     quality_definition:
-      type: sqp-uhd
+      type: movie
       qualities:
-        - name: WEBDL-720p
-          min: 12.5
-          preferred: 84.7
-          max: 85.7
-        - name: WEBRip-720p
-          min: 12.5
-          preferred: 84.7
-          max: 85.7
-        - name: Bluray-720p
-          min: 25.2
-          preferred: 101
-          max: 102
-        - name: Bluray-1080p
-          min: 50.8
-          preferred: 1999
-          max: 2000
+        - name: Remux-1080p
+          min: 136.8
 
     quality_profiles:
       - trash_id: &sqp1_2160p 5128baeb2b081b72126bc8482b2a86a0  # [SQP] SQP-1 (2160p)
