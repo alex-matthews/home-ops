@@ -24,7 +24,7 @@ spec:
               SEASONPACKARR__PORT: &port 80
               SEASONPACKARR__LOG_LEVEL: INFO
               SEASONPACKARR__SMART_MODE: true
-              SEASONPACKARR__SMART_MODE_THRESHOLD: 0.66
+              SEASONPACKARR__SMART_MODE_THRESHOLD: 0.5
               SEASONPACKARR__PARSE_TORRENT_FILE: true
               SEASONPACKARR__FUZZY_MATCHING_SKIP_REPACK_COMPARE: true
               SEASONPACKARR__CLIENTS_DEFAULT_HOST: qbittorrent.default.svc.cluster.local
