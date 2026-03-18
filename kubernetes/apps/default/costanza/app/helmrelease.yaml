@@ -20,7 +20,7 @@ spec:
           app:
             image:
               repository: ghcr.io/alex-matthews/costanza
-              tag: main@sha256:201bf78ce93b16f9061c9e65af9b263096a17d03a2e52c83e12ccfb6082ab66d
+              tag: main@sha256:68cf5f7ff4ab2b908cef36f5c81c745e59c58f3efdf18c3b1ca02e0ef76013b0
             env:
               PORT: &port 80
               MEDIA_ADDED_ENABLED: "true"
