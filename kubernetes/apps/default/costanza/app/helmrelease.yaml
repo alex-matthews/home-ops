@@ -24,6 +24,7 @@ spec:
             env:
               PORT: &port 80
               MEDIA_ADDED_ENABLED: "true"
+              DEBUG_WEBHOOKS: "true"
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
