@@ -20,9 +20,10 @@ spec:
           app:
             image:
               repository: ghcr.io/alex-matthews/costanza
-              tag: main@sha256:b9e6442925f01645fb43f0dc816d952baf7753c3bbb28ad4bbef08b303b921a9
+              tag: main@sha256:201bf78ce93b16f9061c9e65af9b263096a17d03a2e52c83e12ccfb6082ab66d
             env:
               PORT: &port 80
+              MEDIA_ADDED_ENABLED: "true"
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
