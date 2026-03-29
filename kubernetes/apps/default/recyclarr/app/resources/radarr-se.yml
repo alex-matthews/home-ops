@@ -18,7 +18,7 @@ radarr:
       type: sqp-uhd
 
     quality_profiles:
-      - trash_id: &sqp3_audio_remux 0ada8e60cc3ddf2733b65de10f4a6c72  # [SQP] SQP-3 (Audio)
+      - trash_id: &sqp3_audio_remux 0ada8e60cc3ddf2733b65de10f4a6c72 # [SQP] SQP-3 (Audio)
         name: "[SQP] SQP-3 (Audio) Remux"
         reset_unmatched_scores:
           enabled: true
@@ -32,47 +32,44 @@ radarr:
             qualities:
               - Remux-2160p
               - Remux-1080p
-        # # NOTE: Alternative, more concise approach to lines 27-34 (but potentially less clear)
-        # qualities:
-        #   - name: WEB|Remux|2160p
-        #     qualities:
-        #       - Remux-2160p
-        #       - Remux-1080p
 
+    # Use guide-backed CF groups by default.
+    # Only keep groups here when opting into extra SQP behavior or narrowing them.
     custom_format_groups:
       add:
-        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76  # [HDR Formats] DV (w/o HDR fallback)
-        - trash_id: 1616617ab3a14397a2b2321bcbda44d1  # [HDR Formats] DV Boost
-        # - trash_id: b29413a7487478fe98228ce79e5689e4  # [HDR Formats] HDR10+ Boost
-        - trash_id: c4492eebd0c2ddc14c2c91623aa7f95d  # [Optional] Miscellaneous SQP
+        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76 # [HDR Formats] DV (w/o HDR fallback)
+        - trash_id: 1616617ab3a14397a2b2321bcbda44d1 # [HDR Formats] DV Boost
+        - trash_id: c4492eebd0c2ddc14c2c91623aa7f95d # [Optional] Miscellaneous SQP
           select:
-            - b6832f586342ef70d9c128d40c07b872  # Bad Dual Groups
-            - cc444569854e9de0b084ab2b8b1532b2  # Black and White Editions
-            # - f700d29429c023a5734505e77daeaea7  # DV (Disk)
-            - 7357cf5161efbf8c4d5d0c30b4815ee2  # Obfuscated
-            - 5c44f52a8714fdd79bb4d98e2673be1f  # Retags
-            - f537cf427b64c38c8e36298f657e4828  # Scene
-            - 11cd1db7165d6a7ad9a83bc97b8b1060  # VC-1
-        - trash_id: f4f1474b963b24cf983455743aa9906c  # [Optional] Movie Versions
+            - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+            - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
+            - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+            - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+            - f537cf427b64c38c8e36298f657e4828 # Scene
+            - 11cd1db7165d6a7ad9a83bc97b8b1060 # VC-1
+        - trash_id: f4f1474b963b24cf983455743aa9906c # [Optional] Movie Versions
           select:
-            - 570bc9ebecd92723d2d21500f4be314c  # Remaster
-            - eca37840c13c6ef2dd0262b141a5482f  # 4K Remaster
-            # - e0c07d59beb37348e975a930d5e50319  # Criterion Collection
-            # - 9d27d9d2181838f76dee150882bdc58c  # Masters of Cinema
-            # - 09d9dd29a0fc958f9796e65c2a8864b4  # Open Matte
-            # - db9b4c4b53d312a3ca5f1378f6440fc9  # Vinegar Syndrome
-            # - 957d0f44b592285f26449575e8b1167e  # Special Edition
-            # - e9001909a4c88013a359d0b9920d7bea  # Theatrical Cut
-            # - 0f12c086e289cf966fa5948eac571f44  # Hybrid
-            # - eecf3a857724171f968a66cb5719e152  # IMAX
-            # - 9f6cbff8cfe4ebbc1bde14c7b7bec0de  # IMAX Enhanced
-        - trash_id: 47f0d69750de9e16855915fa73bb7b08  # [Optional] SDR
+            - 570bc9ebecd92723d2d21500f4be314c # Remaster
+            - eca37840c13c6ef2dd0262b141a5482f # 4K Remaster
+            # - e0c07d59beb37348e975a930d5e50319 # Criterion Collection
+            # - 9d27d9d2181838f76dee150882bdc58c # Masters of Cinema
+            # - 09d9dd29a0fc958f9796e65c2a8864b4 # Open Matte
+            # - db9b4c4b53d312a3ca5f1378f6440fc9 # Vinegar Syndrome
+            # - 957d0f44b592285f26449575e8b1167e # Special Edition
+            # - e9001909a4c88013a359d0b9920d7bea # Theatrical Cut
+            # - 0f12c086e289cf966fa5948eac571f44 # Hybrid
+            # - eecf3a857724171f968a66cb5719e152 # IMAX
+            # - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
+        - trash_id: 47f0d69750de9e16855915fa73bb7b08 # [Optional] SDR
+          # Keep SDR explicit so this remux profile uses the guide's default SDR score (-10000).
+          # Remove this block to make SDR neutral.
           select:
-            - 9c38ebb7384dada637be8899efa68e6f  # SDR
+            - 9c38ebb7384dada637be8899efa68e6f # SDR (-10000)
 
+    # Leave this commented to keep FraMeSToR neutral for SQP-3.
     # custom_formats:
     #   - trash_ids:
-    #       - ff5bc9e8ce91d46c997ca3ac6994d6f8  # FraMeSToR (+101)
+    #       - ff5bc9e8ce91d46c997ca3ac6994d6f8 # FraMeSToR (+101)
     #     assign_scores_to:
     #       - trash_id: *sqp3_audio_remux
 

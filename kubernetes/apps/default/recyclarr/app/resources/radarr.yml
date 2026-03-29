@@ -21,75 +21,70 @@ radarr:
           min: 136.8
 
     quality_profiles:
-      - trash_id: &sqp1_2160p 5128baeb2b081b72126bc8482b2a86a0  # [SQP] SQP-1 (2160p)
+      - trash_id: &sqp1_2160p 5128baeb2b081b72126bc8482b2a86a0 # [SQP] SQP-1 (2160p)
         reset_unmatched_scores:
           enabled: true
-      # For a smooth migration, rename the existing live profile in Radarr to
-      # "[SQP] SQP-4 (MA Hybrid)" before the first sync, then adopt it if needed.
-      - trash_id: &sqp4_ma_hybrid 7526db7ac0a1f764793fb181864d0222  # [SQP] SQP-4 (MA Hybrid)
-        name: "[SQP] SQP-4 (MA Hybrid)"
+      - trash_id: &sqp4_ma_hybrid 7526db7ac0a1f764793fb181864d0222 # [SQP] SQP-4 (MA Hybrid)
         reset_unmatched_scores:
           enabled: true
           except:
             - "!Personal LQ List"
 
-    # Guide-backed profiles sync their default CF groups automatically.
-    # The groups below only opt in to additional SQP behavior or narrow it per profile.
+    # Use guide-backed CF groups by default.
+    # Only keep groups here when opting into extra SQP behavior or narrowing them.
     custom_format_groups:
       add:
-        - trash_id: ff204bbcecdd487d1cefcefdbf0c278d  # [Required] Golden Rule UHD
+        - trash_id: ff204bbcecdd487d1cefcefdbf0c278d # [Required] Golden Rule UHD
           select:
-            - 839bea857ed2c0a8e084f3cbdbd65ecb  # x265 (no HDR/DV)
+            - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: f638e33c933bf0a8067559247953a270  # [SQP-4 (MA Hybrid) Optional] Release Groups
+        - trash_id: f638e33c933bf0a8067559247953a270 # [SQP-4 (MA Hybrid) Optional] Release Groups
           select:
-            - e098247bc6652dd88c76644b275260ed  # FLUX
-            - 8cd3ac70db7ac318cf9a0e01333940a4  # SiC
-            - 8016f2f66e751dea613e6b5b94bf633c  # MainFrame
+            - e098247bc6652dd88c76644b275260ed # FLUX
+            - 8cd3ac70db7ac318cf9a0e01333940a4 # SiC
+            - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76  # [HDR Formats] DV (w/o HDR fallback)
+        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76 # [HDR Formats] DV (w/o HDR fallback)
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: 1616617ab3a14397a2b2321bcbda44d1  # [HDR Formats] DV Boost
+        - trash_id: 1616617ab3a14397a2b2321bcbda44d1 # [HDR Formats] DV Boost
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: c4492eebd0c2ddc14c2c91623aa7f95d  # [Optional] Miscellaneous SQP
+        - trash_id: c4492eebd0c2ddc14c2c91623aa7f95d # [Optional] Miscellaneous SQP
           select:
-            - b6832f586342ef70d9c128d40c07b872  # Bad Dual Groups
-            - cc444569854e9de0b084ab2b8b1532b2  # Black and White Editions
-            - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5  # No-RlsGroup
-            - 7357cf5161efbf8c4d5d0c30b4815ee2  # Obfuscated
-            - 5c44f52a8714fdd79bb4d98e2673be1f  # Retags
-            - f537cf427b64c38c8e36298f657e4828  # Scene
+            - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+            - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
+            - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+            - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+            - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+            - f537cf427b64c38c8e36298f657e4828 # Scene
           assign_scores_to:
             - trash_id: *sqp1_2160p
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: f4f1474b963b24cf983455743aa9906c  # [Optional] Movie Versions
+        - trash_id: f4f1474b963b24cf983455743aa9906c # [Optional] Movie Versions
           select:
-            - 9f6cbff8cfe4ebbc1bde14c7b7bec0de  # IMAX Enhanced
+            - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
 
     custom_formats:
-      # Keep SQP-1's extra movie-version preference explicit so it does not
-      # bleed into SQP-4's separate movie-version group.
+      # SQP-1 only: explicitly neutralize Special Edition. Omit this block to drop the CF entirely.
       - trash_ids:
-          - 957d0f44b592285f26449575e8b1167e  # Special Edition
+          - 957d0f44b592285f26449575e8b1167e # Special Edition
         assign_scores_to:
           - trash_id: *sqp1_2160p
-      # Keep 10bit pinned so the GA SQP-4 migration preserves the
-      # existing profile behavior instead of taking the guide default.
+            score: 0
+      # SQP-4 only: keep 10bit fully blocked instead of using the guide default.
       - trash_ids:
-          - a5d148168c4506b55cf53984107c396e  # 10bit
+          - a5d148168c4506b55cf53984107c396e # 10bit
         assign_scores_to:
           - trash_id: *sqp4_ma_hybrid
             score: -10000
-      # Keep SDR explicit so it stays easy to toggle between a real downscore
-      # and a neutral score during testing.
+      # SQP-4 only: keep SDR explicitly downscored; change this to 0 to make SDR neutral.
       - trash_ids:
-          - 9c38ebb7384dada637be8899efa68e6f  # SDR
+          - 9c38ebb7384dada637be8899efa68e6f # SDR
         assign_scores_to:
           - trash_id: *sqp4_ma_hybrid
             score: -445
