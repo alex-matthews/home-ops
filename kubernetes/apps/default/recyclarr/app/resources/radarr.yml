@@ -79,6 +79,13 @@ radarr:
           - 957d0f44b592285f26449575e8b1167e  # Special Edition
         assign_scores_to:
           - trash_id: *sqp1_2160p
+      # Keep 10bit pinned so the GA SQP-4 migration preserves the
+      # existing profile behavior instead of taking the guide default.
+      - trash_ids:
+          - a5d148168c4506b55cf53984107c396e  # 10bit
+        assign_scores_to:
+          - trash_id: *sqp4_ma_hybrid
+            score: -10000
       # Keep SDR explicit so it stays easy to toggle between a real downscore
       # and a neutral score during testing.
       - trash_ids:
