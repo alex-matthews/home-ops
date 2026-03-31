@@ -44,6 +44,7 @@ radarr:
             - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
             - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
             - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+            # - 80f51de4636a294e31552e90d2e1decb # P2P Internal
             - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
             - f537cf427b64c38c8e36298f657e4828 # Scene
             - 11cd1db7165d6a7ad9a83bc97b8b1060 # VC-1

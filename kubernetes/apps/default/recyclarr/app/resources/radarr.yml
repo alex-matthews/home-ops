@@ -43,6 +43,7 @@ radarr:
           select:
             - e098247bc6652dd88c76644b275260ed # FLUX
             - 8cd3ac70db7ac318cf9a0e01333940a4 # SiC
+            - 9681750c690210f0936faed781bb7f06 # 126811
             - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
@@ -58,6 +59,7 @@ radarr:
             - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
             - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
             - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+            # - 80f51de4636a294e31552e90d2e1decb # P2P Internal
             - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
             - f537cf427b64c38c8e36298f657e4828 # Scene
           assign_scores_to:
