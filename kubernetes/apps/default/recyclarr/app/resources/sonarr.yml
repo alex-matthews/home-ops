@@ -24,7 +24,7 @@ sonarr:
       - trash_id: &web_1080p 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
         reset_unmatched_scores:
           enabled: true
-        # Leave this commented to keep WEB-1080p web-only with no Bluray-1080p fallback.
+        # # Leave this commented to keep WEB-1080p web-only with no Bluray-1080p fallback.
         # qualities:
         #   - name: WEB 1080p
         #     qualities:
@@ -36,27 +36,31 @@ sonarr:
         reset_unmatched_scores:
           enabled: true
 
-    # Use guide-backed CF groups by default.
-    # Only keep groups here when opting into extra behavior or narrowing them.
     custom_format_groups:
       add:
+        - trash_id: 85fae4a2294965b75710ef2989c850eb  # [Streaming Services] HD/UHD Boost
+        - trash_id: 59c3af66780d08332fdc64e68297098f  # [Unwanted] Unwanted Formats
+          # Explicitly include guide defaults plus No-RlsGroup / Obfuscated / Retags / Scene.
+          select:
+            - 15a05bc7c1a36e2b57fd628f8977e2fc  # AV1
+            - 32b367365729d530ca1c124a0b180c64  # Bad Dual Groups
+            - 85c61753df5da1fb2aab6f2a47426b09  # BR-DISK
+            - 6f808933a71bd9666531610cb8c059cc  # BR-DISK (BTN)
+            - fbcb31d8dabd2a319072b84fc0b7249c  # Extras
+            - 9c11cd3f07101cdba90a2d81cf0e56b4  # LQ
+            - e2315f990da2e2cbfc9fa5b7a6fcfe48  # LQ (Release Title)
+            - 82d40da2bc6923f41e14394075dd4b03  # No-RlsGroup
+            - e1a997ddb54e3ecbfe06341ad323c458  # Obfuscated
+            - 06d66ab109d4d2eddb2794d21526d140  # Retags
+            - 1b3994c551cbb92a2c781af061f4ab44  # Scene
+            - 23297a736ca77c0fc8e70f8edd7ee56c  # Upscaled
         - trash_id: d776a1ea912a117d66d83b880ff2055d # [HDR Formats] DV (w/o HDR fallback)
         - trash_id: e0b2774083df4265f25c9e5bc6c80940 # [HDR Formats] DV Boost
-        # - trash_id: 7d366c213e5c23a052b157356fac1921 # [HDR Formats] HDR10+ Boost
-        - trash_id: f4a0410a1df109a66d6e47dcadcce014 # [Optional] Miscellaneous
-          select:
-            - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
-            - 82d40da2bc6923f41e14394075dd4b03 # No-RlsGroup
-            - e1a997ddb54e3ecbfe06341ad323c458 # Obfuscated
-            # - 09654d13ce1f0453496546dfd875b2a5 # P2P Internal
-            - 06d66ab109d4d2eddb2794d21526d140 # Retags
-            - 1b3994c551cbb92a2c781af061f4ab44 # Scene
+        - trash_id: ddab3095a5d2f436f369263840af34f9 # [Streaming Services] UK
         - trash_id: e1053c0ef622df3749fa43c22865663a # [Optional] SDR
           select:
             - 2016d1676f5ee13a5b7257ff86ac9a93 # SDR
         # - trash_id: d920fd959d220306888f40b6f38e1578 # [Optional] Season Packs
-        # - trash_id: 7832db22b71ab669458c17a2850d6913 # [Streaming Services] Miscellaneous
-        # - trash_id: ddab3095a5d2f436f369263840af34f9 # [Streaming Services] UK
 
     custom_formats:
       - trash_ids:
@@ -64,5 +68,16 @@ sonarr:
         assign_scores_to:
           - trash_id: *web_1080p
           - trash_id: *web_2160p
+      # Block accessibility-tagged releases.
+      - trash_ids:
+          - 44ccbcbc74506f208973e1463b11705f # WiTH AD
+          - c196536ea8122397c5854040d01f2aa7 # WiTH ASL
+          - b40dc2e630723745aab9f1b94f4aab74 # WiTH BASL
+          - 0aef382c4ed4c5eb5d40109dfd351b72 # WiTH BSL
+        assign_scores_to:
+          - trash_id: *web_1080p
+            score: -10000
+          - trash_id: *web_2160p
+            score: -10000
 
     delete_old_custom_formats: true

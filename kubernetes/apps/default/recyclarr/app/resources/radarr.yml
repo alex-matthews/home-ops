@@ -34,9 +34,33 @@ radarr:
     # Only keep groups here when opting into extra SQP behavior or narrowing them.
     custom_format_groups:
       add:
-        - trash_id: ff204bbcecdd487d1cefcefdbf0c278d # [Required] Golden Rule UHD
+        - trash_id: ff204bbcecdd487d1cefcefdbf0c278d # [Optional] Golden Rule UHD
           select:
             - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
+          assign_scores_to:
+            - trash_id: *sqp4_ma_hybrid
+        - trash_id: 15b1cf0b6f1a1493856a4355907affee # [Unwanted] Unwanted Formats SQP
+          select:
+            - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
+            - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
+            - e6886871085226c3da1830830146846c # Generated Dynamic HDR
+            - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
+            - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
+            - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
+            - f537cf427b64c38c8e36298f657e4828 # Scene
+            - bfd8eb01832d646a0a89c4deb46f8564 # Upscaled
+          assign_scores_to:
+            - trash_id: *sqp1_2160p
+            - trash_id: *sqp4_ma_hybrid
+        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76 # [HDR Formats] DV (w/o HDR fallback)
+          assign_scores_to:
+            - trash_id: *sqp4_ma_hybrid
+        - trash_id: 1616617ab3a14397a2b2321bcbda44d1 # [HDR Formats] DV Boost
+          assign_scores_to:
+            - trash_id: *sqp4_ma_hybrid
+        - trash_id: f4f1474b963b24cf983455743aa9906c # [Optional] Movie Versions
+          select:
+            - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
         - trash_id: f638e33c933bf0a8067559247953a270 # [SQP-4 (MA Hybrid) Optional] Release Groups
@@ -47,27 +71,9 @@ radarr:
             - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
-        - trash_id: 7fc2751eef7e6bdc70b74136e5e35c76 # [HDR Formats] DV (w/o HDR fallback)
-          assign_scores_to:
-            - trash_id: *sqp4_ma_hybrid
-        - trash_id: 1616617ab3a14397a2b2321bcbda44d1 # [HDR Formats] DV Boost
-          assign_scores_to:
-            - trash_id: *sqp4_ma_hybrid
-        - trash_id: c4492eebd0c2ddc14c2c91623aa7f95d # [Optional] Miscellaneous SQP
+        - trash_id: 19b55e2ab8b6c05d11858236ef5c93a9 # [SQP-4 (MA Hybrid) Optional] SDR
           select:
-            - b6832f586342ef70d9c128d40c07b872 # Bad Dual Groups
-            - cc444569854e9de0b084ab2b8b1532b2 # Black and White Editions
-            - ae9b7c9ebde1f3bd336a8cbd1ec4c5e5 # No-RlsGroup
-            - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
-            # - 80f51de4636a294e31552e90d2e1decb # P2P Internal
-            - 5c44f52a8714fdd79bb4d98e2673be1f # Retags
-            - f537cf427b64c38c8e36298f657e4828 # Scene
-          assign_scores_to:
-            - trash_id: *sqp1_2160p
-            - trash_id: *sqp4_ma_hybrid
-        - trash_id: f4f1474b963b24cf983455743aa9906c # [Optional] Movie Versions
-          select:
-            - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
+            - 9c38ebb7384dada637be8899efa68e6f # SDR
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
 
@@ -78,17 +84,22 @@ radarr:
         assign_scores_to:
           - trash_id: *sqp1_2160p
             score: 0
-      # SQP-4 only: keep 10bit fully blocked instead of using the guide default.
+      # SQP-4 only: explicitly block 10bit releases.
       - trash_ids:
           - a5d148168c4506b55cf53984107c396e # 10bit
         assign_scores_to:
           - trash_id: *sqp4_ma_hybrid
             score: -10000
-      # SQP-4 only: keep SDR explicitly downscored; change this to 0 to make SDR neutral.
+      # Block accessibility-tagged releases.
       - trash_ids:
-          - 9c38ebb7384dada637be8899efa68e6f # SDR
+          - 127bdbadcf3e4463a8c707759fbaad75 # WiTH AD
+          - 09c60ba54fadb511c6986a7edec4da4b # WiTH ASL
+          - 41e4baea7b10ddefc6609d52f742dacd # WiTH BASL
+          - e205c5ba6be76b472903f4aec97fdb4b # WiTH BSL
         assign_scores_to:
+          - trash_id: *sqp1_2160p
+            score: -10000
           - trash_id: *sqp4_ma_hybrid
-            score: -445
+            score: -10000
 
     delete_old_custom_formats: true
