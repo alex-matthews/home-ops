@@ -10,8 +10,14 @@ spec:
     name: victoria-logs
   interval: 1h
   values:
-    fullnameOverride: victoria-logs
+    dashboards:
+      enabled: true
+      grafanaOperator:
+        enabled: true
     server:
+      fullnameOverride: victoria-logs
+      image:
+        registry: quay.io
       persistentVolume:
         enabled: true
         storageClassName: ceph-block
@@ -20,23 +26,9 @@ spec:
       route:
         enabled: true
         hostnames:
-          - victoria-logs.${SECRET_DOMAIN}
+          - vlogs.${SECRET_DOMAIN}
         parentRefs:
           - name: envoy-internal
             namespace: network
-        extraRules:
-          - filters:
-              - type: RequestRedirect
-                requestRedirect:
-                  path:
-                    type: ReplaceFullPath
-                    replaceFullPath: /select/vmui/
-                  statusCode: 302
-            matches:
-              - path:
-                  type: Exact
-                  value: /
       serviceMonitor:
         enabled: true
-    dashboards:
-      enabled: true
