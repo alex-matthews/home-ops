@@ -11,6 +11,7 @@ resources:
   - ./agregarr/ks.yaml
   - ./autobrr/ks.yaml
   - ./bazarr/ks.yaml
+  - ./brrpolice/ks.yaml
   # - ./costanza/ks.yaml
   - ./plex/ks.yaml
   - ./prowlarr/ks.yaml
