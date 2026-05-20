@@ -1,14 +1,13 @@
-set positional-arguments := true
-set quiet := true
+set quiet
+set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
-
-volsync_dir := justfile_dir() + '/volsync'
 
 [private]
 default:
     just -l volsync
 
 [doc('List snapshots (and corresponding previous offset integers) in the restic repo for an app')]
+[script]
 list-previous ns app:
     kubectl -n "{{ ns }}" get secret "{{ app }}-volsync-secret" \
         -o go-template='{{ "{{" }}range $k,$v := .data{{ "}}" }}'\
@@ -33,31 +32,66 @@ snapshot ns app:
 suspend:
     just kube volsync suspend
 
+[doc('Unlock all restic source repos')]
+[script]
+unlock:
+    kubectl get replicationsources --all-namespaces \
+        -o jsonpath='{range .items[*]}{.metadata.namespace},{.metadata.name}{"\n"}{end}' |
+        while IFS=, read -r ns app; do
+            [ -n "$ns" ] && [ -n "$app" ] || continue
+            kubectl -n "$ns" patch replicationsources "$app" \
+                --type merge --ignore-not-found=true \
+                --patch "{\"spec\":{\"restic\":{\"unlock\":\"$(date +%s)\"}}}"
+    done
+
 [doc('Unlock a restic source repo for an app using a Job')]
+[script]
 unlock-local ns app:
-    APP="{{ app }}" NS="{{ ns }}" just template "{{ volsync_dir }}/unlock.yaml.j2" \
+    APP="{{ app }}" NS="{{ ns }}" just template "{{ source_directory() }}/unlock.yaml.j2" \
         | kubectl apply --server-side -f -
     until kubectl -n "{{ ns }}" get job/volsync-unlock-{{ app }} &>/dev/null; do sleep 5; done
     kubectl -n "{{ ns }}" wait job/volsync-unlock-{{ app }} --for=condition=complete --timeout=5m
     stern -n "{{ ns }}" job/volsync-unlock-{{ app }} --no-follow
     kubectl -n "{{ ns }}" delete job volsync-unlock-{{ app }}
 
-[doc('Unlock all restic source repos')]
-unlock:
-    kubectl get replicationsources --all-namespaces \
-        -o jsonpath='{range .items[*]}{.metadata.namespace},{.metadata.name}{"\n"}{end}' | \
-        while IFS=, read -r ns app; do \
-            [ -n "$$ns" ] && [ -n "$$app" ] || continue; \
-            kubectl -n "$$ns" patch replicationsources "$$app" \
-                --type merge --ignore-not-found=true \
-                --patch "{\"spec\":{\"restic\":{\"unlock\":\"$(date +%s)\"}}}"; \
-    done
+[private]
+[script]
+detect-controller ns app:
+    if kubectl -n "{{ ns }}" get deployment "{{ app }}" >/dev/null 2>&1; then
+        echo deployment
+    elif kubectl -n "{{ ns }}" get statefulset "{{ app }}" >/dev/null 2>&1; then
+        echo statefulset
+    else
+        echo "No deployment/statefulset found for {{ ns }}/{{ app }}" >&2
+        exit 1
+    fi
 
 [private]
+[script]
+keda-pause ns app:
+    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then
+        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
+            kustomize.toolkit.fluxcd.io/reconcile=disabled --overwrite
+        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
+            autoscaling.keda.sh/paused="true" autoscaling.keda.sh/paused-replicas="0" --overwrite
+    fi
+
+[private]
+[script]
+keda-unpause ns app:
+    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then
+        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
+            autoscaling.keda.sh/paused- autoscaling.keda.sh/paused-replicas-
+        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
+            kustomize.toolkit.fluxcd.io/reconcile=enabled --overwrite
+    fi
+
+[private]
+[script]
 restore-run ns app previous:
-    [[ "{{ previous }}" =~ ^[0-9]+$ ]] || { \
-        echo "previous must be an integer offset (0=latest, 1=one snapshot back)" >&2; \
-        exit 1; \
+    [[ "{{ previous }}" =~ ^[0-9]+$ ]] || {
+        echo "previous must be an integer offset (0=latest, 1=one snapshot back)" >&2
+        exit 1
     }
     flux -n "{{ ns }}" suspend kustomization "{{ app }}"
     flux -n "{{ ns }}" suspend helmrelease "{{ app }}"
@@ -68,12 +102,12 @@ restore-run ns app previous:
     kubectl -n "{{ ns }}" wait pod --for=delete \
         --selector="app.kubernetes.io/name={{ app }}" --timeout=5m || true
     rs="replicationsources/{{ app }}"
-    claim="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.sourcePVC}')"; \
-    access_modes="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.restic.accessModes}')"; \
+    claim="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.sourcePVC}')"
+    access_modes="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.restic.accessModes}')"
     storage_class_name="$(kubectl -n "{{ ns }}" get "$rs" \
-        -o jsonpath='{.spec.restic.storageClassName}')"; \
+        -o jsonpath='{.spec.restic.storageClassName}')"
     puid="$(kubectl -n "{{ ns }}" get "$rs" \
-        -o jsonpath='{.spec.restic.moverSecurityContext.runAsUser}')"; \
+        -o jsonpath='{.spec.restic.moverSecurityContext.runAsUser}')"
     pgid="$(kubectl -n "{{ ns }}" get "$rs" \
         -o jsonpath='{.spec.restic.moverSecurityContext.runAsGroup}')"
     APP="{{ app }}" \
@@ -84,7 +118,7 @@ restore-run ns app previous:
         STORAGE_CLASS_NAME="$storage_class_name" \
         PUID="$puid" \
         PGID="$pgid" \
-            just template "{{ volsync_dir }}/replicationdestination.yaml.j2" \
+            just template "{{ source_directory() }}/replicationdestination.yaml.j2" \
             | kubectl apply --server-side -f -
     until kubectl -n "{{ ns }}" get job/volsync-dst-{{ app }}-manual &>/dev/null; do sleep 5; done
     kubectl -n "{{ ns }}" wait job/volsync-dst-{{ app }}-manual \
@@ -96,27 +130,3 @@ restore-run ns app previous:
     just volsync keda-unpause "{{ ns }}" "{{ app }}" || true
     kubectl -n "{{ ns }}" wait pod --for=condition=ready \
         --selector="app.kubernetes.io/name={{ app }}" --timeout=5m || true
-
-[private]
-detect-controller ns app:
-    if kubectl -n "{{ ns }}" get deployment "{{ app }}" >/dev/null 2>&1; then echo deployment; \
-    elif kubectl -n "{{ ns }}" get statefulset "{{ app }}" >/dev/null 2>&1; then echo statefulset; \
-    else echo "No deployment/statefulset found for {{ ns }}/{{ app }}" >&2; exit 1; fi
-
-[private]
-keda-pause ns app:
-    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then \
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            kustomize.toolkit.fluxcd.io/reconcile=disabled --overwrite; \
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            autoscaling.keda.sh/paused="true" autoscaling.keda.sh/paused-replicas="0" --overwrite; \
-    fi
-
-[private]
-keda-unpause ns app:
-    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then \
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            autoscaling.keda.sh/paused- autoscaling.keda.sh/paused-replicas-; \
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            kustomize.toolkit.fluxcd.io/reconcile=enabled --overwrite; \
-    fi
