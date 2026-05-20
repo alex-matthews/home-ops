@@ -6,10 +6,7 @@ TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
 LEFTHOOK_OUTPUT = "false"
 
-_.file = [
-  "{{config_root}}/.secrets.env",
-]
+_.file = ["{{config_root}}/.secrets.env"]
 
-[tools]
-"uv" = "latest"
-"pipx:flux-local" = "latest"
+[hooks]
+postinstall = "lefthook install"
