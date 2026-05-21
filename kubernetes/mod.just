@@ -12,7 +12,9 @@ apply-ks ns ks:
 
 [doc('Browse a PVC')]
 browse-pvc ns claim:
-    kubectl browse-pvc -n "{{ ns }}" -i mirror.gcr.io/alpine:latest "{{ claim }}"
+    kubectl run -n {{ ns }} browse-pvc-{{ claim }} -it --rm --restart=Never \
+        --image=mirror.gcr.io/alpine:latest \
+        --overrides='{"spec":{"containers":[{"name":"browse-pvc-{{ claim }}","image":"mirror.gcr.io/alpine:latest","stdin":true,"tty":true,"command":["/bin/sh"],"workingDir":"/mnt","volumeMounts":[{"mountPath":"/mnt","name":"data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"{{ claim }}"}}]}}'
 
 [doc('Cleanup ReplicationDestination artifacts')]
 [script]
@@ -80,32 +82,12 @@ snapshot-app ns app:
 sync resource:
     kubectl get {{ resource }} --no-headers -A | while read -r ns name _; do
         kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite {{ resource }} "$name" \
-            force-sync="$(date +%s)" \
-            reconcile.fluxcd.io/requestedAt="$(date +%s)" \
-            reconcile.fluxcd.io/forceAt="$(date +%s)"
+            "force-sync=$(date +%s)" \
+            "reconcile.fluxcd.io/requestedAt=$(date +%s)" \
+            "reconcile.fluxcd.io/forceAt=$(date +%s)"
     done
 
-[doc('Sync ExternalSecrets')]
-sync-es:
-    just kube sync es
-
-[doc('Sync GitRepositories')]
-sync-git:
-    just kube sync gitrepo
-
-[doc('Sync HelmReleases')]
-sync-hr:
-    just kube sync hr
-
-[doc('Sync Kustomizations')]
-sync-ks:
-    just kube sync ks
-
-[doc('Sync OCIRepositories')]
-sync-oci:
-    just kube sync ocirepo
-
-[doc('View a Secret')]
+[doc('View a secret')]
 view-secret ns secret:
     kubectl view-secret -n "{{ ns }}" "{{ secret }}"
 
