@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/volsync.backube/replicationsource_v1alpha1.json
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
@@ -14,9 +15,11 @@ spec:
     volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:=csi-ceph-blockpool}"
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:=2Gi}"
     cacheStorageClassName: "${VOLSYNC_CACHE_SNAPSHOTCLASS:=ceph-block}"
-    cacheAccessModes: ["${VOLSYNC_CACHE_ACCESSMODES:=ReadWriteOnce}"]
+    cacheAccessModes:
+      - "${VOLSYNC_CACHE_ACCESSMODES:=ReadWriteOnce}"
     storageClassName: "${VOLSYNC_STORAGECLASS:=ceph-block}"
-    accessModes: ["${VOLSYNC_SNAP_ACCESSMODES:=ReadWriteOnce}"]
+    accessModes:
+      - "${VOLSYNC_SNAP_ACCESSMODES:=ReadWriteOnce}"
     moverSecurityContext:
       runAsUser: ${VOLSYNC_PUID:=1032}
       runAsGroup: ${VOLSYNC_PGID:=100}
