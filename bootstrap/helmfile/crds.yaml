@@ -1,0 +1,43 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/helmfile
+
+# Bootstraps cluster-wide Custom Resource Definitions (CRDs) by extracting them
+# from upstream Helm charts and applying them directly with kubectl. The releases
+# below are never reconciled with helmfile apply or helmfile sync, only their
+# CRDs are rendered (via --include-crds) and piped to the cluster.
+
+bases:
+  - defaults.yaml
+
+helmDefaults:
+  args:
+    - --include-crds
+    - --no-hooks
+
+releases:
+  - name: cloudflare-dns
+    namespace: network
+    inherit:
+      - template: default
+
+  - name: envoy-gateway
+    namespace: network
+    inherit:
+      - template: default
+
+  - name: grafana-operator
+    namespace: observability
+    labels:
+      app: grafana
+    inherit:
+      - template: default
+
+  - name: keda
+    namespace: observability
+    inherit:
+      - template: default
+
+  - name: kube-prometheus-stack
+    namespace: observability
+    inherit:
+      - template: default
