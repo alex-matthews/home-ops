@@ -78,7 +78,8 @@ spec:
       app:
         annotations:
           gatus.home-operations.com/endpoint: |-
-            conditions: ["[STATUS] == 401"]
+            url: https://{{ .Release.Name }}.${SECRET_DOMAIN}/identity
+            conditions: ["[STATUS] == 200"]
         hostnames:
           - "{{ .Release.Name }}.${SECRET_DOMAIN}"
         parentRefs:
