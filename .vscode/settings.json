@@ -27,10 +27,13 @@
     ".github/workflows": "ci",
     "bootstrap": "seeders",
     "bootstrap/helmfile": "helm",
-    "bootstrap/kustomize": "template",
+    "bootstrap/kustomize": "stack",
     "flux": "pipe",
     "talos": "linux",
+    "talos/nodes": "server",
     "volsync": "aws",
+    "volsync/local": "download",
+    "volsync/remote": "connection",
     // namespaces
     "actions-runner-system": "github",
     "cert-manager": "guard",
@@ -43,7 +46,11 @@
     "openebs-system": "base",
     "rook-ceph": "dump",
     "system-upgrade": "update",
-    "volsync-system": "aws"
+    "volsync-system": "aws",
+    // components
+    "alerts": "event",
+    "nfs-scaler": "connection",
+    "sops": "secure"
   },
   "sops.defaults.ageKeyFile": "age.key",
   "terminal.integrated.fontSize": 14,
