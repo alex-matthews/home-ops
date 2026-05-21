@@ -25,10 +25,9 @@
   "material-icon-theme.folders.associations": {
     // top level
     ".github/workflows": "ci",
-    ".private": "archive",
-    ".renovate": "robot",
     "bootstrap": "seeders",
-    "bootstrap/helmfile.d": "helm",
+    "bootstrap/helmfile": "helm",
+    "bootstrap/kustomize": "template",
     "flux": "pipe",
     "talos": "linux",
     "volsync": "aws",
