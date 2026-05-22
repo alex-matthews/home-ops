@@ -16,7 +16,6 @@ spec:
   postBuild:
     substitute:
       APP: radarr-se
-      VOLSYNC_CAPACITY: 5Gi
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
