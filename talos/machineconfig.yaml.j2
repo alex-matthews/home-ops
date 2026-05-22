@@ -59,8 +59,6 @@ machine:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
     extraConfig:
-      featureGates:
-        ImageVolume: true
       serializeImagePulls: false
     extraMounts:
       - destination: /var/openebs/local
@@ -147,12 +145,12 @@ cluster:
     disablePodSecurityPolicy: true
     extraArgs:
       enable-aggregator-routing: "true"
-      feature-gates: ImageVolume=true,MutatingAdmissionPolicy=true
-      runtime-config: admissionregistration.k8s.io/v1beta1=true
+      feature-gates: HPAScaleToZero=true
     image: registry.k8s.io/kube-apiserver:v1.36.1
   controllerManager:
     extraArgs:
       bind-address: 0.0.0.0
+      feature-gates: HPAScaleToZero=true
     image: registry.k8s.io/kube-controller-manager:v1.36.1
   coreDNS:
     disabled: true
