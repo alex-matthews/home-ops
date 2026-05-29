@@ -21,6 +21,9 @@ spec:
               tag: 4.5.0@sha256:ee5d2e8b794537d0d99de95a6756d0272b2011821c3575abac21edc0be1bba7e
             env:
               THELOUNGE_HOME: /config/thelounge
+              # Avoid Node 22 dual-stack connection failures for IRC hosts when IPv6 is
+              # resolvable from the pod but not routable from the cluster.
+              NODE_OPTIONS: "--no-network-family-autoselection"
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
