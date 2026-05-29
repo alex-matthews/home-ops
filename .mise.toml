@@ -4,7 +4,6 @@ MINIJINJA_CONFIG_FILE = "{{config_root}}/.minijinja.toml"
 SOPS_AGE_KEY_FILE = "{{config_root}}/age.key"
 TALOSCONFIG = "{{config_root}}/talosconfig"
 JUST_UNSTABLE = "1"
-LEFTHOOK_OUTPUT = "false"
 
 _.file = ["{{config_root}}/.secrets.env"]
 
