@@ -40,12 +40,12 @@ For continuous integration and deployment, I use [GitHub Actions](https://github
 
 I rely on a few cloud services for essential functionality:
 
-| Service                                   | Purpose                                           | Cost        |
-| ----------------------------------------- | ------------------------------------------------- | ----------- |
-| [1Password](https://1password.com/)       | Secret management via External Secrets            | ~$65/year   |
-| [Cloudflare](https://www.cloudflare.com/) | Domain management, R2, Workers                    | ~$40/year   |
-| [GitHub](https://github.com/)             | Repository hosting and CI/CD                      | Free        |
-| [Pushover](https://pushover.net/)         | Kubernetes alerts and app notifications           | $5 one-time |
+| Service                                   | Purpose                                 | Cost        |
+| ----------------------------------------- | --------------------------------------- | ----------- |
+| [1Password](https://1password.com/)       | Secret management via External Secrets  | ~$65/year   |
+| [Cloudflare](https://www.cloudflare.com/) | Domain management, R2, Workers          | ~$40/year   |
+| [GitHub](https://github.com/)             | Repository hosting and CI/CD            | Free        |
+| [Pushover](https://pushover.net/)         | Kubernetes alerts and app notifications | $5 one-time |
 
 ---
 
