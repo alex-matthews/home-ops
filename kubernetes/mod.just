@@ -90,5 +90,4 @@ volsync state:
 
 [private]
 render-local-ks ns ks:
-    docker run --rm --volume "{{ justfile_directory() }}":/workspace ghcr.io/home-operations/flate:0.2.12 \
-        build ks --namespace "{{ ns }}" --path "/workspace/kubernetes/flux/cluster" "{{ ks }}"
+    flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}"
