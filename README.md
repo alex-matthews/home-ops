@@ -1,64 +1,154 @@
-# My Home Operations Repository
+# Home Operations
 
-_... managed with Flux, Renovate and GitHub Actions_ 🤖
+This repository is the source of truth for my home Kubernetes cluster. The
+cluster runs [Talos Linux](https://www.talos.dev/), reconciles from Git with
+[Flux](https://fluxcd.io/), and is maintained with
+[Renovate](https://github.com/renovatebot/renovate) and
+[GitHub Actions](https://github.com/features/actions).
 
----
+Changes are made in Git, validated in pull requests, merged to `main`, and then
+applied by Flux. Local commands are kept in `just` for operator workflows, while
+CI runs purpose-built validation tools directly.
 
-## 📖 Overview
+## Platform
 
-This repository contains the configuration for my home infrastructure and Kubernetes cluster. I try to follow Infrastructure as Code (IaC) and GitOps principles, using tools like [Talos Linux](https://www.talos.dev/), [Kubernetes](https://kubernetes.io/), [FluxCD](https://github.com/fluxcd/flux2), and [GitHub Actions](https://github.com/features/actions) to automate deployment and management.
+- Operating system: [Talos Linux](https://www.talos.dev/)
+- GitOps: [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator)
+  and [Flux](https://fluxcd.io/)
+- Networking: [Cilium](https://github.com/cilium/cilium),
+  [Envoy Gateway](https://github.com/envoyproxy/gateway), and
+  [cloudflared](https://github.com/cloudflare/cloudflared)
+- DNS: [ExternalDNS](https://github.com/kubernetes-sigs/external-dns),
+  Cloudflare, and UniFi
+- Secrets: [SOPS](https://github.com/getsops/sops),
+  [External Secrets](https://github.com/external-secrets/external-secrets), and
+  [1Password Connect](https://1password.com/)
+- Storage: [Rook-Ceph](https://github.com/rook/rook),
+  [OpenEBS](https://github.com/openebs/openebs), and Synology NFS/SMB
+- Backups: [VolSync](https://github.com/backube/volsync)
+- Observability:
+  [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
+  [Grafana](https://github.com/grafana/grafana), and
+  [Gatus](https://github.com/TwiN/gatus)
+- Automation: [Renovate](https://github.com/renovatebot/renovate),
+  [Flate](https://github.com/home-operations/flate), and self-hosted GitHub
+  Actions runners
 
----
+## Repository Layout
 
-## ⛵ Kubernetes
+```text
+.
+├── bootstrap/          # One-time cluster bootstrap helpers
+├── kubernetes/
+│   ├── apps/           # Flux-managed applications, grouped by namespace
+│   ├── components/     # Shared Kustomize components, SOPS, alerts, VolSync
+│   └── flux/cluster/   # Top-level Flux entrypoint used by Flate
+├── talos/              # Talos config templates and operator commands
+└── volsync/            # Local restore and snapshot helpers
+```
 
-The cluster runs [Talos Linux](https://www.talos.dev/), a minimal, security-hardened Linux distribution designed specifically for Kubernetes.
+Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles the
+applications under `kubernetes/apps`. Most application directories follow this
+shape:
 
-Persistent workloads utilise distributed block storage across the nodes, while a Synology NAS provides NFS and SMB shares for bulk file storage and backups.
+```text
+kubernetes/apps/<namespace>/<app>/ks.yaml
+kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
+kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
+kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
+```
 
-### Core components
+Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
+`servicemonitor.yaml`, dashboards, alerts, and app-specific configuration.
 
-- [actions-runner-controller](https://github.com/actions/actions-runner-controller): Manages self-hosted GitHub runners.
-- [cert-manager](https://github.com/cert-manager/cert-manager): Automates the creation and management of TLS certificates.
-- [cilium](https://github.com/cilium/cilium): Provides networking, security and observability for the cluster.
-- [cloudflared](https://github.com/cloudflare/cloudflared): Enables secure ingress access via Cloudflare tunnels.
-- [external-dns](https://github.com/kubernetes-sigs/external-dns): Syncs ingress DNS records to my UDM-Pro for internal services and to Cloudflare for public-facing services.
-- [external-secrets](https://github.com/external-secrets/external-secrets): Manages Kubernetes secrets with the help of [1Password Connect](https://github.com/1Password/connect).
-- [ingress-nginx](https://github.com/kubernetes/ingress-nginx): A Kubernetes ingress controller using NGINX as a reverse proxy and load balancer.
-- [rook-ceph](https://github.com/rook/rook): Provides stateful workloads with distributed block storage.
-- [volsync](https://github.com/backube/volsync): Automates backup and recovery of persistent volume claims (PVCs).
+## Automation
 
-### GitOps and automation
+Pull requests are checked by GitHub Actions:
 
-[FluxCD](https://github.com/fluxcd/flux2) continuously monitors the `./kubernetes` directory, ensuring the cluster state remains in sync with the configuration stored in Git. Changes pushed to the main branch are automatically applied by the Flux controllers.
+- `Flate` renders and validates the Flux tree with missing secrets allowed.
+- `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
+- `Labeler` and `Label Sync` keep pull request and repository labels consistent.
+- `Renovate` opens dependency update PRs for charts, containers, GitHub Actions, and
+  other versioned references.
+- `Tag` handles repository release tagging.
 
-For continuous integration and deployment, I use [GitHub Actions](https://github.com/features/actions). One important workflow is [Renovate](https://github.com/renovatebot/renovate), which scans my entire repository for dependency updates and automatically creates detailed PRs, making it easy to review and merge changes.
+The required branch checks are the success aggregators for Flate and Image Pull.
+This lets docs-only or non-render-affecting changes pass cleanly while still
+blocking Kubernetes changes when rendering fails.
 
----
+## Local Workflow
 
-## ☁️ Cloud dependencies
+Local environment variables are defined in `.mise.toml`; local secrets and auth
+state such as `age.key`, `kubeconfig`, `talosconfig`, and `.secrets.env` are
+ignored by Git.
 
-I rely on a few cloud services for essential functionality:
+Useful entry points:
 
-| Service                                   | Purpose                                 | Cost        |
-| ----------------------------------------- | --------------------------------------- | ----------- |
-| [1Password](https://1password.com/)       | Secret management via External Secrets  | ~$65/year   |
-| [Cloudflare](https://www.cloudflare.com/) | Domain management, R2, Workers          | ~$40/year   |
-| [GitHub](https://github.com/)             | Repository hosting and CI/CD            | Free        |
-| [Pushover](https://pushover.net/)         | Kubernetes alerts and app notifications | $5 one-time |
+```sh
+just -l
+mise install
+```
 
----
+`just` is for local/operator workflows such as bootstrap, Kubernetes diagnostics,
+Talos operations, and VolSync restore helpers. CI does not route through `just`
+unless a workflow has a specific reason to do so.
 
-## 🌐 DNS and networking
+## Validation
 
-The cluster runs two instances of [ExternalDNS](https://github.com/kubernetes-sigs/external-dns). One instance syncs public and private DNS records to my [UniFi Dream Machine Pro](https://store.ui.com/us/en/category/cloud-gateways-large-scale/products/udm-pro) via the [ExternalDNS webhook provider for UniFi](https://github.com/kashalls/external-dns-unifi-webhook), while the other syncs public DNS records to Cloudflare.
+Use the smallest validation set that matches the change.
 
----
+Formatting and workflow changes:
 
-## 🤝 Acknowledgments
+```sh
+oxfmt --check .
+zizmor --offline .github/workflows/*.yaml
+```
 
-I would like to thank the following resources and communities for their contributions:
+Flux and Kubernetes changes:
 
-- [kubesearch.dev](https://kubesearch.dev/) – An excellent resource for finding configuration examples for nearly any application I want to deploy.
-- [onedr0p's cluster template](https://github.com/onedr0p/cluster-template) – The foundation of this repository, thoughtfully designed with deep Flux integration.
-- [Home Operations Discord](https://discord.gg/home-operations) – A welcoming community where I’ve gained valuable insights and continue to learn from others.
+```sh
+kubectl kustomize kubernetes/apps/flux-system
+FLATE_PATH=./kubernetes/flux/cluster flate test all --allow-missing-secrets
+```
+
+Image-affecting Kubernetes changes:
+
+```sh
+FLATE_BASE=main FLATE_OUTPUT=json FLATE_PATH=./kubernetes/flux/cluster flate diff images
+```
+
+App-specific changes can usually be rendered directly:
+
+```sh
+kubectl kustomize kubernetes/apps/<namespace>/<app>/app
+```
+
+## Change Safety
+
+This is a live GitOps repository. Take extra care with:
+
+- SOPS-encrypted files, which should not be reformatted or reshaped.
+- `ExternalSecret` names, target secret names, and secret key names.
+- PVC names, storage classes, access modes, and `dataSourceRef` fields.
+- VolSync `ReplicationSource` and `ReplicationDestination` objects.
+- Backup retention, schedules, repository secrets, and restore wiring.
+- Core platform components such as Rook-Ceph, Cilium, Flux, External Secrets, and
+  cert-manager.
+
+Storage, backup, and operator changes should include a clear validation or
+rollback path.
+
+## Thanks
+
+This repository builds on patterns from
+[onedr0p/cluster-template](https://github.com/onedr0p/cluster-template),
+[onedr0p/home-ops](https://github.com/onedr0p/home-ops),
+[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops), and the
+[Home Operations](https://discord.gg/home-operations) community.
+
+[kubesearch.dev](https://kubesearch.dev/) remains a great way to find examples of
+how others deploy applications in similar clusters.
+
+## License
+
+See [LICENSE](./LICENSE).
