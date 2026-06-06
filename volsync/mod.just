@@ -68,23 +68,13 @@ detect-controller ns app:
 
 [private]
 [script]
-keda-pause ns app:
-    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            kustomize.toolkit.fluxcd.io/reconcile=disabled --overwrite
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            autoscaling.keda.sh/paused="true" autoscaling.keda.sh/paused-replicas="0" --overwrite
-    fi
+autoscaler-suspend ns app:
+    kubectl -n "{{ ns }}" delete horizontalpodautoscaler "{{ app }}" --ignore-not-found=true
 
 [private]
 [script]
-keda-unpause ns app:
-    if kubectl -n "{{ ns }}" get scaledobject "{{ app }}" >/dev/null 2>&1; then
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            autoscaling.keda.sh/paused- autoscaling.keda.sh/paused-replicas-
-        kubectl -n "{{ ns }}" annotate scaledobject/{{ app }} \
-            kustomize.toolkit.fluxcd.io/reconcile=enabled --overwrite
-    fi
+autoscaler-resume ns app:
+    flux -n "{{ ns }}" reconcile kustomization "{{ app }}" --with-source
 
 [private]
 [script]
@@ -95,7 +85,7 @@ restore-run ns app previous:
     }
     flux -n "{{ ns }}" suspend kustomization "{{ app }}"
     flux -n "{{ ns }}" suspend helmrelease "{{ app }}"
-    just volsync keda-pause "{{ ns }}" "{{ app }}" || true
+    just volsync autoscaler-suspend "{{ ns }}" "{{ app }}" || true
     kubectl -n "{{ ns }}" scale \
         "$(just volsync detect-controller "{{ ns }}" "{{ app }}")/{{ app }}" \
         --replicas=0
@@ -125,8 +115,8 @@ restore-run ns app previous:
         --for=condition=complete --timeout=120m
     kubectl -n "{{ ns }}" delete replicationdestination "{{ app }}-manual" --ignore-not-found
     flux -n "{{ ns }}" resume kustomization "{{ app }}"
+    just volsync autoscaler-resume "{{ ns }}" "{{ app }}" || true
     flux -n "{{ ns }}" resume helmrelease "{{ app }}"
     flux -n "{{ ns }}" reconcile helmrelease "{{ app }}" --force
-    just volsync keda-unpause "{{ ns }}" "{{ app }}" || true
     kubectl -n "{{ ns }}" wait pod --for=condition=ready \
         --selector="app.kubernetes.io/name={{ app }}" --timeout=5m || true

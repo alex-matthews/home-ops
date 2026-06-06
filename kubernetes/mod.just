@@ -43,16 +43,6 @@ debug-node node:
 delete-ks ns ks:
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | kubectl delete -f -
 
-[arg('state', pattern='suspend|resume')]
-[doc('Suspend or resume Keda ScaledObjects')]
-[script]
-keda state:
-    kubectl get scaledobjects --no-headers -A | while read -r ns name _; do
-        pause='autoscaling.keda.sh/paused{{ if state != "suspend" { "-" } else { "=true" } }}'
-        kubectl -n "$ns" annotate --field-manager flux-client-side-apply --overwrite \
-            so "$name" "$pause"
-    done
-
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
 [script]
 prune-pods:

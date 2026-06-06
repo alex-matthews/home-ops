@@ -28,8 +28,5 @@ releases:
     labels:
       app: grafana
 
-  - name: keda
-    namespace: observability
-
   - name: kube-prometheus-stack
     namespace: observability
