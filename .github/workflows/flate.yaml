@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Image Pull
+name: Flate
 
 on:
   pull_request:
@@ -14,9 +14,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FLATE_PATH: ./kubernetes/flux/cluster
+
 jobs:
   filter:
-    name: Image Pull - Filter
+    name: Flate - Filter
     runs-on: ubuntu-latest
     outputs:
       changed-files: ${{ steps.changed-files.outputs.changed_files }}
@@ -26,17 +29,15 @@ jobs:
         uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
           patterns: |-
-            .github/workflows/image-pull.yaml
+            .github/workflows/flate.yaml
             kubernetes/**/*
             !kubernetes/mod.just
 
-  flate:
+  test:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
     needs: filter
-    name: Image Pull - Flate
+    name: Flate - Test
     runs-on: ubuntu-latest
-    outputs:
-      images: ${{ steps.flate.outputs.images }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -48,53 +49,14 @@ jobs:
         uses: home-operations/flate/action@13917764cfe2966e22510118ccf2f77d3c4d74ba # 0.2.12
 
       - name: Run Flate
-        id: flate
-        env:
-          FLATE_OUTPUT: json
-          FLATE_PATH: ./kubernetes/flux/cluster
-        run: |-
-          images="$(flate diff images)"
-
-          echo 'images<<EOF' >> "$GITHUB_OUTPUT"
-          echo "${images}" >> "$GITHUB_OUTPUT"
-          echo 'EOF' >> "$GITHUB_OUTPUT"
-
-          echo '## New images to Pull' >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          echo "${images}" | jq . >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-  pull:
-    if: >-
-      ${{
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        needs.flate.outputs.images != '' &&
-        needs.flate.outputs.images != '[]'
-      }}
-    needs: flate
-    name: Image Pull - Pull Images
-    runs-on: home-ops-runner
-    strategy:
-      max-parallel: 4
-      fail-fast: false
-      matrix:
-        image: ${{ fromJSON(needs.flate.outputs.images) }}
-    env:
-      IMAGE: ${{ matrix.image }}
-    steps:
-      - name: Install talosctl
-        run: curl -fsSL https://talos.dev/install | sh
-
-      - name: Pull image
-        run: talosctl --nodes "${NODE}" image pull "${IMAGE}"
+        run: flate test all --allow-missing-secrets
 
   success:
     if: ${{ !cancelled() }}
     needs:
       - filter
-      - flate
-      - pull
-    name: Image Pull - Success
+      - test
+    name: Flate - Success
     runs-on: ubuntu-latest
     steps:
       - name: Any jobs failed?
