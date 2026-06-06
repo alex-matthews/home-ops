@@ -36,7 +36,7 @@ spec:
           - LoadBalancerIP
       selector:
         matchExpressions:
-          - {key: somekey, operator: NotIn, values: ["never-used-value"]}
+          - { key: somekey, operator: NotIn, values: ["never-used-value"] }
 ---
 apiVersion: cilium.io/v2
 kind: CiliumBGPPeerConfig

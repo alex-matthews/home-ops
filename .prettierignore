@@ -1,0 +1,3 @@
+# SOPS-encrypted files should keep their existing encrypted document shape.
+**/?*.sops.yaml
+**/?*.sops.yml

@@ -38,8 +38,8 @@ sonarr:
 
     custom_format_groups:
       add:
-        - trash_id: 85fae4a2294965b75710ef2989c850eb  # [Streaming Services] HD/UHD Boost
-        - trash_id: 59c3af66780d08332fdc64e68297098f  # [Unwanted] Unwanted Formats
+        - trash_id: 85fae4a2294965b75710ef2989c850eb # [Streaming Services] HD/UHD Boost
+        - trash_id: 59c3af66780d08332fdc64e68297098f # [Unwanted] Unwanted Formats
           # Explicitly include guide defaults plus No-RlsGroup / Obfuscated / Retags / Scene.
           select:
             - 15a05bc7c1a36e2b57fd628f8977e2fc # AV1
