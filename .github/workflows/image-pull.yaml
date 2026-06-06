@@ -25,7 +25,10 @@ jobs:
         id: changed-files
         uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
-          patterns: kubernetes/**/*
+          patterns: |-
+            .github/workflows/image-pull.yaml
+            kubernetes/**/*
+            !kubernetes/mod.just
 
   flate:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
