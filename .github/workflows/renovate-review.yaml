@@ -1,0 +1,161 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Renovate Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    if: >-
+      ${{
+        github.event.pull_request.user.login == 'renovate[bot]' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      }}
+    name: Renovate Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      CODEX_MODEL: ${{ vars.CODEX_MODEL || 'gpt-5.5' }}
+      CODEX_VERSION: 0.137.0
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPOSITORY: ${{ github.repository }}
+    steps:
+      - name: Checkout pull request merge commit
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+
+      - name: Fetch review refs
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |-
+          git fetch --no-tags origin \
+            "${BASE_REF}" \
+            "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/pr/${PR_NUMBER}/head"
+
+      - name: Generate review prompt
+        run: |-
+          {
+            cat <<'PROMPT'
+          You review Renovate dependency update pull requests for a Home Operations Flux GitOps repository.
+          Do not modify repository files. Investigate and report only.
+
+          Focus on:
+          - breaking changes or deprecations that affect this repository
+          - important migration notes
+          - new features worth adopting when they simplify or improve existing configuration
+          - upgrade risk for Kubernetes manifests, HelmRelease values, CRDs, controllers, and operators
+
+          Repository-specific notes:
+          - Git is the source of truth; do not recommend imperative cluster fixes except diagnostics.
+          - Treat SOPS-encrypted files, ExternalSecret names and keys, PVCs, storage classes, VolSync
+            objects, backup schedules, and restore wiring as high-risk surfaces.
+          - CI should call purpose-built tools directly; justfiles are local/operator UX.
+          - Prefer this repository's existing Kubernetes app layout and Home Operations patterns.
+
+          Use only the PR metadata, PR body, diff, and repository files available to you. Do not claim
+          that you checked external changelogs or release notes unless that content is present in the
+          PR body or repository.
+
+          Write a concise Markdown review comment with:
+          - verdict: Safe to merge, Needs human review, or Changes required before merge
+          - what changed
+          - actionable findings, if any
+          - repo-specific impact
+          - sources/context used
+          PROMPT
+
+            echo ""
+            echo "Repository: ${REPOSITORY}"
+            echo "Pull Request: #${PR_NUMBER}"
+            echo "Base SHA: ${BASE_SHA}"
+            echo "Head SHA: ${HEAD_SHA}"
+            echo ""
+            echo "Pull request metadata:"
+            gh pr view "${PR_NUMBER}" \
+              --json title,body,author,baseRefName,headRefName,files,commits \
+              --jq .
+            echo ""
+            echo "Changed files:"
+            git --no-pager diff --name-status "${BASE_SHA}" "${HEAD_SHA}"
+            echo ""
+            echo "Unified diff:"
+            git --no-pager diff --unified=5 --stat=200 "${BASE_SHA}" "${HEAD_SHA}"
+            git --no-pager diff --unified=5 "${BASE_SHA}" "${HEAD_SHA}"
+          } > codex-prompt.md
+
+      - name: Run Codex review
+        id: codex
+        uses: openai/codex-action@9cdb6f3861cdefafeeaec70dfb42687be5ca62d3 # main, 2026-05-26
+        with:
+          allow-bot-users: renovate[bot]
+          codex-version: ${{ env.CODEX_VERSION }}
+          model: ${{ env.CODEX_MODEL }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          output-file: codex-output.md
+          prompt-file: codex-prompt.md
+          safety-strategy: drop-sudo
+          sandbox: read-only
+
+      - name: Build review comment
+        run: |-
+          if [ ! -s codex-output.md ]; then
+            echo "Codex did not produce codex-output.md" >> "${GITHUB_STEP_SUMMARY}"
+            exit 1
+          fi
+
+          {
+            echo "<!-- codex-renovate-review -->"
+            echo "### Codex Renovate review"
+            echo ""
+            cat codex-output.md
+            echo ""
+            echo "<sub>Generated by the Renovate Review workflow with \`${CODEX_MODEL}\`.</sub>"
+          } > codex-review-comment.md
+
+          cat codex-review-comment.md >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Publish review comment
+        run: |-
+          jq -n --rawfile body codex-review-comment.md '{body: $body}' > comment.json
+
+          comment_id="$(
+            gh api "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+              --jq '.[] | select(.body | contains("<!-- codex-renovate-review -->")) | .id' \
+              | head -n 1
+          )"
+
+          if [ -n "${comment_id}" ]; then
+            gh api \
+              --method PATCH \
+              "repos/${REPOSITORY}/issues/comments/${comment_id}" \
+              --input comment.json
+          else
+            gh api \
+              --method POST \
+              "repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --input comment.json
+          fi
