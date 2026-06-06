@@ -22,7 +22,8 @@ jobs:
   review:
     if: >-
       ${{
-        github.event.pull_request.user.login == 'renovate[bot]' &&
+        github.event.pull_request.user.login == 'bot-ler[bot]' &&
+        startsWith(github.event.pull_request.head.ref, 'renovate/') &&
         github.event.pull_request.head.repo.full_name == github.repository
       }}
     name: Renovate Review
@@ -60,32 +61,77 @@ jobs:
         run: |-
           {
             cat <<'PROMPT'
-          You review Renovate dependency update pull requests for a Home Operations Flux GitOps repository.
-          Do not modify repository files. Investigate and report only.
+          You review Renovate dependency update pull requests for a Home Operations Flux GitOps
+          repository. You do not modify repository files. Investigate and report only.
 
-          Focus on:
-          - breaking changes or deprecations that affect this repository
-          - important migration notes
-          - new features worth adopting when they simplify or improve existing configuration
-          - upgrade risk for Kubernetes manifests, HelmRelease values, CRDs, controllers, and operators
+          Your job is to decide whether the update looks safe for this repository, using only the
+          evidence included below: PR metadata, Renovate PR body, release notes included in the PR
+          body, changed files, unified diff, and repository files readable in this checkout.
 
-          Repository-specific notes:
-          - Git is the source of truth; do not recommend imperative cluster fixes except diagnostics.
-          - Treat SOPS-encrypted files, ExternalSecret names and keys, PVCs, storage classes, VolSync
-            objects, backup schedules, and restore wiring as high-risk surfaces.
-          - CI should call purpose-built tools directly; justfiles are local/operator UX.
-          - Prefer this repository's existing Kubernetes app layout and Home Operations patterns.
+          Do not claim that you checked external changelogs, GitHub releases, commits, docs, or web
+          pages unless their content is already included in the evidence below. If Renovate links to
+          external release notes but the notes are not included, say that external review is needed.
 
-          Use only the PR metadata, PR body, diff, and repository files available to you. Do not claim
-          that you checked external changelogs or release notes unless that content is present in the
-          PR body or repository.
+          ## Review Workflow
 
-          Write a concise Markdown review comment with:
-          - verdict: Safe to merge, Needs human review, or Changes required before merge
-          - what changed
-          - actionable findings, if any
-          - repo-specific impact
-          - sources/context used
+          1. Identify every updated dependency.
+             - Determine the package name, datasource/type, old version, new version, and update type.
+             - Detect wrapper updates: Helm charts, OCI artifacts, container images, and GitHub
+               Actions can wrap a different upstream component. If the PR body exposes that inner
+               component, identify it separately.
+
+          2. Read the Renovate-provided release notes.
+             - Look for breaking changes, deprecations, migrations, removals, renamed settings,
+               changed defaults, new required fields, dropped Kubernetes versions, changed CRDs, or
+               security-impacting changes.
+             - Treat deprecations like breaking changes when this repository already uses the
+               deprecated path.
+             - If the release notes are missing or too thin for a non-trivial minor/major/operator
+               update, use `Needs human review`, not `Safe to merge`.
+
+          3. Assess repository impact.
+             - Read the changed files and nearby app configuration.
+             - Search for other references to the same chart, image, app, CRD, controller, env vars,
+               annotations, values, dashboards, alerts, or routes.
+             - Map each possible breaking change to whether this repository actually uses the
+               affected feature.
+
+          4. Classify findings.
+             - `Changes required before merge`: repo usage appears incompatible with the update.
+             - `Needs human review`: evidence is insufficient, release notes are absent/thin, or the
+               update affects high-risk platform/storage/backup/security surfaces.
+             - `Safe to merge`: no actionable repo impact found from the available evidence.
+
+          Repository-specific high-risk surfaces:
+          - SOPS-encrypted files, ExternalSecret names and keys
+          - PVCs, storage classes, access modes, and dataSourceRef fields
+          - VolSync ReplicationSource/ReplicationDestination objects, schedules, retention, and
+            restore wiring
+          - Rook-Ceph, Cilium, Flux, External Secrets, cert-manager, and CRD/controller upgrades
+          - Ingress/route/auth changes and public exposure changes
+
+          Output concise Markdown in exactly this shape:
+
+          ### <package>: <old version> -> <new version>
+
+          **Verdict**: Safe to merge | Needs human review | Changes required before merge
+
+          **What changed**:
+          - ...
+
+          **Repository impact**:
+          - ...
+
+          **Actionable findings**:
+          - ...
+
+          **Sources used**:
+          - PR body release notes
+          - Changed files / diff
+          - Repository files checked
+
+          Omit empty sections, but always include Verdict, Repository impact, and Sources used.
+          Keep GitHub URLs on `redirect.github.com` when copying links from the PR body.
           PROMPT
 
             echo ""
@@ -111,7 +157,7 @@ jobs:
         id: codex
         uses: openai/codex-action@9cdb6f3861cdefafeeaec70dfb42687be5ca62d3 # main, 2026-05-26
         with:
-          allow-bot-users: renovate[bot]
+          allow-bot-users: bot-ler[bot]
           codex-version: ${{ env.CODEX_VERSION }}
           model: ${{ env.CODEX_MODEL }}
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
