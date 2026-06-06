@@ -78,7 +78,7 @@ blocking Kubernetes changes when rendering fails.
 
 ## Local Workflow
 
-Local environment variables are defined in `mise/config.toml`; local secrets and auth
+Local environment variables are defined in `.mise/config.toml`; local secrets and auth
 state such as `age.key`, `kubeconfig`, `talosconfig`, and `.secrets.env` are
 ignored by Git.
 
