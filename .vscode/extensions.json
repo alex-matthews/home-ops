@@ -1,11 +1,12 @@
 {
   "recommendations": [
     "blueglassblock.better-json5",
+    "catppuccin.catppuccin-vsc-icons",
     "hverlin.mise-vscode",
     "irongeek.vscode-env",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
     "nefrob.vscode-just-syntax",
     "oxc.oxc-vscode",
-    "PKief.material-icon-theme",
     "redhat.vscode-yaml",
     "signageos.signageos-vscode-sops"
   ]
