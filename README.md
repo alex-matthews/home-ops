@@ -97,6 +97,8 @@ unless a workflow has a specific reason to do so.
 
 Use the smallest validation set that matches the change.
 
+The commands below assume the repo's `.mise/config.toml` environment is loaded.
+
 Formatting and workflow changes:
 
 ```sh
@@ -108,13 +110,13 @@ Flux and Kubernetes changes:
 
 ```sh
 kubectl kustomize kubernetes/apps/flux-system
-FLATE_PATH=./kubernetes/flux/cluster flate test all --allow-missing-secrets
+flate test all --allow-missing-secrets
 ```
 
 Image-affecting Kubernetes changes:
 
 ```sh
-FLATE_BASE=main FLATE_OUTPUT=json FLATE_PATH=./kubernetes/flux/cluster flate diff images
+FLATE_BASE=main FLATE_OUTPUT=json flate diff images
 ```
 
 App-specific changes can usually be rendered directly:
