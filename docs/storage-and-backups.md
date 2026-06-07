@@ -41,7 +41,6 @@ This inventory is derived from the current `default` namespace app tree.
 | `radarr-se`     | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
 | `recyclarr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `sabnzbd`       | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `seasonpackarr` | no            | no             | yes         | no         | Planned retirement; do not use as a migration pilot.          |
 | `seerr`         | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
 | `sonarr`        | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
 | `tautulli`      | yes           | yes            | no          | no         | Separate `tautulli-cache` PVC.                                |
