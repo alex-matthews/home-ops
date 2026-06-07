@@ -153,5 +153,5 @@ Render checks for future manifest changes:
 
 ```sh
 kubectl kustomize kubernetes/apps/default
-FLATE_PATH=./kubernetes/flux/cluster flate test all --allow-missing-secrets
+flate test all --allow-missing-secrets
 ```
