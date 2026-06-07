@@ -51,9 +51,11 @@ jobs:
         with:
           client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-checks: write
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
+          permission-statuses: write
           permission-vulnerability-alerts: read
           permission-workflows: write
 
