@@ -1,65 +1,48 @@
 {
-  "editor.bracketPairColorization.enabled": true,
-  "editor.fontFamily": "FiraCode Nerd Font",
-  "editor.fontLigatures": true,
-  "editor.fontSize": 14,
-  "editor.guides.bracketPairs": true,
-  "editor.guides.bracketPairsHorizontal": true,
-  "editor.guides.highlightActiveBracketPair": true,
-  "editor.hover.delay": 1500,
-  "editor.rulers": [100],
-  "editor.stickyScroll.enabled": false,
-  "explorer.autoReveal": true,
-  "files.associations": {
-    "**/*.json5": "json5",
-    "**/*.yaml.j2": "yaml"
-  },
-  "files.trimTrailingWhitespace": true,
+  "workbench.iconTheme": "catppuccin-mocha",
   "oxc.fmt.configPath": ".oxfmtrc.json",
-  "material-icon-theme.files.associations": {
-    "*.gotmpl": "smarty",
-    "*.sops.yaml": "lock",
-    "helmfile.yaml": "helm",
-    "kubeconfig": "kubernetes",
-    "talosconfig": "kubernetes"
+  "catppuccin-icons.associations.extensions": {
+    "gotmpl": "go-template",
+    "sops.yaml": "lock",
+    "sops.yml": "lock"
   },
-  "material-icon-theme.folders.associations": {
-    // top level
-    ".github/workflows": "ci",
-    "bootstrap": "seeders",
-    "bootstrap/helmfile": "helm",
-    "bootstrap/kustomize": "stack",
-    "flux": "pipe",
-    "talos": "linux",
-    "talos/nodes": "server",
-    "volsync": "aws",
-    "volsync/local": "download",
-    "volsync/remote": "connection",
-    // namespaces
-    "actions-runner-system": "github",
-    "cert-manager": "guard",
-    "default": "home",
-    "external-secrets": "secure",
-    "flux-system": "pipe",
-    "kube-system": "kubernetes",
-    "network": "connection",
-    "observability": "event",
-    "openebs-system": "base",
-    "rook-ceph": "dump",
-    "system-upgrade": "update",
-    "volsync-system": "aws",
-    // components
-    "alerts": "event",
-    "nfs-scaler": "connection",
-    "sops": "secure"
+  "catppuccin-icons.associations.files": {
+    "helmfile.yaml": "helm",
+    "kubeconfig": "config",
+    "talosconfig": "config"
+  },
+  "catppuccin-icons.associations.folders": {
+    "workflows": "folder_workflows",
+    "bootstrap": "folder_download",
+    "helmfile": "folder_config",
+    "kustomize": "folder_kubernetes",
+    "flux": "folder_kubernetes",
+    "talos": "folder_linux",
+    "nodes": "folder_server",
+    "volsync": "folder_aws",
+    "local": "folder_download",
+    "remote": "folder_connection",
+    "actions-runner-system": "folder_github",
+    "cert-manager": "folder_security",
+    "default": "folder_app",
+    "external-secrets": "folder_security",
+    "flux-system": "folder_kubernetes",
+    "kube-system": "folder_kubernetes",
+    "network": "folder_connection",
+    "observability": "folder_audit",
+    "openebs-system": "folder_database",
+    "rook-ceph": "folder_database",
+    "system-upgrade": "folder_config",
+    "volsync-system": "folder_aws",
+    "alerts": "folder_audit",
+    "zeroscaler": "folder_connection",
+    "sops": "folder_security"
   },
   "sops.defaults.ageKeyFile": "age.key",
-  "terminal.integrated.fontSize": 14,
   "vs-kubernetes": {
     "vs-kubernetes.kubeconfig": "./kubeconfig",
     "vs-kubernetes.knownKubeconfigs": ["./kubeconfig"]
   },
-  "window.zoomLevel": 0,
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
     "kubernetes": "./kubernetes/**/*.yaml"
