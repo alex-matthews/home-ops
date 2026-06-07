@@ -1,0 +1,15 @@
+---
+- Repositories:
+    - Home Ops:
+        - abbr: ops
+          href: https://github.com/alex-matthews/home-ops
+    - Home Operations:
+        - abbr: hom
+          href: https://github.com/home-operations
+- References:
+    - Homepage Docs:
+        - abbr: hp
+          href: https://gethomepage.dev/
+    - KubeSearch:
+        - abbr: k8s
+          href: https://kubesearch.dev/

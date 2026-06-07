@@ -1,0 +1,127 @@
+---
+- Requests:
+    - Seerr:
+        href: https://seerr.${SECRET_DOMAIN}
+        description: Requests
+        icon: sh-overseerr
+        widget:
+          type: seerr
+          url: http://seerr.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
+          fields: ["pending", "approved", "completed"]
+    - Maintainerr:
+        href: https://maintainerr.${SECRET_DOMAIN}
+        description: Retention
+        icon: sh-maintainerr
+        siteMonitor: http://maintainerr.default.svc.cluster.local
+
+- Library:
+    - Plex:
+        href: https://plex.${SECRET_DOMAIN}
+        description: Streaming
+        icon: sh-plex
+        widget:
+          type: tautulli
+          url: http://tautulli.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_TAUTULLI_API_KEY}}"
+          enableUser: true
+          showEpisodeNumber: true
+    - Radarr:
+        href: https://radarr.${SECRET_DOMAIN}
+        description: Movies
+        icon: sh-radarr
+        widget:
+          type: radarr
+          url: http://radarr.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+          fields: ["wanted", "missing", "queued"]
+          enableQueue: true
+    - Radarr SE:
+        href: https://radarr-se.${SECRET_DOMAIN}
+        description: Special editions
+        icon: sh-radarr
+        widget:
+          type: radarr
+          url: http://radarr-se.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_RADARR_SE_API_KEY}}"
+          fields: ["wanted", "missing", "queued"]
+          enableQueue: true
+    - Sonarr:
+        href: https://sonarr.${SECRET_DOMAIN}
+        description: Series
+        icon: sh-sonarr
+        widget:
+          type: sonarr
+          url: http://sonarr.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+          fields: ["wanted", "queued", "series"]
+          enableQueue: true
+    - Bazarr:
+        href: https://bazarr.${SECRET_DOMAIN}
+        description: Subtitles
+        icon: sh-bazarr
+        siteMonitor: http://bazarr.default.svc.cluster.local
+    - Prowlarr:
+        href: https://prowlarr.${SECRET_DOMAIN}
+        description: Indexers
+        icon: sh-prowlarr
+        widget:
+          type: prowlarr
+          url: http://prowlarr.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
+          fields: ["numberOfQueries", "numberOfGrabs", "numberOfFailQueries", "numberOfFailGrabs"]
+
+- Transfers:
+    - qBittorrent:
+        href: https://qbittorrent.${SECRET_DOMAIN}
+        description: Torrents
+        icon: sh-qbittorrent
+        siteMonitor: http://qbittorrent.default.svc.cluster.local
+    - SABnzbd:
+        href: https://sabnzbd.${SECRET_DOMAIN}
+        description: Usenet
+        icon: sh-sabnzbd
+        widget:
+          type: sabnzbd
+          url: http://sabnzbd.default.svc.cluster.local:8080
+          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+          fields: ["rate", "queue", "timeleft"]
+    - Autobrr:
+        href: https://autobrr.${SECRET_DOMAIN}
+        description: Release filters
+        icon: sh-autobrr
+        siteMonitor: http://autobrr.default.svc.cluster.local
+    - Qui:
+        href: https://qui.${SECRET_DOMAIN}
+        description: Torrent controls
+        icon: sh-qbittorrent
+        siteMonitor: http://qui.default.svc.cluster.local
+
+- Insights:
+    - Tautulli:
+        href: https://tautulli.${SECRET_DOMAIN}
+        description: Plex analytics
+        icon: sh-tautulli
+        siteMonitor: http://tautulli.default.svc.cluster.local
+
+- Operations:
+    - Grafana:
+        href: https://grafana.${SECRET_DOMAIN}
+        description: Dashboards
+        icon: sh-grafana
+    - Gatus:
+        href: https://status.${SECRET_DOMAIN}
+        description: Status checks
+        icon: sh-gatus
+        widget:
+          type: gatus
+          url: http://gatus.observability.svc.cluster.local
+          fields: ["up", "down", "uptime"]
+    - Alertmanager:
+        href: https://alertmanager.${SECRET_DOMAIN}
+        description: Alert routing
+        icon: sh-prometheus
+    - Konflate:
+        href: https://konflate.${SECRET_DOMAIN}
+        description: Render previews
+        icon: sh-kubernetes

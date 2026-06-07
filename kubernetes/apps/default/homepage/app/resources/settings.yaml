@@ -1,0 +1,37 @@
+---
+title: Home Ops
+description: Media and cluster operations cockpit
+theme: dark
+color: slate
+target: _blank
+hideVersion: true
+disableUpdateCheck: true
+fullWidth: true
+headerStyle: boxedWidgets
+iconStyle: theme
+statusStyle: dot
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+  hideVisitURL: true
+layout:
+  Requests:
+    style: row
+    columns: 2
+    icon: sh-overseerr
+  Library:
+    style: row
+    columns: 3
+    icon: sh-plex
+  Transfers:
+    style: row
+    columns: 4
+    icon: sh-qbittorrent
+  Insights:
+    style: row
+    columns: 2
+    icon: sh-tautulli
+  Operations:
+    style: row
+    columns: 4
+    icon: sh-grafana

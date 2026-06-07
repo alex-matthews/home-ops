@@ -12,6 +12,7 @@ resources:
   - ./bazarr/ks.yaml
   - ./brrpolice/ks.yaml
   # - ./costanza/ks.yaml
+  - ./homepage/ks.yaml
   - ./plex/ks.yaml
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
