@@ -4,8 +4,10 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaFolder
 metadata:
   name: home-ops
+  labels:
+    dashboards: grafana
 spec:
-  title: Home Ops
+  title: home-ops
   instanceSelector:
     matchLabels:
       dashboards: grafana

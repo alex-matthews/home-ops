@@ -1,0 +1,1707 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Status",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://status.${SECRET_DOMAIN}"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Prometheus",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://prometheus.${SECRET_DOMAIN}"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Alertmanager",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://alertmanager.${SECRET_DOMAIN}"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Konflate",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://konflate.${SECRET_DOMAIN}"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "VictoriaLogs",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://vlogs.${SECRET_DOMAIN}"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Critical alerts. Shows OK when none are firing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "links": [
+        {
+          "title": "Alertmanager",
+          "url": "https://alertmanager.${SECRET_DOMAIN}/#/alerts",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(ALERTS{alertstate=\"firing\",severity=\"critical\",alertname!~\"Watchdog|KubeHpaMaxedOut\"}) or vector(0)",
+          "instant": true,
+          "legendFormat": "Critical",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Critical",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Warning alerts. Shows OK when none are firing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 3,
+      "links": [
+        {
+          "title": "Alertmanager",
+          "url": "https://alertmanager.${SECRET_DOMAIN}/#/alerts",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(ALERTS{alertstate=\"firing\",severity=\"warning\",alertname!~\"Watchdog|KubeHpaMaxedOut\"}) or vector(0)",
+          "instant": true,
+          "legendFormat": "Warnings",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Warnings",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Flux Kustomizations and HelmReleases that are not Ready or are suspended. Shows OK when none need attention.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 4,
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count((gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",ready!=\"True\"} == 1) or (gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",suspended=~\"True|true\"} == 1)) or vector(0)",
+          "instant": true,
+          "legendFormat": "Flux",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Flux",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "External and service Gatus checks currently failing. Shows OK when all are passing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 5,
+      "links": [
+        {
+          "title": "Status",
+          "url": "https://status.${SECRET_DOMAIN}",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count(gatus_results_endpoint_success{group=~\"external|services\"} == 0) or vector(0)",
+          "instant": true,
+          "legendFormat": "Services down",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Services",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Kubernetes Job failures over the last 24 hours. Shows OK when none failed.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 6,
+      "links": [],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(kube_job_status_failed[24h])) or vector(0)",
+          "instant": true,
+          "legendFormat": "Jobs failed",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Jobs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Composite Ceph, VolSync, and NAS NFS backup-path health.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                },
+                "1": {
+                  "text": "ATTN",
+                  "color": "yellow",
+                  "index": 1
+                },
+                "2": {
+                  "text": "BAD",
+                  "color": "red",
+                  "index": 2
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 7,
+      "links": [
+        {
+          "title": "Ceph dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=ceph",
+          "targetBlank": true
+        },
+        {
+          "title": "VolSync dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=volsync",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "max(label_replace(max(ceph_health_status) or vector(2), \"signal\", \"ceph\", \"__name__\", \".*\") or label_replace(sum(volsync_volume_out_of_sync) or vector(0), \"signal\", \"volsync\", \"__name__\", \".*\") or label_replace((1 - min(probe_success{job=\"nfs_probe\"})) or vector(1), \"signal\", \"nfs\", \"__name__\", \".*\"))",
+          "instant": true,
+          "legendFormat": "Storage guard",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Storage",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Current non-noise firing alerts. Shows an all-clear row when there are no matching alerts.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 20,
+      "links": [
+        {
+          "title": "Alertmanager",
+          "url": "https://alertmanager.${SECRET_DOMAIN}/#/alerts",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "active"
+          }
+        ]
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc((sum by (severity, alertname, namespace) (ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|KubeHpaMaxedOut\"})) or (label_replace(label_replace(label_replace(vector(0), \"severity\", \"ok\", \"__name__\", \".*\"), \"alertname\", \"all clear\", \"__name__\", \".*\"), \"namespace\", \"cluster\", \"__name__\", \".*\") unless on() (count(sum by (severity, alertname, namespace) (ALERTS{alertstate=\"firing\",alertname!~\"Watchdog|KubeHpaMaxedOut\"})) > 0)))",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "severity": 0,
+              "alertname": 1,
+              "namespace": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "alertname": "alert",
+              "Value": "active"
+            }
+          }
+        }
+      ],
+      "title": "Actionable alerts",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Flux resources that are not Ready or are suspended.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 4
+      },
+      "id": 50,
+      "links": [
+        {
+          "title": "Flux dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=flux",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count(label_replace(label_replace(label_replace(label_replace(label_replace(((gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",ready!=\"True\"} == 1) or (gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",suspended=~\"True|true\"} == 1)), \"namespace\", \"$1\", \"exported_namespace\", \"(.*)\"), \"resource\", \"$1\", \"name\", \"(.*)\"), \"detail\", \"$1\", \"customresource_kind\", \"(.*)\"), \"signal\", \"not ready/suspended\", \"resource\", \".*\"), \"area\", \"flux\", \"resource\", \".*\")) or vector(0)",
+          "instant": true,
+          "legendFormat": "GitOps",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "GitOps",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Pods with recent restarts, OOM kills, Pending state, or container waiting errors.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 4
+      },
+      "id": 51,
+      "links": [
+        {
+          "title": "Kubernetes dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=kubernetes",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count((label_replace(label_replace(label_replace(label_replace(topk(8, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h]))) > 0, \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"restarts 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod, container, reason) (kube_pod_container_status_waiting_reason{reason=~\"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError\"} == 1), \"signal\", \"$1\", \"reason\", \"(.*)\"), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod) (kube_pod_status_phase{phase=\"Pending\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"pod pending\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace((sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h])) > 0) * on(namespace, pod, container) group_left(reason) max by (namespace, pod, container, reason) (kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"OOMKilled 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\"))) or vector(0)",
+          "instant": true,
+          "legendFormat": "Pods",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Deployments, StatefulSets, and DaemonSets with unavailable replicas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 4
+      },
+      "id": 52,
+      "links": [
+        {
+          "title": "Kubernetes dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=kubernetes",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count((label_replace(label_replace(label_replace(label_replace((kube_deployment_status_replicas_unavailable > 0), \"resource\", \"$1\", \"deployment\", \"(.*)\"), \"detail\", \"Deployment\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace(((kube_statefulset_status_replicas - kube_statefulset_status_replicas_ready) > 0), \"resource\", \"$1\", \"statefulset\", \"(.*)\"), \"detail\", \"StatefulSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace((kube_daemonset_status_number_unavailable > 0), \"resource\", \"$1\", \"daemonset\", \"(.*)\"), \"detail\", \"DaemonSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\"))) or vector(0)",
+          "instant": true,
+          "legendFormat": "Workloads",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Workloads",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Node readiness, pressure, network-unavailable, and unschedulable signals.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 8
+      },
+      "id": 53,
+      "links": [
+        {
+          "title": "Node dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=node",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count((label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=\"Ready\",status!=\"true\"} == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"signal\", \"NotReady\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure|NetworkUnavailable\",status=\"true\"} == 1, \"signal\", \"$1\", \"condition\", \"(.*)\"), \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_spec_unschedulable == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"unschedulable\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\"))) or vector(0)",
+          "instant": true,
+          "legendFormat": "Nodes",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Nodes",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "VolSync out-of-sync volumes and missed scheduled intervals over the last 24 hours.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 8
+      },
+      "id": 54,
+      "links": [
+        {
+          "title": "VolSync dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=volsync",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count((label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((volsync_volume_out_of_sync == 1), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"out of sync\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\") or label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((increase(volsync_missed_intervals_total[24h]) > 0), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"missed intervals 24h\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\"))) or vector(0)",
+          "instant": true,
+          "legendFormat": "Backups",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Backups",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Prometheus scrape targets that are currently down. Shows OK when all targets are up.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 8
+      },
+      "id": 55,
+      "links": [
+        {
+          "title": "Prometheus targets",
+          "url": "https://prometheus.${SECRET_DOMAIN}/targets",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "count(label_replace(label_replace(label_replace(label_replace(label_replace(up == 0, \"resource\", \"$1\", \"job\", \"(.*)\"), \"detail\", \"$1\", \"instance\", \"(.*)\"), \"signal\", \"target down\", \"resource\", \".*\"), \"namespace\", \"\", \"resource\", \".*\"), \"area\", \"monitoring\", \"resource\", \".*\")) or vector(0)",
+          "instant": true,
+          "legendFormat": "Monitoring",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Monitoring",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Cluster CPU and memory usage as a percentage of Kubernetes allocatable capacity.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "id": 42,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum(rate(container_cpu_usage_seconds_total{container!=\"\",image!=\"\"}[5m])) / sum(kube_node_status_allocatable{resource=\"cpu\",unit=\"core\"})",
+          "instant": false,
+          "legendFormat": "cpu allocatable used",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum(container_memory_working_set_bytes{container!=\"\",image!=\"\"}) / sum(kube_node_status_allocatable{resource=\"memory\",unit=\"byte\"})",
+          "instant": false,
+          "legendFormat": "memory allocatable used",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Cluster saturation",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Ceph raw capacity used over the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
+      "id": 40,
+      "links": [
+        {
+          "title": "Ceph dashboards",
+          "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=ceph",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum(ceph_cluster_total_used_bytes) / sum(ceph_cluster_total_bytes))",
+          "instant": false,
+          "legendFormat": "used",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Ceph capacity",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "Persistent volumes with the least free space.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "id": 41,
+      "links": [],
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "free"
+          }
+        ]
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "bottomk(10, (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) * 100)",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "endpoint": true,
+              "instance": true,
+              "job": true,
+              "metrics_path": true,
+              "service": true
+            },
+            "indexByName": {
+              "namespace": 0,
+              "persistentvolumeclaim": 1,
+              "node": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "persistentvolumeclaim": "pvc",
+              "Value": "free"
+            }
+          }
+        }
+      ],
+      "title": "PVC free floor",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$${DS_PROMETHEUS}"
+      },
+      "description": "One drilldown table for non-alert cluster signals. Shows an all-clear row when no category has findings.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 60,
+      "links": [
+        {
+          "title": "Prometheus",
+          "url": "https://prometheus.${SECRET_DOMAIN}",
+          "targetBlank": true
+        },
+        {
+          "title": "Alertmanager",
+          "url": "https://alertmanager.${SECRET_DOMAIN}/#/alerts",
+          "targetBlank": true
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "value"
+          }
+        ]
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sort_desc(((label_replace(label_replace(label_replace(label_replace(label_replace(((gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",ready!=\"True\"} == 1) or (gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",suspended=~\"True|true\"} == 1)), \"namespace\", \"$1\", \"exported_namespace\", \"(.*)\"), \"resource\", \"$1\", \"name\", \"(.*)\"), \"detail\", \"$1\", \"customresource_kind\", \"(.*)\"), \"signal\", \"not ready/suspended\", \"resource\", \".*\"), \"area\", \"flux\", \"resource\", \".*\") or (label_replace(label_replace(label_replace(label_replace(topk(8, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h]))) > 0, \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"restarts 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod, container, reason) (kube_pod_container_status_waiting_reason{reason=~\"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError\"} == 1), \"signal\", \"$1\", \"reason\", \"(.*)\"), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod) (kube_pod_status_phase{phase=\"Pending\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"pod pending\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace((sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h])) > 0) * on(namespace, pod, container) group_left(reason) max by (namespace, pod, container, reason) (kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"OOMKilled 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\")) or (label_replace(label_replace(label_replace(label_replace((kube_deployment_status_replicas_unavailable > 0), \"resource\", \"$1\", \"deployment\", \"(.*)\"), \"detail\", \"Deployment\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace(((kube_statefulset_status_replicas - kube_statefulset_status_replicas_ready) > 0), \"resource\", \"$1\", \"statefulset\", \"(.*)\"), \"detail\", \"StatefulSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace((kube_daemonset_status_number_unavailable > 0), \"resource\", \"$1\", \"daemonset\", \"(.*)\"), \"detail\", \"DaemonSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\")) or (label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=\"Ready\",status!=\"true\"} == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"signal\", \"NotReady\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure|NetworkUnavailable\",status=\"true\"} == 1, \"signal\", \"$1\", \"condition\", \"(.*)\"), \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_spec_unschedulable == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"unschedulable\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\")) or (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((volsync_volume_out_of_sync == 1), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"out of sync\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\") or label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((increase(volsync_missed_intervals_total[24h]) > 0), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"missed intervals 24h\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\")) or label_replace(label_replace(label_replace(label_replace(topk(10, sum by (namespace, job_name) (increase(kube_job_status_failed[24h]))) > 0, \"resource\", \"$1\", \"job_name\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"failed 24h\", \"resource\", \".*\"), \"area\", \"jobs\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(label_replace(up == 0, \"resource\", \"$1\", \"job\", \"(.*)\"), \"detail\", \"$1\", \"instance\", \"(.*)\"), \"signal\", \"target down\", \"resource\", \".*\"), \"namespace\", \"\", \"resource\", \".*\"), \"area\", \"monitoring\", \"resource\", \".*\"))) or (label_replace(label_replace(label_replace(label_replace(label_replace(vector(0), \"area\", \"all clear\", \"__name__\", \".*\"), \"signal\", \"OK\", \"__name__\", \".*\"), \"namespace\", \"cluster\", \"__name__\", \".*\"), \"resource\", \"\", \"__name__\", \".*\"), \"detail\", \"\", \"__name__\", \".*\") unless on() (count((label_replace(label_replace(label_replace(label_replace(label_replace(((gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",ready!=\"True\"} == 1) or (gotk_resource_info{customresource_kind=~\"Kustomization|HelmRelease\",suspended=~\"True|true\"} == 1)), \"namespace\", \"$1\", \"exported_namespace\", \"(.*)\"), \"resource\", \"$1\", \"name\", \"(.*)\"), \"detail\", \"$1\", \"customresource_kind\", \"(.*)\"), \"signal\", \"not ready/suspended\", \"resource\", \".*\"), \"area\", \"flux\", \"resource\", \".*\") or (label_replace(label_replace(label_replace(label_replace(topk(8, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h]))) > 0, \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"restarts 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod, container, reason) (kube_pod_container_status_waiting_reason{reason=~\"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError\"} == 1), \"signal\", \"$1\", \"reason\", \"(.*)\"), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(max by (namespace, pod) (kube_pod_status_phase{phase=\"Pending\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"pod pending\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace((sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h])) > 0) * on(namespace, pod, container) group_left(reason) max by (namespace, pod, container, reason) (kube_pod_container_status_last_terminated_reason{reason=\"OOMKilled\"} == 1), \"resource\", \"$1\", \"pod\", \"(.*)\"), \"detail\", \"$1\", \"container\", \"(.*)\"), \"signal\", \"OOMKilled 6h\", \"resource\", \".*\"), \"area\", \"pods\", \"resource\", \".*\")) or (label_replace(label_replace(label_replace(label_replace((kube_deployment_status_replicas_unavailable > 0), \"resource\", \"$1\", \"deployment\", \"(.*)\"), \"detail\", \"Deployment\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace(((kube_statefulset_status_replicas - kube_statefulset_status_replicas_ready) > 0), \"resource\", \"$1\", \"statefulset\", \"(.*)\"), \"detail\", \"StatefulSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\") or label_replace(label_replace(label_replace(label_replace((kube_daemonset_status_number_unavailable > 0), \"resource\", \"$1\", \"daemonset\", \"(.*)\"), \"detail\", \"DaemonSet\", \"namespace\", \".*\"), \"signal\", \"unavailable\", \"namespace\", \".*\"), \"area\", \"workloads\", \"namespace\", \".*\")) or (label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=\"Ready\",status!=\"true\"} == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"signal\", \"NotReady\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure|NetworkUnavailable\",status=\"true\"} == 1, \"signal\", \"$1\", \"condition\", \"(.*)\"), \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"$1\", \"status\", \"(.*)\"), \"area\", \"nodes\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(kube_node_spec_unschedulable == 1, \"resource\", \"$1\", \"node\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"unschedulable\", \"resource\", \".*\"), \"area\", \"nodes\", \"resource\", \".*\")) or (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((volsync_volume_out_of_sync == 1), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"out of sync\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\") or label_replace(label_replace(label_replace(label_replace(label_replace(label_replace((increase(volsync_missed_intervals_total[24h]) > 0), \"namespace\", \"$1\", \"obj_namespace\", \"(.*)\"), \"resource\", \"$1\", \"obj_name\", \"(.*)\"), \"detail\", \"$1\", \"role\", \"(.*)\"), \"signal\", \"missed intervals 24h\", \"resource\", \".*\"), \"area\", \"backups\", \"resource\", \".*\"), \"detail\", \"$1\", \"method\", \"(.*)\")) or label_replace(label_replace(label_replace(label_replace(topk(10, sum by (namespace, job_name) (increase(kube_job_status_failed[24h]))) > 0, \"resource\", \"$1\", \"job_name\", \"(.*)\"), \"detail\", \"\", \"resource\", \".*\"), \"signal\", \"failed 24h\", \"resource\", \".*\"), \"area\", \"jobs\", \"resource\", \".*\") or label_replace(label_replace(label_replace(label_replace(label_replace(up == 0, \"resource\", \"$1\", \"job\", \"(.*)\"), \"detail\", \"$1\", \"instance\", \"(.*)\"), \"signal\", \"target down\", \"resource\", \".*\"), \"namespace\", \"\", \"resource\", \".*\"), \"area\", \"monitoring\", \"resource\", \".*\"))) > 0)))",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "endpoint": true,
+              "metrics_path": true,
+              "service": true,
+              "uid": true,
+              "phase": true,
+              "reason": true,
+              "condition": true,
+              "deployment": true,
+              "statefulset": true,
+              "daemonset": true,
+              "job_name": true,
+              "obj_namespace": true,
+              "obj_name": true,
+              "exported_namespace": true,
+              "customresource_kind": true,
+              "name": true,
+              "pod": true,
+              "container": true,
+              "node": true,
+              "job": true,
+              "instance": true,
+              "status": true,
+              "ready": true,
+              "suspended": true,
+              "role": true,
+              "method": true
+            },
+            "indexByName": {
+              "area": 0,
+              "signal": 1,
+              "namespace": 2,
+              "resource": 3,
+              "detail": 4,
+              "Value": 5
+            },
+            "renameByName": {
+              "Value": "value"
+            }
+          }
+        }
+      ],
+      "title": "Attention detail",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 41,
+  "tags": ["home-ops", "cockpit"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Home Ops Cockpit",
+  "uid": "home-ops-cockpit",
+  "version": 8,
+  "weekStart": ""
+}
