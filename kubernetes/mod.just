@@ -82,7 +82,6 @@ homepage-preview port="3000":
         -e "TZ=Pacific/Auckland" \
         -e "HOMEPAGE_VAR_PROWLARR_API_KEY=preview" \
         -e "HOMEPAGE_VAR_RADARR_API_KEY=preview" \
-        -e "HOMEPAGE_VAR_RADARR_SE_API_KEY=preview" \
         -e "HOMEPAGE_VAR_SABNZBD_API_KEY=preview" \
         -e "HOMEPAGE_VAR_SEERR_API_KEY=preview" \
         -e "HOMEPAGE_VAR_SONARR_API_KEY=preview" \

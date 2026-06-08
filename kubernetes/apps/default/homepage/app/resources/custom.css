@@ -1,19 +1,20 @@
 :root {
-  --hp-page-top: #101316;
-  --hp-page-mid: #15191b;
-  --hp-page-low: #191714;
-  --hp-panel: rgba(27, 34, 42, 0.82);
-  --hp-panel-soft: rgba(30, 38, 47, 0.58);
-  --hp-panel-strong: rgba(34, 43, 52, 0.9);
-  --hp-block: rgba(9, 14, 20, 0.24);
-  --hp-border: rgba(213, 219, 228, 0.12);
-  --hp-border-strong: rgba(213, 219, 228, 0.24);
-  --hp-text: rgb(239, 244, 248);
-  --hp-text-soft: rgba(226, 232, 240, 0.72);
-  --hp-text-muted: rgba(203, 213, 225, 0.56);
-  --hp-accent: #14b8a6;
-  --hp-warm: #f59e0b;
-  --hp-danger: #f43f5e;
+  --hp-bg-top: #111417;
+  --hp-bg-mid: #171a1c;
+  --hp-bg-low: #1b1814;
+  --hp-panel: rgba(31, 38, 45, 0.84);
+  --hp-panel-raised: rgba(37, 45, 53, 0.9);
+  --hp-panel-soft: rgba(22, 28, 34, 0.5);
+  --hp-metric: rgba(8, 12, 17, 0.24);
+  --hp-border: rgba(229, 234, 240, 0.12);
+  --hp-border-strong: rgba(229, 234, 240, 0.22);
+  --hp-text: rgb(240, 244, 248);
+  --hp-text-soft: rgba(226, 232, 240, 0.74);
+  --hp-text-muted: rgba(203, 213, 225, 0.58);
+  --hp-teal: #2dd4bf;
+  --hp-gold: #f59e0b;
+  --hp-blue: #60a5fa;
+  --hp-rose: #fb7185;
 }
 
 html {
@@ -23,8 +24,8 @@ html {
 body {
   letter-spacing: 0 !important;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 14%),
-    linear-gradient(135deg, var(--hp-page-top) 0%, var(--hp-page-mid) 52%, var(--hp-page-low) 100%) fixed !important;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 15rem),
+    linear-gradient(135deg, var(--hp-bg-top) 0%, var(--hp-bg-mid) 54%, var(--hp-bg-low) 100%) fixed !important;
 }
 
 body::before {
@@ -34,8 +35,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(20, 184, 166, 0.07), transparent 38%, rgba(245, 158, 11, 0.05)),
-    linear-gradient(180deg, transparent 0%, rgba(3, 7, 12, 0.4) 100%);
+    linear-gradient(90deg, rgba(45, 212, 191, 0.07), transparent 38%, rgba(245, 158, 11, 0.055)),
+    linear-gradient(180deg, transparent 0%, rgba(3, 7, 12, 0.45) 100%);
 }
 
 a,
@@ -57,47 +58,51 @@ main {
 }
 
 #information-widgets {
-  margin: 1.5rem 2rem 0 !important;
+  width: min(1780px, calc(100vw - 4rem)) !important;
+  margin: 1.7rem auto 0 !important;
+  padding: 0.7rem !important;
+  border: 1px solid var(--hp-border);
+  border-radius: 10px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018)),
+    rgba(22, 28, 34, 0.76) !important;
+  box-shadow: 0 18px 48px rgba(2, 6, 12, 0.28) !important;
 }
 
-#widgets-wrap {
+#widgets-wrap,
+#information-widgets-right {
   align-items: stretch !important;
-  gap: 0.7rem !important;
+  gap: 0.65rem !important;
 }
 
 #information-widgets-right {
-  flex-grow: 0 !important;
-  gap: 0.7rem !important;
-  justify-content: flex-end !important;
-  margin: 0 0 0 auto !important;
+  margin-left: auto !important;
 }
 
 #information-widgets .widget-container {
-  min-height: 58px;
+  min-height: 64px;
   margin-top: 0 !important;
-  border: 1px solid var(--hp-border);
+  border: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: 8px !important;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
-    var(--hp-panel) !important;
-  box-shadow: 0 14px 36px rgba(2, 6, 12, 0.18) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  box-shadow: none !important;
 }
 
 #information-widgets .information-widget-greeting {
   flex: 1 1 28rem;
   align-items: flex-start;
   justify-content: center !important;
-  padding-inline: 1.05rem !important;
+  padding-inline: 1.1rem !important;
   background:
-    linear-gradient(90deg, rgba(20, 184, 166, 0.18), rgba(245, 158, 11, 0.075)),
-    var(--hp-panel-strong) !important;
+    linear-gradient(90deg, rgba(45, 212, 191, 0.17), rgba(245, 158, 11, 0.08)),
+    rgba(255, 255, 255, 0.055) !important;
 }
 
 #information-widgets .information-widget-greeting::after {
-  content: "Media, network, and home operations";
+  content: "Media, queues, network, and home operations";
   color: var(--hp-text-muted);
   font-size: 0.76rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0 !important;
 }
 
@@ -105,106 +110,70 @@ main {
   display: none !important;
 }
 
-#information-widgets .information-widget-greeting span {
-  color: var(--hp-text) !important;
-  font-weight: 700;
-}
-
-#information-widgets .information-widget-icon {
-  color: var(--hp-text) !important;
-}
-
+#information-widgets .information-widget-greeting span,
 #information-widgets .primary-text {
-  color: var(--hp-text) !important;
-  font-weight: 650;
-}
-
-#information-widgets .secondary-text {
-  color: var(--hp-text-soft) !important;
-}
-
-#tabs {
-  margin: 0.9rem 2rem 0 !important;
-}
-
-#myTab {
-  gap: 0.25rem;
-  padding: 0.3rem;
-  border: 1px solid var(--hp-border);
-  border-radius: 8px !important;
-  background: rgba(27, 34, 42, 0.66) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03);
-}
-
-#myTab [role="tab"] {
-  margin: 0 !important;
-  border-radius: 6px !important;
-  color: var(--hp-text-soft) !important;
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-#myTab [role="tab"][aria-selected="true"] {
-  color: var(--hp-text) !important;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.055)),
-    rgba(20, 184, 166, 0.11) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(148, 241, 230, 0.24),
-    0 8px 20px rgba(2, 6, 12, 0.18);
-}
-
-#layout-groups {
-  margin: 1.05rem 1.75rem 0 !important;
-}
-
-main h2,
-main h3 {
-  letter-spacing: 0 !important;
-}
-
-main h2 {
   color: var(--hp-text) !important;
   font-weight: 700 !important;
 }
 
-main h3 {
+#information-widgets .secondary-text {
   color: var(--hp-text-soft) !important;
+  font-weight: 500 !important;
 }
 
-.service-group-icon,
-.bookmark-group-icon {
-  opacity: 0.9;
+#tabs,
+#myTab {
+  display: none !important;
+}
+
+#layout-groups {
+  width: min(1780px, calc(100vw - 4rem)) !important;
+  margin: 1.25rem auto 0 !important;
+}
+
+main h2,
+main h3,
+.service-group-name,
+.bookmark-group-name {
+  letter-spacing: 0 !important;
 }
 
 .service-group-name,
 .bookmark-group-name {
   color: var(--hp-text) !important;
-  font-size: 1.18rem !important;
-  font-weight: 700 !important;
+  font-size: 1.02rem !important;
+  font-weight: 760 !important;
 }
 
-.services-list {
-  gap: 0.55rem !important;
+.service-group-icon,
+.bookmark-group-icon {
+  color: var(--hp-text-soft) !important;
+  opacity: 0.92;
+}
+
+.services-list,
+.bookmarks-list {
+  gap: 0.58rem !important;
 }
 
 .service-card,
 .bookmark a {
+  overflow: hidden;
   border: 1px solid var(--hp-border);
   border-radius: 8px !important;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.012)),
     var(--hp-panel) !important;
-  box-shadow: 0 12px 30px rgba(2, 6, 12, 0.16) !important;
+  box-shadow: 0 12px 30px rgba(2, 6, 12, 0.17) !important;
 }
 
 .service-card:hover,
 .bookmark a:hover {
   border-color: var(--hp-border-strong) !important;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018)),
-    var(--hp-panel-strong) !important;
-  box-shadow: 0 18px 42px rgba(2, 6, 12, 0.22) !important;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.062), rgba(255, 255, 255, 0.02)),
+    var(--hp-panel-raised) !important;
+  box-shadow: 0 18px 42px rgba(2, 6, 12, 0.24) !important;
 }
 
 .service-title {
@@ -212,7 +181,7 @@ main h3 {
 }
 
 .service-icon {
-  width: 3.4rem !important;
+  width: 3.35rem !important;
   border-radius: 7px 0 0 7px;
   background: rgba(255, 255, 255, 0.035);
 }
@@ -223,31 +192,32 @@ main h3 {
 }
 
 .service-name {
-  padding-block: 0.78rem !important;
+  padding-block: 0.76rem !important;
 }
 
-.service-name > :first-child {
+.service-name > :first-child,
+.bookmark-name {
   color: var(--hp-text) !important;
-  font-size: 0.94rem;
-  font-weight: 690;
+  font-weight: 720 !important;
 }
 
-.service-description {
+.service-description,
+.bookmark-description {
   color: var(--hp-text-muted) !important;
   font-size: 0.78rem !important;
-  font-weight: 500 !important;
+  font-weight: 520 !important;
 }
 
 .service-block {
   min-height: 42px;
   border: 1px solid rgba(255, 255, 255, 0.035);
   border-radius: 6px !important;
-  background: var(--hp-block) !important;
+  background: var(--hp-metric) !important;
 }
 
 .service-block > :first-child {
-  color: var(--hp-text-soft);
-  font-weight: 600 !important;
+  color: var(--hp-text-soft) !important;
+  font-weight: 640 !important;
 }
 
 .service-block > :last-child {
@@ -255,33 +225,41 @@ main h3 {
   letter-spacing: 0 !important;
 }
 
-.services-group:nth-child(4n + 1) .service-card {
-  border-top-color: rgba(20, 184, 166, 0.24);
+.services-group:nth-child(4n + 1) .service-card,
+.bookmarks-group:nth-child(4n + 1) .bookmark a {
+  border-top-color: rgba(45, 212, 191, 0.28);
 }
 
-.services-group:nth-child(4n + 2) .service-card {
-  border-top-color: rgba(245, 158, 11, 0.22);
+.services-group:nth-child(4n + 2) .service-card,
+.bookmarks-group:nth-child(4n + 2) .bookmark a {
+  border-top-color: rgba(245, 158, 11, 0.26);
 }
 
-.services-group:nth-child(4n + 3) .service-card {
-  border-top-color: rgba(96, 165, 250, 0.2);
+.services-group:nth-child(4n + 3) .service-card,
+.bookmarks-group:nth-child(4n + 3) .bookmark a {
+  border-top-color: rgba(96, 165, 250, 0.24);
 }
 
-.services-group:nth-child(4n + 4) .service-card {
-  border-top-color: rgba(244, 114, 182, 0.18);
+.services-group:nth-child(4n + 4) .service-card,
+.bookmarks-group:nth-child(4n + 4) .bookmark a {
+  border-top-color: rgba(251, 113, 133, 0.22);
+}
+
+.bookmark a {
+  min-height: 56px;
 }
 
 .bookmark-icon {
-  background: rgba(20, 184, 166, 0.11) !important;
+  background:
+    linear-gradient(180deg, rgba(45, 212, 191, 0.16), rgba(45, 212, 191, 0.05)),
+    rgba(255, 255, 255, 0.035) !important;
 }
 
-.bookmark-name {
-  color: var(--hp-text) !important;
-  font-weight: 650;
-}
-
-.bookmark-description {
-  color: var(--hp-text-muted) !important;
+.bookmark .additional-info,
+.service-card .service-error,
+.service-card [class*="error"],
+.service-card [class*="status"] {
+  border-radius: 6px !important;
 }
 
 #footer {
@@ -290,8 +268,8 @@ main h3 {
 
 @media (max-width: 768px) {
   #information-widgets,
-  #tabs {
-    margin-inline: 1.25rem !important;
+  #layout-groups {
+    width: calc(100vw - 1.75rem) !important;
   }
 
   #widgets-wrap,

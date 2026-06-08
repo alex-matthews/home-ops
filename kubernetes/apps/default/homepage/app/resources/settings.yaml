@@ -17,47 +17,18 @@ quicklaunch:
   hideVisitURL: true
 layout:
   Now:
-    tab: Overview
-    icon: mdi-pulse
+    icon: mdi-view-dashboard-outline
   Queues:
-    tab: Overview
     icon: mdi-tray-arrow-down
   Network:
-    tab: Overview
-    icon: mdi-wan
+    icon: mdi-access-point-network
   Operations:
-    tab: Overview
     icon: mdi-monitor-dashboard
   Media Calendar:
-    tab: Media
-    style: row
-    columns: 1
     icon: mdi-calendar-month-outline
   Media:
-    tab: Media
-    style: row
-    columns: 3
     icon: sh-plex
   Downloads:
-    tab: Media
-    style: row
-    columns: 4
-    icon: mdi-download
-  Network Detail:
-    tab: Network
-    style: row
-    columns: 2
-    icon: mdi-access-point-network
-  Observability:
-    tab: Ops
-    style: row
-    columns: 3
-    icon: mdi-chart-line
-  Repositories:
-    tab: Ops
-    columns: 2
-    icon: mdi-source-branch
-  References:
-    tab: Ops
-    columns: 2
-    icon: mdi-book-open-variant
+    icon: mdi-download-network-outline
+  Links:
+    icon: mdi-link-variant
