@@ -1,0 +1,128 @@
+:root {
+  --hp-page-top: #111827;
+  --hp-page-mid: #15191e;
+  --hp-page-low: #1a1715;
+  --hp-panel: rgba(18, 24, 33, 0.74);
+  --hp-panel-strong: rgba(23, 31, 42, 0.88);
+  --hp-border: rgba(148, 163, 184, 0.16);
+  --hp-border-strong: rgba(148, 163, 184, 0.26);
+  --hp-text-soft: rgba(226, 232, 240, 0.72);
+  --hp-accent: #14b8a6;
+  --hp-warm: #f59e0b;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  letter-spacing: 0 !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 18%),
+    linear-gradient(135deg, var(--hp-page-top) 0%, var(--hp-page-mid) 48%, var(--hp-page-low) 100%) fixed !important;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(20, 184, 166, 0.075), transparent 35%, rgba(245, 158, 11, 0.055)),
+    linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.34) 100%);
+}
+
+a,
+button {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+a:hover,
+button:hover {
+  transform: translateY(-1px);
+}
+
+main {
+  padding-bottom: 4rem;
+}
+
+main h2,
+main h3 {
+  letter-spacing: 0 !important;
+}
+
+main h2 {
+  color: rgb(241, 245, 249) !important;
+}
+
+main h3 {
+  color: var(--hp-text-soft) !important;
+}
+
+main a[href],
+main button,
+main [class*="card"],
+main [class*="service"] {
+  border-radius: 8px !important;
+}
+
+main a[href] {
+  border-color: var(--hp-border) !important;
+}
+
+main a[href]:hover {
+  border-color: var(--hp-border-strong) !important;
+  box-shadow: 0 14px 42px rgba(2, 6, 23, 0.22);
+}
+
+main section:first-of-type a[href] {
+  border-color: rgba(20, 184, 166, 0.28) !important;
+}
+
+main section:first-of-type a[href]:hover {
+  border-color: rgba(20, 184, 166, 0.42) !important;
+}
+
+main section:nth-of-type(2) a[href] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 52%),
+    var(--hp-panel-strong) !important;
+}
+
+main section:nth-of-type(3) a[href] {
+  background:
+    linear-gradient(180deg, rgba(20, 184, 166, 0.045), transparent 58%),
+    var(--hp-panel) !important;
+}
+
+main section:nth-of-type(4) a[href] {
+  background:
+    linear-gradient(180deg, rgba(245, 158, 11, 0.04), transparent 58%),
+    var(--hp-panel) !important;
+}
+
+main section:nth-of-type(5) a[href] {
+  background:
+    linear-gradient(180deg, rgba(125, 211, 252, 0.04), transparent 58%),
+    var(--hp-panel) !important;
+}
+
+@media (max-width: 768px) {
+  main {
+    padding-inline: 0.75rem;
+  }
+
+  main section {
+    margin-bottom: 1.5rem !important;
+  }
+
+  main a[href],
+  main button {
+    transform: none !important;
+  }
+}

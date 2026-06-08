@@ -10,6 +10,11 @@ configMapGenerator:
   - name: homepage-configmap
     files:
       - ./resources/bookmarks.yaml
+      - ./resources/custom.css
+      - ./resources/custom.js
+      - ./resources/docker.yaml
+      - ./resources/kubernetes.yaml
+      - ./resources/proxmox.yaml
       - ./resources/services.yaml
       - ./resources/settings.yaml
       - ./resources/widgets.yaml

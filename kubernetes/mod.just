@@ -50,6 +50,46 @@ prune-pods:
         kubectl delete pods -A --field-selector status.phase="$phase" --ignore-not-found=true
     done
 
+[doc('Preview Homepage locally')]
+[script]
+homepage-preview port="3000":
+    if ! docker info >/dev/null 2>&1; then
+        echo "Docker is not running. Start Colima or Docker Desktop, then re-run this preview."
+        exit 1
+    fi
+
+    repo_dir="{{ justfile_directory() }}"
+    app_dir="${repo_dir}/kubernetes/apps/default/homepage/app"
+    config_dir="${app_dir}/resources"
+    mkdir -p "${repo_dir}/.private"
+    tmp_dir="$(mktemp -d "${repo_dir}/.private/homepage-preview.XXXXXX")"
+    image="$(yq -r '.spec.values.controllers.homepage.containers.app.image | .repository + ":" + .tag' "${app_dir}/helmrelease.yaml")"
+
+    cleanup() {
+        rm -rf "${tmp_dir}"
+    }
+    trap cleanup EXIT
+
+    cp "${config_dir}"/* "${tmp_dir}/"
+    yq '.hideErrors = true' "${config_dir}/settings.yaml" > "${tmp_dir}/settings.yaml"
+
+    docker run --rm \
+        --name "homepage-preview-{{ port }}" \
+        --pull missing \
+        -p "127.0.0.1:{{ port }}:3000" \
+        -e "HOMEPAGE_ALLOWED_HOSTS=localhost:{{ port }},127.0.0.1:{{ port }}" \
+        -e "LOG_TARGETS=stdout" \
+        -e "TZ=Pacific/Auckland" \
+        -e "HOMEPAGE_VAR_PROWLARR_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_RADARR_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_RADARR_SE_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_SABNZBD_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_SEERR_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_SONARR_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_TAUTULLI_API_KEY=preview" \
+        -v "${tmp_dir}:/app/config:ro" \
+        "${image}"
+
 [doc('Snapshot all VolSync-backed PVCs')]
 [script]
 snapshot:

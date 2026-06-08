@@ -3,7 +3,7 @@
     - Media Calendar:
         href: https://sonarr.${SECRET_DOMAIN}
         description: Releases
-        icon: sh-calendar
+        icon: mdi-calendar-month-outline
         widget:
           type: calendar
           view: agenda

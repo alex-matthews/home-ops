@@ -7,6 +7,7 @@ target: _blank
 hideVersion: true
 disableUpdateCheck: true
 fullWidth: true
+maxGroupColumns: 1
 headerStyle: boxedWidgets
 iconStyle: theme
 statusStyle: dot
@@ -18,7 +19,7 @@ layout:
   Today:
     style: row
     columns: 1
-    icon: sh-calendar
+    icon: mdi-calendar-month-outline
   At a Glance:
     style: row
     columns: 4
