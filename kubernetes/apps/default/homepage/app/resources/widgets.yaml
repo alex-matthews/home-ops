@@ -1,4 +1,7 @@
 ---
+- greeting:
+    text: Homepage
+    text_size: 2xl
 - openmeteo:
     label: Home
     latitude: -36.8485
@@ -8,6 +11,9 @@
     cache: 5
     format:
       maximumFractionDigits: 1
+- unifi_console:
+    url: https://192.168.1.1
+    key: "{{HOMEPAGE_VAR_UNIFI_API_KEY}}"
 - datetime:
     text_size: xl
     format:

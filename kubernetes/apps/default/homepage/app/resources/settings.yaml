@@ -19,9 +19,9 @@ layout:
   Now:
     tab: Overview
     icon: mdi-pulse
-  Transfer Status:
+  Queues:
     tab: Overview
-    icon: mdi-swap-horizontal
+    icon: mdi-tray-arrow-down
   Network:
     tab: Overview
     icon: mdi-wan
@@ -41,8 +41,8 @@ layout:
   Downloads:
     tab: Media
     style: row
-    columns: 3
-    icon: sh-qbittorrent
+    columns: 4
+    icon: mdi-download
   Network Detail:
     tab: Network
     style: row

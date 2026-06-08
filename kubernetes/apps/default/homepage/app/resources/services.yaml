@@ -20,7 +20,7 @@
           key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
           fields: ["pending", "approved", "completed"]
 
-- Transfer Status:
+- Queues:
     - SABnzbd:
         href: https://sabnzbd.${SECRET_DOMAIN}
         description: Usenet queue
@@ -118,11 +118,6 @@
           key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
           fields: ["wanted", "queued", "series"]
           enableQueue: true
-    - Bazarr:
-        href: https://bazarr.${SECRET_DOMAIN}
-        description: Subtitles
-        icon: sh-bazarr
-        siteMonitor: http://bazarr.default.svc.cluster.local
     - Prowlarr:
         href: https://prowlarr.${SECRET_DOMAIN}
         description: Indexers
@@ -144,6 +139,15 @@
         description: Torrents
         icon: sh-qbittorrent
         siteMonitor: http://qbittorrent.default.svc.cluster.local
+    - SABnzbd:
+        href: https://sabnzbd.${SECRET_DOMAIN}
+        description: Usenet
+        icon: sh-sabnzbd
+        widget:
+          type: sabnzbd
+          url: http://sabnzbd.default.svc.cluster.local:8080
+          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+          fields: ["rate", "queue", "timeleft"]
     - Autobrr:
         href: https://autobrr.${SECRET_DOMAIN}
         description: Release filters
@@ -152,7 +156,7 @@
     - Qui:
         href: https://qui.${SECRET_DOMAIN}
         description: Torrent controls
-        icon: sh-qbittorrent
+        icon: mdi-playlist-check
         siteMonitor: http://qui.default.svc.cluster.local
 
 - Network Detail:
