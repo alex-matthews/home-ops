@@ -1,8 +1,8 @@
 ---
 - Now:
-    - Plex:
+    - Plex Activity:
         href: https://plex.${SECRET_DOMAIN}
-        description: Current streams
+        description: Now playing
         icon: sh-plex
         widget:
           type: tautulli
@@ -11,9 +11,9 @@
           hide_errors: true
           enableUser: true
           showEpisodeNumber: true
-    - Seerr:
+    - Requests:
         href: https://seerr.${SECRET_DOMAIN}
-        description: Requests
+        description: Media requests
         icon: sh-overseerr
         widget:
           type: seerr
@@ -21,63 +21,14 @@
           key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
           hide_errors: true
           fields: ["pending", "approved", "completed"]
-
-- Queues:
-    - SABnzbd:
-        href: https://sabnzbd.${SECRET_DOMAIN}
-        description: Usenet queue
-        icon: sh-sabnzbd
-        widget:
-          type: sabnzbd
-          url: http://sabnzbd.default.svc.cluster.local:8080
-          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
-          hide_errors: true
-          fields: ["rate", "queue", "timeleft"]
-    - qBittorrent:
-        href: https://qbittorrent.${SECRET_DOMAIN}
-        description: Torrents
-        icon: sh-qbittorrent
-
-- Network:
-    - Gatus:
-        href: https://status.${SECRET_DOMAIN}
-        description: Service health
-        icon: sh-gatus
-        widget:
-          type: gatus
-          url: http://gatus.observability.svc.cluster.local
-          hide_errors: true
-          fields: ["up", "down", "uptime"]
-    - UniFi:
-        href: https://192.168.1.1
-        description: WAN and clients
-        icon: mdi-router-network
-        widget:
-          type: unifi
-          url: https://192.168.1.1
-          key: "{{HOMEPAGE_VAR_UNIFI_API_KEY}}"
-          hide_errors: true
-          fields: ["wan", "lan_users", "wlan_users", "uptime"]
-
-- Operations:
-    - Grafana:
-        href: https://grafana.${SECRET_DOMAIN}
-        description: Dashboards
-        icon: sh-grafana
-    - Alertmanager:
-        href: https://alertmanager.${SECRET_DOMAIN}
-        description: Alert routing
-        icon: sh-prometheus
-
-- Media Calendar:
     - Releases:
         href: https://sonarr.${SECRET_DOMAIN}
-        description: Series and movies
+        description: Calendar
         icon: mdi-calendar-month-outline
         widget:
           type: calendar
           view: agenda
-          maxEvents: 18
+          maxEvents: 12
           showTime: true
           timezone: Pacific/Auckland
           integrations:
@@ -91,6 +42,39 @@
               service_name: Radarr
               color: amber
               baseUrl: https://radarr.${SECRET_DOMAIN}
+
+- Downloads:
+    - qBittorrent:
+        href: https://qbittorrent.${SECRET_DOMAIN}
+        description: Torrent queue
+        icon: sh-qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://qbittorrent.default.svc.cluster.local
+          hide_errors: true
+          enableLeechProgress: true
+          enableLeechSize: true
+          fields: ["leech", "download", "seed", "upload"]
+    - SABnzbd:
+        href: https://sabnzbd.${SECRET_DOMAIN}
+        description: Usenet queue
+        icon: sh-sabnzbd
+        widget:
+          type: sabnzbd
+          url: http://sabnzbd.default.svc.cluster.local:8080
+          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+          hide_errors: true
+          fields: ["rate", "queue", "timeleft"]
+    - Autobrr:
+        href: https://autobrr.${SECRET_DOMAIN}
+        description: Release filters
+        icon: sh-autobrr
+        widget:
+          type: autobrr
+          url: http://autobrr.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_AUTOBRR_API_KEY}}"
+          hide_errors: true
+          fields: ["approvedPushes", "rejectedPushes", "filters", "indexers"]
 
 - Media:
     - Radarr:
@@ -125,48 +109,55 @@
           key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
           hide_errors: true
           fields: ["numberOfQueries", "numberOfGrabs", "numberOfFailQueries", "numberOfFailGrabs"]
-    - Tautulli:
-        href: https://tautulli.${SECRET_DOMAIN}
-        description: Plex activity
-        icon: sh-tautulli
 
-- Downloads:
-    - qBittorrent:
-        href: https://qbittorrent.${SECRET_DOMAIN}
-        description: Torrents
-        icon: sh-qbittorrent
-    - SABnzbd:
-        href: https://sabnzbd.${SECRET_DOMAIN}
-        description: Usenet
-        icon: sh-sabnzbd
+- Network:
+    - UniFi:
+        href: https://192.168.1.1
+        description: Gateway and clients
+        icon: sh-ubiquiti-unifi
         widget:
-          type: sabnzbd
-          url: http://sabnzbd.default.svc.cluster.local:8080
-          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+          type: unifi
+          url: https://192.168.1.1
+          key: "{{HOMEPAGE_VAR_UNIFI_API_KEY}}"
           hide_errors: true
-          fields: ["rate", "queue", "timeleft"]
-    - Autobrr:
-        href: https://autobrr.${SECRET_DOMAIN}
-        description: Release filters
-        icon: sh-autobrr
-    - Qui:
-        href: https://qui.${SECRET_DOMAIN}
-        description: Torrent controls
-        icon: mdi-format-list-checks
+          fields: ["wan", "lan_users", "wlan_users", "uptime"]
+    - Gatus:
+        href: https://status.${SECRET_DOMAIN}
+        description: Service checks
+        icon: sh-gatus
+        widget:
+          type: gatus
+          url: http://gatus.observability.svc.cluster.local
+          hide_errors: true
+          fields: ["up", "down", "uptime"]
 
-- Links:
+- Operations:
+    - Grafana:
+        href: https://grafana.${SECRET_DOMAIN}
+        description: Dashboards
+        icon: sh-grafana
+    - Alertmanager:
+        href: https://alertmanager.${SECRET_DOMAIN}
+        description: Alert routes
+        icon: sh-prometheus
     - Home Ops:
         href: https://github.com/alex-matthews/home-ops
-        description: Cluster repository
+        description: GitOps repository
         icon: sh-github
+
+- Shortcuts:
     - KubeSearch:
         href: https://kubesearch.dev/
-        description: Public manifests
-        icon: mdi-kubernetes
+        description: Manifest examples
+        icon: sh-kubernetes
     - Homepage Docs:
         href: https://gethomepage.dev/
-        description: Configuration reference
+        description: Widget reference
         icon: sh-homepage
+    - Qui:
+        href: https://qui.${SECRET_DOMAIN}
+        description: qBittorrent controls
+        icon: sh-qbittorrent
     - Konflate:
         href: https://konflate.${SECRET_DOMAIN}
         description: Manifest previews

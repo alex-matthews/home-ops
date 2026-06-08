@@ -87,6 +87,7 @@ homepage-preview port="3000":
         -e "HOMEPAGE_VAR_SONARR_API_KEY=preview" \
         -e "HOMEPAGE_VAR_TAUTULLI_API_KEY=preview" \
         -e "HOMEPAGE_VAR_UNIFI_API_KEY=preview" \
+        -e "HOMEPAGE_VAR_AUTOBRR_API_KEY=preview" \
         -v "${tmp_dir}:/app/config:ro" \
         "${image}"
 

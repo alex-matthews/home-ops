@@ -6,6 +6,7 @@ color: slate
 target: _blank
 hideVersion: true
 disableUpdateCheck: true
+hideErrors: true
 fullWidth: true
 maxGroupColumns: 4
 headerStyle: boxedWidgets
@@ -17,18 +18,14 @@ quicklaunch:
   hideVisitURL: true
 layout:
   Now:
-    icon: mdi-view-dashboard-outline
-  Queues:
-    icon: mdi-tray-arrow-down
+    icon: mdi-view-dashboard-variant-outline
+  Downloads:
+    icon: mdi-download-network-outline
+  Media:
+    icon: mdi-movie-open-outline
   Network:
     icon: mdi-access-point-network
   Operations:
     icon: mdi-monitor-dashboard
-  Media Calendar:
-    icon: mdi-calendar-month-outline
-  Media:
-    icon: sh-plex
-  Downloads:
-    icon: mdi-download-network-outline
-  Links:
+  Shortcuts:
     icon: mdi-link-variant
