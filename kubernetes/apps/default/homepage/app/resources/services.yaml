@@ -1,5 +1,43 @@
 ---
-- Requests:
+- Today:
+    - Media Calendar:
+        href: https://sonarr.${SECRET_DOMAIN}
+        description: Releases
+        icon: sh-calendar
+        widget:
+          type: calendar
+          view: agenda
+          maxEvents: 12
+          showTime: true
+          timezone: Pacific/Auckland
+          integrations:
+            - type: sonarr
+              service_group: Media
+              service_name: Sonarr
+              color: sky
+              baseUrl: https://sonarr.${SECRET_DOMAIN}
+            - type: radarr
+              service_group: Media
+              service_name: Radarr
+              color: amber
+              baseUrl: https://radarr.${SECRET_DOMAIN}
+            - type: radarr
+              service_group: Media
+              service_name: Radarr SE
+              color: orange
+              baseUrl: https://radarr-se.${SECRET_DOMAIN}
+
+- At a Glance:
+    - Plex:
+        href: https://plex.${SECRET_DOMAIN}
+        description: Current streams
+        icon: sh-plex
+        widget:
+          type: tautulli
+          url: http://tautulli.default.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_TAUTULLI_API_KEY}}"
+          enableUser: true
+          showEpisodeNumber: true
     - Seerr:
         href: https://seerr.${SECRET_DOMAIN}
         description: Requests
@@ -9,23 +47,25 @@
           url: http://seerr.default.svc.cluster.local
           key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
           fields: ["pending", "approved", "completed"]
-    - Maintainerr:
-        href: https://maintainerr.${SECRET_DOMAIN}
-        description: Retention
-        icon: sh-maintainerr
-        siteMonitor: http://maintainerr.default.svc.cluster.local
-
-- Library:
-    - Plex:
-        href: https://plex.${SECRET_DOMAIN}
-        description: Streaming
-        icon: sh-plex
+    - SABnzbd:
+        href: https://sabnzbd.${SECRET_DOMAIN}
+        description: Usenet queue
+        icon: sh-sabnzbd
         widget:
-          type: tautulli
-          url: http://tautulli.default.svc.cluster.local
-          key: "{{HOMEPAGE_VAR_TAUTULLI_API_KEY}}"
-          enableUser: true
-          showEpisodeNumber: true
+          type: sabnzbd
+          url: http://sabnzbd.default.svc.cluster.local:8080
+          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
+          fields: ["rate", "queue", "timeleft"]
+    - Gatus:
+        href: https://status.${SECRET_DOMAIN}
+        description: Service health
+        icon: sh-gatus
+        widget:
+          type: gatus
+          url: http://gatus.observability.svc.cluster.local
+          fields: ["up", "down", "uptime"]
+
+- Media:
     - Radarr:
         href: https://radarr.${SECRET_DOMAIN}
         description: Movies
@@ -70,22 +110,18 @@
           url: http://prowlarr.default.svc.cluster.local
           key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
           fields: ["numberOfQueries", "numberOfGrabs", "numberOfFailQueries", "numberOfFailGrabs"]
+    - Tautulli:
+        href: https://tautulli.${SECRET_DOMAIN}
+        description: Plex analytics
+        icon: sh-tautulli
+        siteMonitor: http://tautulli.default.svc.cluster.local
 
-- Transfers:
+- Downloads:
     - qBittorrent:
         href: https://qbittorrent.${SECRET_DOMAIN}
         description: Torrents
         icon: sh-qbittorrent
         siteMonitor: http://qbittorrent.default.svc.cluster.local
-    - SABnzbd:
-        href: https://sabnzbd.${SECRET_DOMAIN}
-        description: Usenet
-        icon: sh-sabnzbd
-        widget:
-          type: sabnzbd
-          url: http://sabnzbd.default.svc.cluster.local:8080
-          key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
-          fields: ["rate", "queue", "timeleft"]
     - Autobrr:
         href: https://autobrr.${SECRET_DOMAIN}
         description: Release filters
@@ -97,29 +133,14 @@
         icon: sh-qbittorrent
         siteMonitor: http://qui.default.svc.cluster.local
 
-- Insights:
-    - Tautulli:
-        href: https://tautulli.${SECRET_DOMAIN}
-        description: Plex analytics
-        icon: sh-tautulli
-        siteMonitor: http://tautulli.default.svc.cluster.local
-
 - Operations:
     - Grafana:
         href: https://grafana.${SECRET_DOMAIN}
-        description: Dashboards
+        description: Investigate
         icon: sh-grafana
-    - Gatus:
-        href: https://status.${SECRET_DOMAIN}
-        description: Status checks
-        icon: sh-gatus
-        widget:
-          type: gatus
-          url: http://gatus.observability.svc.cluster.local
-          fields: ["up", "down", "uptime"]
     - Alertmanager:
         href: https://alertmanager.${SECRET_DOMAIN}
-        description: Alert routing
+        description: Alerts
         icon: sh-prometheus
     - Konflate:
         href: https://konflate.${SECRET_DOMAIN}

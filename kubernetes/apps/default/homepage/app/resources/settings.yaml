@@ -1,6 +1,6 @@
 ---
-title: Home Ops
-description: Media and cluster operations cockpit
+title: Homepage
+description: Daily front door for media and home operations
 theme: dark
 color: slate
 target: _blank
@@ -15,23 +15,23 @@ quicklaunch:
   hideInternetSearch: true
   hideVisitURL: true
 layout:
-  Requests:
+  Today:
     style: row
-    columns: 2
+    columns: 1
+    icon: sh-calendar
+  At a Glance:
+    style: row
+    columns: 4
     icon: sh-overseerr
-  Library:
+  Media:
     style: row
     columns: 3
     icon: sh-plex
-  Transfers:
+  Downloads:
     style: row
-    columns: 4
+    columns: 3
     icon: sh-qbittorrent
-  Insights:
-    style: row
-    columns: 2
-    icon: sh-tautulli
   Operations:
     style: row
-    columns: 4
+    columns: 3
     icon: sh-grafana
