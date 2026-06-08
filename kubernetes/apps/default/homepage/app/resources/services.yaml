@@ -1,33 +1,5 @@
 ---
-- Today:
-    - Media Calendar:
-        href: https://sonarr.${SECRET_DOMAIN}
-        description: Releases
-        icon: mdi-calendar-month-outline
-        widget:
-          type: calendar
-          view: agenda
-          maxEvents: 12
-          showTime: true
-          timezone: Pacific/Auckland
-          integrations:
-            - type: sonarr
-              service_group: Media
-              service_name: Sonarr
-              color: sky
-              baseUrl: https://sonarr.${SECRET_DOMAIN}
-            - type: radarr
-              service_group: Media
-              service_name: Radarr
-              color: amber
-              baseUrl: https://radarr.${SECRET_DOMAIN}
-            - type: radarr
-              service_group: Media
-              service_name: Radarr SE
-              color: orange
-              baseUrl: https://radarr-se.${SECRET_DOMAIN}
-
-- At a Glance:
+- Now:
     - Plex:
         href: https://plex.${SECRET_DOMAIN}
         description: Current streams
@@ -47,6 +19,8 @@
           url: http://seerr.default.svc.cluster.local
           key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
           fields: ["pending", "approved", "completed"]
+
+- Transfer Status:
     - SABnzbd:
         href: https://sabnzbd.${SECRET_DOMAIN}
         description: Usenet queue
@@ -56,6 +30,13 @@
           url: http://sabnzbd.default.svc.cluster.local:8080
           key: "{{HOMEPAGE_VAR_SABNZBD_API_KEY}}"
           fields: ["rate", "queue", "timeleft"]
+    - qBittorrent:
+        href: https://qbittorrent.${SECRET_DOMAIN}
+        description: Torrent client
+        icon: sh-qbittorrent
+        siteMonitor: http://qbittorrent.default.svc.cluster.local
+
+- Network:
     - Gatus:
         href: https://status.${SECRET_DOMAIN}
         description: Service health
@@ -64,6 +45,57 @@
           type: gatus
           url: http://gatus.observability.svc.cluster.local
           fields: ["up", "down", "uptime"]
+    - UniFi:
+        href: https://192.168.1.1
+        description: WAN and clients
+        icon: mdi-router-network
+        widget:
+          type: unifi
+          url: https://192.168.1.1
+          key: "{{HOMEPAGE_VAR_UNIFI_API_KEY}}"
+          fields: ["wan", "lan_users", "wlan_users", "uptime"]
+
+- Operations:
+    - Grafana:
+        href: https://grafana.${SECRET_DOMAIN}
+        description: Metrics and logs
+        icon: sh-grafana
+    - Alertmanager:
+        href: https://alertmanager.${SECRET_DOMAIN}
+        description: Alert routing
+        icon: sh-prometheus
+    - Konflate:
+        href: https://konflate.${SECRET_DOMAIN}
+        description: Manifest previews
+        icon: sh-kubernetes
+
+- Media Calendar:
+    - Releases:
+        href: https://sonarr.${SECRET_DOMAIN}
+        description: Series and movies
+        icon: mdi-calendar-month-outline
+        widget:
+          type: calendar
+          view: agenda
+          maxEvents: 18
+          showTime: true
+          timezone: Pacific/Auckland
+          integrations:
+            - type: sonarr
+              service_group: Media
+              service_name: Sonarr
+              color: sky
+              baseUrl: https://sonarr.${SECRET_DOMAIN}
+            - type: radarr
+              service_group: Media
+              service_name: Radarr
+              color: amber
+              baseUrl: https://radarr.${SECRET_DOMAIN}
+            - type: radarr
+              service_group: Media
+              service_name: Radarr SE
+              color: orange
+              baseUrl: https://radarr-se.${SECRET_DOMAIN}
 
 - Media:
     - Radarr:
@@ -74,16 +106,6 @@
           type: radarr
           url: http://radarr.default.svc.cluster.local
           key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
-          fields: ["wanted", "missing", "queued"]
-          enableQueue: true
-    - Radarr SE:
-        href: https://radarr-se.${SECRET_DOMAIN}
-        description: Special editions
-        icon: sh-radarr
-        widget:
-          type: radarr
-          url: http://radarr-se.default.svc.cluster.local
-          key: "{{HOMEPAGE_VAR_RADARR_SE_API_KEY}}"
           fields: ["wanted", "missing", "queued"]
           enableQueue: true
     - Sonarr:
@@ -112,7 +134,7 @@
           fields: ["numberOfQueries", "numberOfGrabs", "numberOfFailQueries", "numberOfFailGrabs"]
     - Tautulli:
         href: https://tautulli.${SECRET_DOMAIN}
-        description: Plex analytics
+        description: Plex activity
         icon: sh-tautulli
         siteMonitor: http://tautulli.default.svc.cluster.local
 
@@ -133,16 +155,35 @@
         icon: sh-qbittorrent
         siteMonitor: http://qui.default.svc.cluster.local
 
-- Operations:
+- Network Detail:
+    - UniFi:
+        href: https://192.168.1.1
+        description: Gateway health
+        icon: mdi-router-network
+        widget:
+          type: unifi
+          url: https://192.168.1.1
+          key: "{{HOMEPAGE_VAR_UNIFI_API_KEY}}"
+          fields: ["wan", "lan_users", "wlan_users", "uptime"]
+    - Gatus:
+        href: https://status.${SECRET_DOMAIN}
+        description: Service checks
+        icon: sh-gatus
+        widget:
+          type: gatus
+          url: http://gatus.observability.svc.cluster.local
+          fields: ["up", "down", "uptime"]
+
+- Observability:
     - Grafana:
         href: https://grafana.${SECRET_DOMAIN}
-        description: Investigate
+        description: Metrics and logs
         icon: sh-grafana
     - Alertmanager:
         href: https://alertmanager.${SECRET_DOMAIN}
-        description: Alerts
+        description: Alert routing
         icon: sh-prometheus
     - Konflate:
         href: https://konflate.${SECRET_DOMAIN}
-        description: Render previews
+        description: Manifest previews
         icon: sh-kubernetes

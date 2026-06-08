@@ -7,7 +7,7 @@ target: _blank
 hideVersion: true
 disableUpdateCheck: true
 fullWidth: true
-maxGroupColumns: 1
+maxGroupColumns: 4
 headerStyle: boxedWidgets
 iconStyle: theme
 statusStyle: dot
@@ -16,23 +16,48 @@ quicklaunch:
   hideInternetSearch: true
   hideVisitURL: true
 layout:
-  Today:
+  Now:
+    tab: Overview
+    icon: mdi-pulse
+  Transfer Status:
+    tab: Overview
+    icon: mdi-swap-horizontal
+  Network:
+    tab: Overview
+    icon: mdi-wan
+  Operations:
+    tab: Overview
+    icon: mdi-monitor-dashboard
+  Media Calendar:
+    tab: Media
     style: row
     columns: 1
     icon: mdi-calendar-month-outline
-  At a Glance:
-    style: row
-    columns: 4
-    icon: sh-overseerr
   Media:
+    tab: Media
     style: row
     columns: 3
     icon: sh-plex
   Downloads:
+    tab: Media
     style: row
     columns: 3
     icon: sh-qbittorrent
-  Operations:
+  Network Detail:
+    tab: Network
+    style: row
+    columns: 2
+    icon: mdi-access-point-network
+  Observability:
+    tab: Ops
     style: row
     columns: 3
-    icon: sh-grafana
+    icon: mdi-chart-line
+  Repositories:
+    tab: Ops
+    columns: 2
+    icon: mdi-source-branch
+  References:
+    tab: Ops
+    columns: 2
+    icon: mdi-book-open-variant

@@ -1,10 +1,16 @@
 ---
+- openmeteo:
+    label: Home
+    latitude: -36.8485
+    longitude: 174.7633
+    timezone: Pacific/Auckland
+    units: metric
+    cache: 5
+    format:
+      maximumFractionDigits: 1
 - datetime:
     text_size: xl
     format:
       dateStyle: long
       timeStyle: short
       hour12: false
-- search:
-    provider: duckduckgo
-    target: _blank
