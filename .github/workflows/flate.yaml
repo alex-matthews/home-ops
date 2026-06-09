@@ -14,9 +14,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  FLATE_PATH: ./kubernetes/flux/cluster
-
 jobs:
   filter:
     name: Flate - Filter
@@ -28,10 +25,7 @@ jobs:
         id: changed-files
         uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
-          patterns: |-
-            .github/workflows/flate.yaml
-            kubernetes/**/*
-            !kubernetes/mod.just
+          patterns: kubernetes/**/*
 
   test:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
@@ -49,7 +43,8 @@ jobs:
         uses: home-operations/flate/action@2e60db3b5de50864088cf597c2ca801dc274793b # v0.3.2
 
       - name: Run Flate
-        run: flate test all --allow-missing-secrets
+        id: flate
+        run: flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 
   success:
     if: ${{ !cancelled() }}
