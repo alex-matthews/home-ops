@@ -12,6 +12,8 @@ spec:
   values:
     config:
       repo: github://alex-matthews/home-ops
+    secret:
+      existingSecret: konflate-webhook-token-secret
     httpRoute:
       enabled: true
       parentRefs:
