@@ -15,7 +15,7 @@ spec:
     httpRoute:
       enabled: true
       parentRefs:
-        - name: envoy-internal
+        - name: envoy-external
           namespace: network
       hostnames:
         - "{{ .Release.Name }}.${SECRET_DOMAIN}"
@@ -26,5 +26,4 @@ spec:
       requests:
         cpu: 50m
       limits:
-        cpu: 4000m
-        memory: 4Gi
+        memory: 1Gi
