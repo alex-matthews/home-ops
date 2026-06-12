@@ -79,6 +79,9 @@ This lets docs-only or non-render-affecting changes pass cleanly while still
 blocking Kubernetes changes when rendering fails. Konflate is advisory and is
 not a required branch check.
 
+See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
+repository conventions.
+
 ## Local Workflow
 
 Local environment variables are defined in `.mise/config.toml`; local secrets and auth
@@ -96,55 +99,10 @@ mise install
 Talos operations, and VolSync restore helpers. CI does not route through `just`
 unless a workflow has a specific reason to do so.
 
-## Validation
+## Operations Docs
 
-Use the smallest validation set that matches the change.
-
-The commands below assume the repo's `.mise/config.toml` environment is loaded.
-
-Formatting and workflow changes:
-
-```sh
-oxfmt --check .
-zizmor --offline .github/workflows/*.yaml
-```
-
-Flux and Kubernetes changes:
-
-```sh
-kubectl kustomize kubernetes/apps/flux-system
-flate test all --allow-missing-secrets
-```
-
-Image-affecting Kubernetes changes:
-
-```sh
-FLATE_BASE=main FLATE_OUTPUT=json flate diff images
-```
-
-App-specific changes can usually be rendered directly:
-
-```sh
-kubectl kustomize kubernetes/apps/<namespace>/<app>/app
-```
-
-## Change Safety
-
-This is a live GitOps repository. Take extra care with:
-
-- SOPS-encrypted files, which should not be reformatted or reshaped.
-- `ExternalSecret` names, target secret names, and secret key names.
-- PVC names, storage classes, access modes, and `dataSourceRef` fields.
-- VolSync `ReplicationSource` and `ReplicationDestination` objects.
-- Backup retention, schedules, repository secrets, and restore wiring.
-- Core platform components such as Rook-Ceph, Cilium, Flux, External Secrets, and
-  cert-manager.
-
-Storage, backup, and operator changes should include a clear validation or
-rollback path.
-
-See [Storage and Backups](docs/operations/storage-and-backups.md) for the
-current backup posture and Kopia migration criteria.
+- [Storage and Backups](docs/operations/storage-and-backups.md) describes the
+  current backup posture and Kopia migration criteria.
 
 ## Thanks
 
