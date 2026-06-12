@@ -140,8 +140,8 @@ This is a live GitOps repository. Take extra care with:
 Storage, backup, and operator changes should include a clear validation or
 rollback path.
 
-See [Storage and Backups](docs/storage-and-backups.md) for the current backup
-posture and Kopia migration criteria.
+See [Storage and Backups](docs/operations/storage-and-backups.md) for the
+current backup posture and Kopia migration criteria.
 
 ## Thanks
 
