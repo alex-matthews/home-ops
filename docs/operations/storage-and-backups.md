@@ -1,9 +1,9 @@
 # Storage and Backups
 
-This document captures the current storage and backup posture and the decision
-criteria for a future Kopia migration. It is intentionally short-lived and
+This document captures the current storage and backup posture and the selected
+direction for a future Kopia migration. It is intentionally short-lived and
 practical: update it when backup topology changes, after restore drills, or when
-selecting a new backup operator.
+the migration criteria change.
 
 ## Current Posture
 
@@ -24,7 +24,8 @@ recovery.
 
 ## Backup Inventory
 
-This inventory is derived from the current `default` namespace app tree.
+This inventory is derived from the currently included resources in
+`kubernetes/apps/default/kustomization.yaml`.
 
 | App             | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
 | --------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
@@ -32,14 +33,13 @@ This inventory is derived from the current `default` namespace app tree.
 | `autobrr`       | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `bazarr`        | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `brrpolice`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `costanza`      | yes           | yes            | no          | no         | Small VolSync capacity; good pilot candidate.                 |
 | `plex`          | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
 | `prowlarr`      | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `qbittorrent`   | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `qui`           | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `radarr`        | yes           | yes            | yes         | yes        | Separate `radarr-cache` PVC.                                  |
 | `radarr-se`     | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
-| `recyclarr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `recyclarr`     | yes           | yes            | no          | no         | CronJob workload; default VolSync capacity.                   |
 | `sabnzbd`       | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `seerr`         | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
 | `sonarr`        | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
@@ -50,6 +50,11 @@ Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover job by itself. If a future local Kopia target uses NFS only inside
 backup jobs, protect that path with backup scheduling, alerts, restore tests, and
 maintenance monitoring rather than by scaling unrelated app workloads.
+
+A more conservative future policy is possible: apply zeroscaler to every
+VolSync/Kopiur-backed Deployment, even if the app does not currently mount NAS
+storage at runtime. If that policy is adopted, document it as a deliberate
+availability posture and handle non-Deployment workloads separately.
 
 ## Migration Requirements
 
@@ -87,48 +92,78 @@ Start with conservative schedules and measure before expanding:
 Do not disable maintenance unless another process is reliably running it and is
 observable from the cluster.
 
-## Tooling Decision
+## Migration Decision
 
-The decision is not yet Restic versus Kopia in one step. The safer path is:
+VolSync Restic remains the working backup system. Do not migrate to
+VolSync-Kopia as an intermediate step.
 
-1. Keep VolSync Restic as the working backup system.
-2. Pilot Kopia in parallel on one low-risk PVC.
-3. Restore the pilot backup into a temporary PVC.
-4. Add a remote target for the same pilot.
-5. Expand only after maintenance and restore behavior are proven.
+The selected Kopia migration path is Kopiur, after it has proved itself enough
+for this cluster:
 
-### VolSync-Kopia
+1. Keep VolSync Restic as the production backup system.
+2. Test-deploy Kopiur without disturbing existing Restic backups.
+3. Prove a local backup and restore on one low-risk PVC.
+4. Prove a remote object-storage target for the same pilot.
+5. Verify Kopiur maintenance behavior, status, alerts, and failure modes.
+6. Wait for the project to mature enough, with peer testing considered useful
+   evidence but not a substitute for local restore tests.
+7. Expand only after local and remote maintenance and restore behavior are
+   acceptable.
 
-Prefer this path if the goal is a nearer-term Kopia migration that stays close
-to the existing VolSync model. Before choosing it, verify remote target support,
-maintenance behavior, restore ergonomics, and how much it diverges from the
-current Restic restore helpers.
+Kopiur adoption should follow the deploy-or-restore model used by current peer
+testing: install the operator and repository first, add a reusable app component
+for SnapshotPolicy, SnapshotSchedule, PVC, and Restore resources, then migrate
+apps one at a time. A bound PVC's `dataSourceRef` is immutable, so app migration
+is a deliberate cutover rather than an in-place mutation.
 
-### Kopiur
+### Why Not VolSync-Kopia
 
-Prefer this path as an evaluation of the emerging Kopia-native operator model.
-It has promising design traits: repository resources, separate backup configs
-and schedules, restore resources, multiple backends including S3-compatible
-object storage, and first-class maintenance.
+VolSync-Kopia is no longer the planned migration path. It would be an
+intermediate migration from VolSync Restic to a Kopia mover inside the VolSync
+model, followed by a later migration to Kopiur if Kopiur becomes the preferred
+long-term tool.
 
-It is also alpha software. Do not make it the primary backup system until the
-cluster has local and remote pilot backups, maintenance runs, and restore tests
-with acceptable behavior.
+That double migration is not worth taking unless Kopiur stalls or proves
+unsuitable. The cluster should keep the known-good Restic posture while Kopiur
+matures, rather than adopting a transitional backup implementation.
+
+### Why Kopiur
+
+Kopiur is the selected candidate because it is Kopia-native rather than a
+retrofit into VolSync's Restic-shaped model. Its design direction better matches
+the desired end state: repository resources, separate backup configs and
+schedules, restore resources, multiple backends including S3-compatible object
+storage, and first-class maintenance.
+
+It is still not the primary backup system. Do not make it production until the
+cluster has local and remote pilot backups, maintenance runs, restore tests, and
+acceptable operational behavior. Peer testing in other home-ops clusters is a
+positive signal, but this cluster still needs its own restore evidence.
 
 ## Suggested Pilot
 
-Use a low-risk app with a small PVC first. `costanza` is a reasonable candidate
-because it already uses VolSync and has a small custom capacity. Pick a
-different app if operational importance makes it a poor test target.
+Use a currently deployed low-risk app with a small PVC first. Pick the pilot
+immediately before implementation based on current app importance, PVC size,
+restore risk, and whether the app can tolerate a deliberate scale-down and PVC
+recreate.
 
 Pilot success means:
 
 - The existing Restic backup remains untouched.
-- A Kopia backup completes to the selected local target.
-- Kopia maintenance completes and reports useful status.
+- A Kopiur-managed Kopia backup completes to the selected local target.
+- Kopiur maintenance completes and reports useful status.
 - A restore into a temporary PVC completes.
 - The same pattern works against the remote object-storage target.
 - Rollback is simply deleting the pilot Kopia resources.
+
+App cutover should not proceed until a Kopiur snapshot for that app has
+succeeded with non-zero file content. The expected cutover shape is:
+
+1. Scale the app down.
+2. Delete the old app PVC deliberately.
+3. Let Flux recreate the PVC with the Kopiur `Restore` data source.
+4. Confirm the restored PVC contents.
+5. Scale the app back up.
 
 ## Validation Commands
 
@@ -144,8 +179,8 @@ kubectl -n observability get probe nfs -o yaml
 Current Restic snapshot and restore helpers:
 
 ```sh
-just volsync list-previous default costanza
-just volsync restore default costanza 0
+just volsync list-previous default <app>
+just volsync restore default <app> 0
 ```
 
 Render checks for future manifest changes:
@@ -154,3 +189,8 @@ Render checks for future manifest changes:
 kubectl kustomize kubernetes/apps/default
 flate test all --allow-missing-secrets
 ```
+
+## References
+
+- [Kopiur](https://github.com/home-operations/kopiur)
+- [onedr0p/home-ops#11012: deploy Kopiur](https://github.com/onedr0p/home-ops/pull/11012)
