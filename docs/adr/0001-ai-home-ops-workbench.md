@@ -145,6 +145,7 @@ MCPs are grouped by risk, not by novelty.
 | --- | --- | --- |
 | Public reference | Context7 | Allow early; no secrets in queries. |
 | Repository context | GitHub MCP | Start read-only or narrowly scoped. |
+| Rendered GitOps review | Konflate MCP | Use after ingress/auth boundary review; read-only. |
 | Observability | Grafana or metrics MCPs | Read-only. |
 | Cluster operations | Kubernetes, Flux, Talos | Defer until RBAC review; read-only first. |
 | Off-cluster infrastructure | Cloudflare, UniFi | Defer; scoped read-only tokens first. |
@@ -154,6 +155,13 @@ MCPs are grouped by risk, not by novelty.
 Context7 belongs in the public-reference tier. Its purpose is to reduce stale
 model knowledge when reasoning about current documentation. It is not a source
 of truth and must not receive sensitive configuration or secrets.
+
+Konflate MCP belongs in the rendered GitOps review tier. It is a read-only view
+over the same pull request summaries and rendered diffs Konflate already serves,
+so it is a strong early source for AI review of Renovate and Kubernetes changes.
+Do not expose it on the public Konflate route without an explicit ingress or
+authentication boundary, and treat pull request text and rendered manifests as
+untrusted prompt input.
 
 ### 4.5 Community signal intake
 
@@ -232,13 +240,15 @@ scraping approaches are not an acceptable design foundation.
    or an equivalent structure.
 4. Deploy ToolHive with a minimal read-only MCP set, starting with GitHub and
    Context7.
-5. Evaluate whether LiteLLM is needed before multiple consumers exist. If
+5. Add Konflate MCP to the read-only workbench surface after its route is
+   protected for agent access.
+6. Evaluate whether LiteLLM is needed before multiple consumers exist. If
    deployed, use it only as a thin gateway at first.
-6. Deploy Memini and Hermes for interactive home-ops assistance.
-7. Add peer-repository trend summarisation through GitHub-first ingestion.
-8. Add observability and off-cluster MCPs only after trust boundaries and tokens
+7. Deploy Memini and Hermes for interactive home-ops assistance.
+8. Add peer-repository trend summarisation through GitHub-first ingestion.
+9. Add observability and off-cluster MCPs only after trust boundaries and tokens
    are scoped.
-9. Revisit OpenClaw, OpenCode, Open WebUI, SearXNG, and local inference after the
+10. Revisit OpenClaw, OpenCode, Open WebUI, SearXNG, and local inference after the
    minimal workbench has proved useful.
 
 ## 7. Evaluation Criteria
