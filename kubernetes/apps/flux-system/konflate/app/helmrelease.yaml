@@ -18,6 +18,7 @@ spec:
       statusCheckName: Konflate
       prComments: true
       publicUrl: "https://{{ .Release.Name }}.${SECRET_DOMAIN}"
+      mcp: true
     secret:
       existingSecret: konflate-webhook-token-secret
     httpRoute:

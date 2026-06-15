@@ -55,16 +55,16 @@ Adopt a lightweight AI home-ops workbench in phases.
 
 The initial architecture is:
 
-| Area | Decision |
-| --- | --- |
-| Pull request review | Start with `misospace/pr-reviewer-action` for advisory Renovate review. |
-| Agent workbench | Use Hermes as the first interactive home-ops workbench to evaluate. |
-| MCP gateway | Use ToolHive to expose approved MCPs through explicit trust boundaries. |
-| Memory | Evaluate Memini for assistant memory and context recall, not as backlog source of truth. |
-| Model routing | Evaluate MiniMax first as the non-OpenAI cloud inference provider. Use OpenAI API only where quality justifies spend. |
-| LiteLLM | Treat as a thin gateway candidate for aliases, metrics, fallbacks, and provider isolation. Do not rely on Postgres-backed LiteLLM features initially. |
-| Backlog source of truth | Use GitHub Issues, optionally GitHub Projects, with ADRs for durable architecture decisions. |
-| Community signal | Prefer GitHub-first peer-repo monitoring and sanctioned digest exports. Do not use Discord scraping or user-token automation. |
+| Area                    | Decision                                                                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pull request review     | Start with `misospace/pr-reviewer-action` for advisory Renovate review.                                                                               |
+| Agent workbench         | Use Hermes as the first interactive home-ops workbench to evaluate.                                                                                   |
+| MCP gateway             | Use ToolHive to expose approved MCPs through explicit trust boundaries.                                                                               |
+| Memory                  | Evaluate Memini for assistant memory and context recall, not as backlog source of truth.                                                              |
+| Model routing           | Evaluate MiniMax first as the non-OpenAI cloud inference provider. Use OpenAI API only where quality justifies spend.                                 |
+| LiteLLM                 | Treat as a thin gateway candidate for aliases, metrics, fallbacks, and provider isolation. Do not rely on Postgres-backed LiteLLM features initially. |
+| Backlog source of truth | Use GitHub Issues, optionally GitHub Projects, with ADRs for durable architecture decisions.                                                          |
+| Community signal        | Prefer GitHub-first peer-repo monitoring and sanctioned digest exports. Do not use Discord scraping or user-token automation.                         |
 
 The workbench should start read-only wherever possible. Write-capable tools must
 be added only after the read-only workflow has proved useful and the approval
@@ -99,14 +99,14 @@ External services
 
 ### 4.2 State and source-of-truth boundaries
 
-| State | Source of truth |
-| --- | --- |
-| Cluster desired state | This repository and Flux. |
-| Backlog | GitHub Issues, optionally GitHub Projects. |
-| Architecture decisions | ADRs under `docs/adr/`. |
-| Scratch planning | `backlog.md` or issue drafts. |
-| Assistant memory | Memini, non-authoritative. |
-| Secrets | 1Password, SOPS, External Secrets, and cluster secret stores. |
+| State                  | Source of truth                                               |
+| ---------------------- | ------------------------------------------------------------- |
+| Cluster desired state  | This repository and Flux.                                     |
+| Backlog                | GitHub Issues, optionally GitHub Projects.                    |
+| Architecture decisions | ADRs under `docs/adr/`.                                       |
+| Scratch planning       | `backlog.md` or issue drafts.                                 |
+| Assistant memory       | Memini, non-authoritative.                                    |
+| Secrets                | 1Password, SOPS, External Secrets, and cluster secret stores. |
 
 Memini must not become a hidden backlog, secret store, or decision database. It
 may retain summaries, observations, and references that make future work easier,
@@ -141,16 +141,16 @@ Do not deploy LiteLLM solely because peer repositories run it.
 
 MCPs are grouped by risk, not by novelty.
 
-| Tier | Examples | Initial posture |
-| --- | --- | --- |
-| Public reference | Context7 | Allow early; no secrets in queries. |
-| Repository context | GitHub MCP | Start read-only or narrowly scoped. |
-| Rendered GitOps review | Konflate MCP | Use after ingress/auth boundary review; read-only. |
-| Observability | Grafana or metrics MCPs | Read-only. |
-| Cluster operations | Kubernetes, Flux, Talos | Defer until RBAC review; read-only first. |
-| Off-cluster infrastructure | Cloudflare, UniFi | Defer; scoped read-only tokens first. |
-| Secret tooling | 1Password Developer Environments | Local/dev-first; no whole-vault automation. |
-| Write-capable automation | Any mutating infra action | Deferred; require explicit human approval. |
+| Tier                       | Examples                         | Initial posture                                 |
+| -------------------------- | -------------------------------- | ----------------------------------------------- |
+| Public reference           | Context7                         | Allow early; no secrets in queries.             |
+| Repository context         | GitHub MCP                       | Start read-only or narrowly scoped.             |
+| Rendered GitOps review     | Konflate MCP                     | Read-only; narrow public-route exception below. |
+| Observability              | Grafana or metrics MCPs          | Read-only.                                      |
+| Cluster operations         | Kubernetes, Flux, Talos          | Defer until RBAC review; read-only first.       |
+| Off-cluster infrastructure | Cloudflare, UniFi                | Defer; scoped read-only tokens first.           |
+| Secret tooling             | 1Password Developer Environments | Local/dev-first; no whole-vault automation.     |
+| Write-capable automation   | Any mutating infra action        | Deferred; require explicit human approval.      |
 
 Context7 belongs in the public-reference tier. Its purpose is to reduce stale
 model knowledge when reasoning about current documentation. It is not a source
@@ -159,9 +159,12 @@ of truth and must not receive sensitive configuration or secrets.
 Konflate MCP belongs in the rendered GitOps review tier. It is a read-only view
 over the same pull request summaries and rendered diffs Konflate already serves,
 so it is a strong early source for AI review of Renovate and Kubernetes changes.
-Do not expose it on the public Konflate route without an explicit ingress or
-authentication boundary, and treat pull request text and rendered manifests as
-untrusted prompt input.
+For the Renovate reviewer, it may be enabled on the existing public Konflate
+route because that route already exposes the same rendered PR UI and REST data,
+and MCP does not trigger renders or forge writes. Add an explicit
+ingress/authentication boundary before exposing private repository data, fork
+renders, mutating tools, or broader agent access through that route. Treat pull
+request text and rendered manifests as untrusted prompt input.
 
 ### 4.5 Community signal intake
 
@@ -240,8 +243,8 @@ scraping approaches are not an acceptable design foundation.
    or an equivalent structure.
 4. Deploy ToolHive with a minimal read-only MCP set, starting with GitHub and
    Context7.
-5. Add Konflate MCP to the read-only workbench surface after its route is
-   protected for agent access.
+5. Use Konflate MCP for advisory Renovate review; revisit route protection
+   before expanding it beyond the existing public rendered-diff data.
 6. Evaluate whether LiteLLM is needed before multiple consumers exist. If
    deployed, use it only as a thin gateway at first.
 7. Deploy Memini and Hermes for interactive home-ops assistance.
@@ -249,7 +252,7 @@ scraping approaches are not an acceptable design foundation.
 9. Add observability and off-cluster MCPs only after trust boundaries and tokens
    are scoped.
 10. Revisit OpenClaw, OpenCode, Open WebUI, SearXNG, and local inference after the
-   minimal workbench has proved useful.
+    minimal workbench has proved useful.
 
 ## 7. Evaluation Criteria
 

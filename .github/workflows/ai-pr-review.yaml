@@ -92,12 +92,25 @@ jobs:
           ref: ${{ steps.pr.outputs.checkout_ref }}
           token: ${{ github.token }}
 
+      - name: Wait for Konflate render
+        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        env:
+          KONFLATE_URL: https://konflate.alexmatthews.xyz
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          echo "Waiting for Konflate to finish rendering PR #${PR_NUMBER}..."
+          if curl -fsS --retry 40 --retry-delay 5 --retry-all-errors \
+            -H "Accept: text/markdown" \
+            "${KONFLATE_URL}/api/prs/${PR_NUMBER}/summary" \
+            -o /dev/null; then
+            echo "Konflate render ready."
+          else
+            echo "Konflate not ready after retries; analysis falls back to the git diff."
+          fi
+
       - name: Review Renovate PR
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
         uses: misospace/pr-reviewer-action@3479bf51ab9133414ae07af783bff985d3929884 # v1.3.0
-        env:
-          KONFLATE_MCP_URL: ${{ vars.AI_PR_REVIEW_KONFLATE_MCP_URL }}
-          KONFLATE_URL: https://konflate.alexmatthews.xyz
         with:
           github_token: ${{ github.token }}
           pr_number: ${{ steps.pr.outputs.number }}
@@ -115,7 +128,7 @@ jobs:
           ai_connect_timeout_sec: "10"
           on_model_failure: notice
           standards_file: .github/ai-review-rules.md
-          allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com
+          allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com,konflate.alexmatthews.xyz
           publish_mode: review_comment
           comment_marker: "<!-- home-ops-ai-pr-review -->"
           allow_approve: "false"
@@ -126,8 +139,7 @@ jobs:
           review_scope: auto
           context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'normal' }}
           model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
-          evidence_providers_file: .github/konflate-evidence-providers.json
-          tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'plan_execute_loop' }}
+          tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'native_loop' }}
           tool_max_rounds: "2"
           tool_max_requests: "4"
           tool_planning_timeout_sec: "45"
@@ -137,7 +149,7 @@ jobs:
           tool_allowed_gh_api_repos: "*"
           tool_request_timeout_sec: "15"
           tool_enable_for_forks: "false"
-          tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS }}
+          tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS || 'konflate=https://konflate.alexmatthews.xyz/mcp' }}
           tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
           search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
           ci_status_check: "true"
