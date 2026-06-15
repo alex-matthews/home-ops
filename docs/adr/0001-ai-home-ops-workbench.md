@@ -224,10 +224,11 @@ surface should be smaller and easier to reason about.
 
 ### 5.5 SearXNG first
 
-Deferred. SearXNG does not require PostgreSQL, but it adds operational surface
-and often includes Valkey for limiter support. Start with GitHub, Context7, and
-provider-native search where available. Add SearXNG only if the workbench needs
-a self-hosted metasearch endpoint.
+Initially deferred. The reviewer now has a concrete need for a self-hosted
+metasearch endpoint, so deploy SearXNG behind a public route with Dragonfly as a
+small Redis-compatible limiter backend, one 1Password-backed app secret, and
+JSON search enabled. Keep the Dragonfly data disposable and avoid persistent
+storage unless another consumer creates a durable cache requirement.
 
 ### 5.6 Discord bot or Discord scraping
 
@@ -252,8 +253,8 @@ scraping approaches are not an acceptable design foundation.
 8. Add peer-repository trend summarisation through GitHub-first ingestion.
 9. Add observability and off-cluster MCPs only after trust boundaries and tokens
    are scoped.
-10. Revisit OpenClaw, OpenCode, Open WebUI, SearXNG, and local inference after the
-    minimal workbench has proved useful.
+10. Revisit OpenClaw, OpenCode, Open WebUI, and local inference after the minimal
+    workbench has proved useful.
 
 ## 7. Evaluation Criteria
 
