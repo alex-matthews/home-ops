@@ -3,10 +3,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: gatus
+  name: gatus-sidecar
 spec:
   groups:
-    - name: gatus.rules
+    - name: gatus-sidecar.rules
       rules:
         - alert: GatusEndpointDown
           expr: |-
