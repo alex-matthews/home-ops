@@ -140,8 +140,8 @@ jobs:
           context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'normal' }}
           model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
           tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'native_loop' }}
-          tool_max_rounds: "2"
-          tool_max_requests: "4"
+          tool_max_rounds: "3"
+          tool_max_requests: "6"
           tool_planning_timeout_sec: "45"
           tool_planning_max_context_bytes: "15000"
           tool_planning_max_tokens: "1500"
