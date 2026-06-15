@@ -26,11 +26,15 @@ For dependency upgrades:
    Action, tool, module, or regex-managed dependency.
 2. Identify the inner component when the artifact is a wrapper. A chart/image
    bump can wrap a different application, binary, or base image version.
-3. Read the changed files and nearby repo usage before making an impact claim.
-4. Check Renovate release notes first, then upstream releases, changelogs,
+3. Before claiming the inner component changed, compare the old and new wrapper
+   metadata or rendered values directly. If a Helm chart's `appVersion`, image
+   repository, or image tag is unchanged across the bumped versions, say that
+   narrower fact instead of inferring an inner application upgrade.
+4. Read the changed files and nearby repo usage before making an impact claim.
+5. Check Renovate release notes first, then upstream releases, changelogs,
    migration guides, compare pages, registry metadata, and commit history as
    needed.
-5. If a useful changelog cannot be found, say what was checked and keep the
+6. If a useful changelog cannot be found, say what was checked and keep the
    recommendation conservative.
 
 Do not stop at the first source when the first source is only a wrapper release
@@ -91,6 +95,11 @@ When using rendered diff evidence:
   when they are available. If the diff only proves the resource changed but not
   the field-level detail, say that and use `Needs human review` for non-routine
   impact.
+- Do not assert that a backing Service, Deployment, Secret, webhook, or other
+  related resource is absent merely because it is absent from a changed-resource
+  diff. First verify full rendered resources, current repo manifests, or live
+  cluster state. If only values or a changed-resource diff suggest a mismatch,
+  phrase it as a verification item and use `Needs human review`.
 - If resource-level or field-level rendered diff output is truncated, unavailable,
   or ambiguous, do not reconstruct missing names or fields from memory or
   upstream docs. Say what is missing.
