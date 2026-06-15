@@ -67,6 +67,8 @@ Pull requests are checked by GitHub Actions:
 
 - `Flate` renders and validates the Flux tree with missing secrets allowed.
 - `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
+- `Konflate` runs in-cluster and posts native advisory pull request comments and
+  checks from rendered Flate diffs.
 - `Labeler` and `Label Sync` keep pull request and repository labels consistent.
 - `Renovate` opens dependency update PRs for charts, containers, GitHub Actions, and
   other versioned references.
@@ -74,7 +76,8 @@ Pull requests are checked by GitHub Actions:
 
 The required branch checks are the success aggregators for Flate and Image Pull.
 This lets docs-only or non-render-affecting changes pass cleanly while still
-blocking Kubernetes changes when rendering fails.
+blocking Kubernetes changes when rendering fails. Konflate is advisory and is
+not a required branch check.
 
 ## Local Workflow
 
