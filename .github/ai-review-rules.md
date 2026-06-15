@@ -68,6 +68,13 @@ or security context in a way that needs operator judgment.
   the pull request under review. Use Konflate MCP for deeper rendered diff
   detail or to resolve ambiguity; do not replace the generated PR number with a
   guessed number.
+- For Kubernetes, Helm chart, Flux, and container image PRs, use Konflate MCP
+  `get_pr_summary` and `get_pr_diff` before describing rendered resource impact
+  whenever MCP is available. The summary alone is not enough to claim the change
+  is Deployment-only, image-only, CRD-free, or storage/RBAC/route-free.
+- If `get_pr_diff` is unavailable and Konflate summary indicates CRDs, blast
+  radius, cautions, render failures, or unnamed changed resources, say what is
+  missing and use `Needs human review` for non-routine impact.
 - Do not stop at `list_pull_requests` for Konflate evidence. For the pull
   request under review, call `get_pr_summary`. Call `get_pr_diff` when the
   summary reports cautions, render failures, or resource changes that need
@@ -110,6 +117,9 @@ or security context in a way that needs operator judgment.
 
 - For Kubernetes chart or image updates, look for breaking changes affecting
   CRDs, API versions, security contexts, storage, probes, routes, and RBAC.
+- Treat rendered CRD, webhook/conversion, RBAC, route, storage, auth, and
+  blast-radius changes as non-routine even when the raw diff is a one-line chart
+  or image bump.
 - Be exact about security context and storage findings. If a podSecurityContext
   field changes, describe that additive/removal change rather than saying there
   was no securityContext change. If a PVC object is unchanged but volume
