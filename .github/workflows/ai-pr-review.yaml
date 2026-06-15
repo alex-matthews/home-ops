@@ -62,11 +62,7 @@ jobs:
           echo "eligible=${eligible}" >> "$GITHUB_OUTPUT"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
           echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-          checkout_ref="${head_sha}"
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            checkout_ref="${GITHUB_SHA}"
-          fi
-          echo "checkout_ref=${checkout_ref}" >> "$GITHUB_OUTPUT"
+          echo "checkout_ref=${head_sha}" >> "$GITHUB_OUTPUT"
 
       - name: Check reviewer config
         id: config

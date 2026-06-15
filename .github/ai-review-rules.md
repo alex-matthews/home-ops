@@ -61,9 +61,12 @@ loss risk.
   examples. If `get_pr_summary` says a pull request is not tracked but
   `list_pull_requests` shows the PR under review, retry `get_pr_summary` with
   the listed pull request number before writing the review.
-- Do not include an `Evidence Provider Findings` section when no evidence
-  providers are configured. Summarize MCP and other tool output under
-  `Tool Harness Findings`.
+- Do not include an `Evidence Provider Findings` heading, placeholder, or
+  "none configured" sentence when no evidence providers are configured.
+  Summarize MCP and other tool output under `Tool Harness Findings`.
+- Do not mention transient failed tool calls after they have been corrected,
+  unless the failure limits confidence in the final review. Corrected lookup
+  mistakes are log/debug detail, not review evidence.
 - If an enabled provider returns no findings, say which evidence surface was
   empty or unavailable. Do not infer that no provider was configured unless the
   corpus explicitly says that.
