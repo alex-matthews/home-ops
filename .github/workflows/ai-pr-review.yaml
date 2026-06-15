@@ -92,7 +92,7 @@ jobs:
         id: review_context
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
         env:
-          KONFLATE_URL: https://konflate.alexmatthews.xyz
+          KONFLATE_URL: ${{ secrets.KONFLATE_URL || vars.KONFLATE_URL }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
           context_file=".github/ai-review-context.md"
@@ -103,13 +103,15 @@ jobs:
             echo
             echo "## Current Konflate Summary"
             echo
-            echo "The workflow fetched this section for PR #${PR_NUMBER} from ${KONFLATE_URL}/api/prs/${PR_NUMBER}/summary before invoking the reviewer."
+            echo "This section contains the configured Konflate summary for PR #${PR_NUMBER} when the fetch succeeds."
             echo "When using Konflate MCP for this review, call tools with number ${PR_NUMBER}. Do not use any other pull request number."
             echo
           } >> "${context_file}"
 
-          echo "Waiting for Konflate to finish rendering PR #${PR_NUMBER}..."
-          if curl -fsS --retry 40 --retry-delay 5 --retry-all-errors \
+          if [ -z "${KONFLATE_URL:-}" ]; then
+            echo "KONFLATE_URL is not configured; analysis falls back to MCP, CI, and the git diff."
+            echo "Konflate summary was unavailable because KONFLATE_URL is not configured; use Konflate MCP, CI, or the git diff as fallback evidence." >> "${context_file}"
+          elif curl -fsS --retry 40 --retry-delay 5 --retry-all-errors \
             -H "Accept: text/markdown" \
             "${KONFLATE_URL}/api/prs/${PR_NUMBER}/summary" \
             -o "${summary_file}"; then
@@ -141,8 +143,9 @@ jobs:
           ai_request_timeout_sec: "300"
           ai_connect_timeout_sec: "10"
           on_model_failure: notice
+          system_prompt_file: .github/ai-review-system-prompt.md
           standards_file: ${{ steps.review_context.outputs.path }}
-          allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com,konflate.alexmatthews.xyz
+          allowed_source_hosts: ${{ vars.AI_PR_REVIEW_ALLOWED_SOURCE_HOSTS || 'github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com' }}
           publish_mode: review_comment
           comment_marker: "<!-- home-ops-ai-pr-review -->"
           allow_approve: "false"
@@ -164,7 +167,7 @@ jobs:
           tool_request_timeout_sec: "15"
           tool_enable_for_forks: "false"
           tool_evidence_memory: "false"
-          tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS || 'konflate=https://konflate.alexmatthews.xyz/mcp' }}
+          tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS }}
           tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
           search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
           ci_status_check: "true"
