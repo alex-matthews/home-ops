@@ -8,3 +8,10 @@ skip = true
 
 [pre-commit.commands.format-yaml]
 exclude = ["?*.sops.yaml", "?*.sops.yml"]
+skip = true
+
+[pre-commit.commands.format-oxfmt]
+glob = ["*.yml", "*.yaml"]
+run = "oxfmt {staged_files}"
+exclude = ["?*.sops.yaml", "?*.sops.yml"]
+stage_fixed = true
