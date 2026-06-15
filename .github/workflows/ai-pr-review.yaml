@@ -102,10 +102,15 @@ jobs:
           context_file=".github/ai-review-context.md"
           system_prompt_file=".github/ai-review-system-prompt.effective.md"
           summary_file="${RUNNER_TEMP}/konflate-summary.md"
+          config_ref="${BASE_REF}"
 
-          gh api "repos/${GITHUB_REPOSITORY}/contents/.github/ai-review-rules.md?ref=${BASE_REF}" \
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            config_ref="${GITHUB_REF_NAME}"
+          fi
+
+          gh api "repos/${GITHUB_REPOSITORY}/contents/.github/ai-review-rules.md?ref=${config_ref}" \
             --jq ".content" | base64 --decode > "${context_file}"
-          gh api "repos/${GITHUB_REPOSITORY}/contents/.github/ai-review-system-prompt.md?ref=${BASE_REF}" \
+          gh api "repos/${GITHUB_REPOSITORY}/contents/.github/ai-review-system-prompt.md?ref=${config_ref}" \
             --jq ".content" | base64 --decode > "${system_prompt_file}"
 
           {
