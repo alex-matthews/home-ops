@@ -81,6 +81,10 @@ or security context in a way that needs operator judgment.
   `Standards Compliance`, `Linked Issue Fit`, or `Unknowns` headings when the
   section would only say "none", "not configured", or "not applicable".
   Summarize useful MCP and CI evidence under the main evidence section instead.
+- Do not include a `must_check` section when the classifier has no required
+  checks. Do not write "No evidence providers are configured" in the review body.
+- Do not print the configured Konflate API or MCP endpoint URL in review prose;
+  cite Konflate summary, rendered diff, or MCP evidence by name instead.
 - Do not mention transient failed tool calls after they have been corrected,
   unless the failure limits confidence in the final review. Corrected lookup
   mistakes are log/debug detail, not review evidence.
