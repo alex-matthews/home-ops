@@ -136,7 +136,7 @@ jobs:
           inline_findings: "false"
           validate_required_checks: auto
           required_check_validation_mode: warn
-          review_scope: auto
+          review_scope: full
           context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'normal' }}
           model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
           tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'native_loop' }}
@@ -149,6 +149,7 @@ jobs:
           tool_allowed_gh_api_repos: "*"
           tool_request_timeout_sec: "15"
           tool_enable_for_forks: "false"
+          tool_evidence_memory: "false"
           tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS || 'konflate=https://konflate.alexmatthews.xyz/mcp' }}
           tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
           search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
