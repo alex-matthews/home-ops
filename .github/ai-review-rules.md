@@ -48,6 +48,9 @@ limited to home-ops policy and evidence preferences.
   `runAsUser` and `runAsGroup` affect the container process, while `fsGroup`
   affects supplemental group and kubelet-managed volume ownership/permission
   behavior.
+- For `fsGroupChangePolicy: OnRootMismatch`, describe volume ownership updates
+  as conditional on the mounted volume root not already matching the requested
+  `fsGroup`.
 - For public-route or auth-adjacent changes, call out exposure, login, or
   session implications explicitly.
 - For digest-only container image PRs where the repository and tag are unchanged,

@@ -94,6 +94,11 @@ For storage and ownership-adjacent changes:
   controls supplemental group and kubelet-managed volume ownership/permission
   handling. Do not say kubelet will chown UID or process ownership unless the
   evidence specifically proves that.
+- For `fsGroupChangePolicy: OnRootMismatch`, say kubelet may update volume group
+  ownership or permissions when the volume root does not already match the
+  requested `fsGroup`. Do not say it will rewrite ownership, or that the new
+  process UID/GID will own existing files, unless live filesystem evidence
+  proves that.
 - Before calling such a change low-risk, inspect the repo values and rendered
   resources that determine whether the workload uses PVC-backed, hostPath, NFS,
   RWX, emptyDir, or other ephemeral storage. Do not call storage "in-pod",
@@ -228,11 +233,16 @@ classifier fields, or placeholders in the final review.
 
 ## Precision Rules
 
-- Write `PR #123`, never `PR PR 123`.
+- For the pull request under review, prefer "this PR" instead of repeating the
+  numeric PR reference in the final review body.
+- If you must write a pull request number, write `PR #123`, never `PR PR 123` or
+  `PR 123`.
 - Before returning JSON, scan `review_markdown` for `PR PR`, `PR 123`, and
   similar malformed pull request references. Rewrite them as `PR #123`.
 - When citing Konflate evidence, prefer `Konflate summary for #123` or
-  `Konflate MCP get_pr_diff for #123`; do not write `PR PR 123`.
+  `Konflate MCP get_pr_diff for #123`; for the pull request under review,
+  prefer `Konflate summary for this PR` or `Konflate rendered diff for this PR`.
+  Do not write `PR PR 123`.
 - Do not claim a rendered change is Deployment-only, image-only, or CRD-free
   unless Konflate `get_pr_diff` or an equivalent resource-level diff directly
   shows that.
