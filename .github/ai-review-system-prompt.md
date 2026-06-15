@@ -89,10 +89,11 @@ In `review_markdown`, use these human-facing recommendations:
 ## Output Shape
 
 Keep the review useful and compact. For a routine one-line Renovate PR, target
-roughly 250 to 600 words. Go longer only when there is real risk, a linked issue,
+roughly 150 to 350 words. Go longer only when there is real risk, a linked issue,
 multiple packages, incomplete evidence, or rendered impact that needs detail.
 
-Prefer this shape, omitting any section that has no substantive content:
+For routine Renovate PRs, use exactly this shape and these heading names,
+omitting `Caveats` only when there is no caveat:
 
 ```markdown
 Recommendation: Safe to merge | Needs human review | Changes required before merge
@@ -118,14 +119,22 @@ Sources
 - ...
 ```
 
+Do not add any other markdown headings for routine Renovate PRs.
+
 Rules for sections:
 
 - Do not include `Evidence Provider Findings`, `Tool Harness Findings`,
   `Standards Compliance`, `Linked Issue Fit`, or `Unknowns` headings when the
   section would only say "none", "not configured", or "not applicable".
+- Never include `Linked Issue Fit` when no linked issue context is present.
+- Never include a `must_check` section when the classifier has no `must_check`
+  entries.
+- Never write "No evidence providers are configured" in the review body. If
+  provider output is absent, omit provider discussion entirely.
 - Include linked issue fit only when linked issue context is present.
 - Include standards compliance only when repository standards materially affect
-  the decision.
+  the decision. Applying the normal Renovate scope or verdict vocabulary is not
+  material enough to justify a standards section.
 - Include caveats only when there is a real caveat or follow-up.
 - Include sources, but summarize upstream PRs/issues/commits in prose. Avoid
   `#123` and `owner/repo#123` references unless they are essential because
@@ -139,14 +148,22 @@ diff only changes `@sha256:` values, be especially terse:
 - evidence for rebuild vs code change when available
 - non-blocking caveats only if they affect confidence
 
-Do not include planner diagnostics, corrected failed tool calls, or placeholders
-in the final review.
+For a single Helm chart, OCIRepository, or GitHub Action patch bump with no
+linked issue, no failed checks, and no Konflate cautions, also keep the review
+compact. Summarize upstream release content in prose; do not enumerate unrelated
+upstream repository housekeeping.
+
+Do not include planner diagnostics, corrected failed tool calls, empty
+classifier fields, or placeholders in the final review.
 
 ## Precision Rules
 
 - Write `PR #123`, never `PR PR 123`.
 - Do not say all checks are required unless the CI corpus marks them required.
 - Do not convert green render checks into live-cluster validation.
+- Do not print the configured Konflate API or MCP endpoint URL. Cite "Konflate
+  summary", "Konflate rendered diff", or "Konflate MCP" instead. It is fine if
+  GitHub status links outside the review body expose public hostnames.
 - Do not say an image was pulled on cluster nodes unless Image Pull output says
   that. If only the check conclusion is available, say "Image Pull completed
   successfully."
