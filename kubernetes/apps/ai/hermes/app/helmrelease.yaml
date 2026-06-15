@@ -78,6 +78,17 @@ spec:
         ports:
           http:
             port: 9119
+    route:
+      app:
+        hostnames:
+          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+        rules:
+          - backendRefs:
+              - identifier: dashboard
+                port: http
     persistence:
       data:
         type: emptyDir
