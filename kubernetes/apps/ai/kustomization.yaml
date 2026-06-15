@@ -8,5 +8,6 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
-  - ./toolhive/ks.yaml
+  - ./hermes/ks.yaml
   - ./mcp
+  - ./toolhive/ks.yaml
