@@ -305,8 +305,8 @@ jobs:
           context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'normal' }}
           model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
           tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'native_loop' }}
-          tool_max_rounds: "3"
-          tool_max_requests: "8"
+          tool_max_rounds: "2"
+          tool_max_requests: "4"
           tool_loop_wall_clock_sec: "600"
           tool_planning_timeout_sec: "45"
           tool_planning_max_context_bytes: "15000"
@@ -318,7 +318,6 @@ jobs:
           tool_evidence_memory: "false"
           tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS || format('konflate={0}/mcp', secrets.KONFLATE_URL || vars.KONFLATE_URL) }}
           tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
-          search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
           ci_status_check: "true"
           ci_timeout_sec: "600"
           rereview_label: ai-review

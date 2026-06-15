@@ -22,6 +22,10 @@ limited to home-ops policy and evidence preferences.
   failures, blast radius, and operational impact that raw diffs can hide.
 - Use the generated `Current Konflate Summary` section as the fallback Konflate
   summary for the pull request under review when MCP is unavailable.
+- Web search is intentionally disabled for this reviewer phase. Do not list
+  missing SearXNG or `web_search` access as a caveat. Use Renovate, GitHub,
+  Konflate, CI, and allowed source fetches first; if external changelog evidence
+  is missing, say which source or changelog was unavailable.
 - Prefer Renovate release notes and dependency metadata first, then upstream
   releases, changelogs, migration guides, compare pages, registry metadata, and
   commit history when release notes are incomplete.
