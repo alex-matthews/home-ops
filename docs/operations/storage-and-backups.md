@@ -142,10 +142,13 @@ positive signal, but this cluster still needs its own restore evidence.
 
 ## Suggested Pilot
 
-Use a currently deployed low-risk app with a small PVC first. Pick the pilot
-immediately before implementation based on current app importance, PVC size,
-restore risk, and whether the app can tolerate a deliberate scale-down and PVC
-recreate.
+Use Atuin as the first Kopiur pilot after it is deployed. Track that deployment
+in [Deploy atuin](https://github.com/alex-matthews/home-ops/issues/1266).
+
+Atuin is a good pilot because it is useful, small, and lower-risk than the
+media-adjacent workloads. Do not add Kopiur resources for it until the Atuin app
+and PVC exist and the deployment issue has captured any dotfiles and domain
+exposure decisions.
 
 Pilot success means:
 
