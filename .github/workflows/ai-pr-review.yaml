@@ -103,6 +103,7 @@ jobs:
           context_file=".github/ai-review-context.md"
           system_prompt_file=".github/ai-review-system-prompt.effective.md"
           summary_file="${RUNNER_TEMP}/konflate-summary.md"
+          diff_file="${RUNNER_TEMP}/konflate-diff.json"
           config_ref="${BASE_REF}"
 
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
@@ -135,6 +136,80 @@ jobs:
           else
             echo "Konflate not ready after retries; analysis falls back to the git diff."
             echo "Konflate summary was unavailable after retries; use Konflate MCP or the git diff as fallback evidence." >> "${context_file}"
+          fi
+
+          {
+            echo
+            echo "## Current Konflate Rendered Diff"
+            echo
+            echo "This section contains deterministic rendered-diff context for PR #${PR_NUMBER} when the fetch succeeds."
+            echo "Use this section before making claims about rendered resource identities, images, field paths, storage, securityContext, podSecurityContext, RBAC, CRDs, routes, services, probes, or volume changes."
+            echo
+          } >> "${context_file}"
+
+          if [ -z "${KONFLATE_URL:-}" ]; then
+            echo "Konflate rendered diff was unavailable because KONFLATE_URL is not configured." >> "${context_file}"
+          elif curl -fsS --retry 10 --retry-delay 3 --retry-all-errors \
+            -H "Accept: application/json" \
+            "${KONFLATE_URL}/api/prs/${PR_NUMBER}/diff" \
+            -o "${diff_file}" &&
+            jq -e '.status == "ready" and (.diff != null)' "${diff_file}" >/dev/null; then
+            echo "Konflate rendered diff ready."
+            jq -r '
+              def clean:
+                gsub("<[^>]*>"; "")
+                | gsub("&#34;"; "\"")
+                | gsub("&quot;"; "\"")
+                | gsub("&amp;"; "&")
+                | gsub("&lt;"; "<")
+                | gsub("&gt;"; ">")
+                | gsub("&#39;"; "\u0027");
+
+              "### Rendered Diff Status",
+              "",
+              "- status: \(.status // "unknown")",
+              "- head SHA: \(.diff.headSha // .pr.headSha // "unknown")",
+              "- summary: +\(.diff.summary.added // 0) added / \(.diff.summary.changed // 0) changed / -\(.diff.summary.removed // 0) removed",
+              "- impact: \(.diff.impact.resources // 0) resources; \(.diff.impact.parents // 0) parents; namespaces: \((.diff.impact.namespaces // []) | join(", "))",
+              "",
+              "### Rendered Image Changes",
+              (if ((.diff.images // []) | length) == 0 then
+                "- none"
+              else
+                (.diff.images // [])[] |
+                "- \(.name): \(.from // "none") -> \(.to // "none") (refs: \((.refs // []) | join(", ")))"
+              end),
+              "",
+              "### Rendered Resource Changes",
+              (if ((.diff.resources // []) | length) == 0 then
+                "- none"
+              else
+                (.diff.resources // [])[] |
+                "#### \(.title)",
+                "- status: \(.status); changed lines: +\(.add)/-\(.del)",
+                ([
+                  .unified[]? |
+                  if .kind? == "add" then
+                    "+ new \(.newNo // "?"): \(.html | clean)"
+                  elif .kind? == "del" then
+                    "- old \(.oldNo // "?"): \(.html | clean)"
+                  elif .right.kind? == "add" then
+                    "+ new \(.right.no // "?"): \(.right.html | clean)"
+                  elif .left.kind? == "del" then
+                    "- old \(.left.no // "?"): \(.left.html | clean)"
+                  else
+                    empty
+                  end
+                ] | .[:50] | if length == 0 then
+                  "- no field-level changed-line snippets available"
+                else
+                  "```diff", .[], "```"
+                end),
+                ""
+              end)
+            ' "${diff_file}" >> "${context_file}"
+          else
+            echo "Konflate rendered diff was unavailable or not ready; use Konflate MCP or the git diff as fallback evidence." >> "${context_file}"
           fi
 
           {
