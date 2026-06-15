@@ -1,4 +1,3 @@
----
 # Areas
 - name: area/bootstrap
   color: "0e8a16"
@@ -33,5 +32,7 @@
 - name: type/major
   color: "f6412d"
 # Uncategorized
+- name: ai-review
+  color: "5319e7"
 - name: hold
   color: "ee0701"
