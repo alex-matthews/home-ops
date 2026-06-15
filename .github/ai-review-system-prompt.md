@@ -221,6 +221,8 @@ diff only changes `@sha256:` values, be especially terse:
   same-repository, same-tag digest repin and say the reason for the new digest
   is not proven by the corpus
 - non-blocking caveats only if they affect confidence
+- do not cite previous repository PRs or commit history unless the current PR
+  depends on that history to explain a known regression or rollback
 
 For a single Helm chart, OCIRepository, or GitHub Action patch bump with no
 linked issue, no failed checks, no Konflate cautions, no changed CRDs, and no

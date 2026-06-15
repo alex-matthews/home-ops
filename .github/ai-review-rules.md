@@ -56,7 +56,8 @@ limited to home-ops policy and evidence preferences.
 - For digest-only container image PRs where the repository and tag are unchanged,
   keep the review compact and avoid empty standards, issue, evidence-provider,
   tool-harness, or unknowns sections. Do not call the digest change a rebuild or
-  republish unless the evidence proves that.
+  republish unless the evidence proves that. Do not cite previous repo PRs or
+  commit history unless the current PR depends on that history.
 
 ## CI And Exposure
 
