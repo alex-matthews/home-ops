@@ -136,6 +136,63 @@ jobs:
             echo "Konflate summary was unavailable after retries; use Konflate MCP or the git diff as fallback evidence." >> "${context_file}"
           fi
 
+          {
+            echo
+            echo "## Repository App Context"
+            echo
+            echo "This section is deterministic context from the checked-out PR head for apps whose HelmRelease or OCIRepository changed."
+            echo "For storage, ownership, securityContext, podSecurityContext, volume, or persistence findings, use this section before deciding whether the change is low-risk."
+          } >> "${context_file}"
+
+          app_dirs="$(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' |
+              awk -F/ '$1 == "kubernetes" && $2 == "apps" && $5 == "app" && ($6 == "ocirepository.yaml" || $6 == "helmrelease.yaml") { print $1 "/" $2 "/" $3 "/" $4 "/" $5 }' |
+              sort -u
+          )"
+
+          if [ -z "${app_dirs}" ]; then
+            echo "No changed app HelmRelease or OCIRepository files were detected." >> "${context_file}"
+          else
+            printf '%s\n' "${app_dirs}" | while IFS= read -r app_dir; do
+              [ -n "${app_dir}" ] || continue
+
+              {
+                echo
+                echo "### ${app_dir}"
+                echo
+                echo "If rendered diff changes UID/GID/fsGroup, volume mounts, persistence, or storage-adjacent fields for this app, inspect these manifests before choosing the recommendation."
+              } >> "${context_file}"
+
+              if [ -f "${app_dir}/helmrelease.yaml" ]; then
+                {
+                  echo
+                  echo "#### ${app_dir}/helmrelease.yaml"
+                  echo
+                  echo '```yaml'
+                  sed -n '1,260p' "${app_dir}/helmrelease.yaml"
+                  echo '```'
+                  echo
+                  echo "#### Persistence and ownership excerpts"
+                  echo
+                  echo '```text'
+                  grep -n -A12 -E '^[[:space:]]+(persistence:|volumeClaimTemplates:|volumes:|volumeMounts:|securityContext:|podSecurityContext:|runAsUser:|runAsGroup:|fsGroup:|fsGroupChangePolicy:)' "${app_dir}/helmrelease.yaml" || true
+                  echo '```'
+                } >> "${context_file}"
+              fi
+
+              if [ -f "${app_dir}/ocirepository.yaml" ]; then
+                {
+                  echo
+                  echo "#### ${app_dir}/ocirepository.yaml"
+                  echo
+                  echo '```yaml'
+                  sed -n '1,120p' "${app_dir}/ocirepository.yaml"
+                  echo '```'
+                } >> "${context_file}"
+              fi
+            done
+          fi
+
           echo "path=${context_file}" >> "$GITHUB_OUTPUT"
           echo "system_prompt_path=${system_prompt_file}" >> "$GITHUB_OUTPUT"
 
@@ -189,3 +246,36 @@ jobs:
           ci_status_check: "true"
           ci_timeout_sec: "600"
           rereview_label: ai-review
+
+      - name: Normalize managed review comment
+        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          body_file="${RUNNER_TEMP}/ai-review-body.md"
+          normalized_file="${RUNNER_TEMP}/ai-review-body-normalized.md"
+          payload_file="${RUNNER_TEMP}/ai-review-body.json"
+
+          comment_id="$(
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" --paginate \
+              --jq '.[] | select((.body // "") | contains("<!-- home-ops-ai-pr-review -->")) | .id' |
+              tail -n 1
+          )"
+
+          if [ -z "${comment_id}" ]; then
+            echo "No managed AI review comment found to normalize."
+            exit 0
+          fi
+
+          gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --jq '.body' > "${body_file}"
+          perl -0pe 's/\bPR\s+PR\s+#?([0-9]+)\b/PR #$1/g; s/\bPR\s+([0-9]+)\b/PR #$1/g' "${body_file}" > "${normalized_file}"
+
+          if cmp -s "${body_file}" "${normalized_file}"; then
+            echo "Managed AI review comment did not need normalization."
+            exit 0
+          fi
+
+          jq -Rs '{body: .}' "${normalized_file}" > "${payload_file}"
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --input "${payload_file}"
+          echo "Normalized managed AI review comment ${comment_id}."
