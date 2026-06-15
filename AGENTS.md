@@ -11,8 +11,10 @@ small, reviewable, and independently reconcilable.
 - Do not add bespoke scripts, provider systems, permissions, webhooks, storage,
   auth surfaces, or new public routes without explicit justification and
   approval.
-- Treat onedr0p/home-ops and buroa/k8s-gitops patterns as constraints. Explain
-  any divergence before implementing it.
+- Use onedr0p/home-ops and buroa/k8s-gitops as design references, not sources
+  to copy blindly. Prefer this repo's existing conventions; when modeling work
+  on a peer repo, compare the relevant files or PRs and call out material
+  divergence before implementation.
 - If live verification shows unexpected behavior, stop and report before
   layering additional fixes.
 - Use PR branches for high-risk changes unless the user explicitly approves
