@@ -62,6 +62,11 @@ jobs:
           echo "eligible=${eligible}" >> "$GITHUB_OUTPUT"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
           echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          checkout_ref="${head_sha}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            checkout_ref="${GITHUB_SHA}"
+          fi
+          echo "checkout_ref=${checkout_ref}" >> "$GITHUB_OUTPUT"
 
       - name: Check reviewer config
         id: config
@@ -78,40 +83,31 @@ jobs:
 
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
-      - name: Generate token
-        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        id: app-token
-        with:
-          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
-          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
-          permission-checks: read
-          permission-contents: read
-          permission-issues: write
-          permission-pull-requests: write
-          permission-statuses: read
-
       - name: Checkout
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: ${{ steps.pr.outputs.head_sha }}
-          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ steps.pr.outputs.checkout_ref }}
+          token: ${{ github.token }}
 
       - name: Review Renovate PR
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
         uses: misospace/pr-reviewer-action@3479bf51ab9133414ae07af783bff985d3929884 # v1.3.0
+        env:
+          KONFLATE_MCP_URL: ${{ vars.AI_PR_REVIEW_KONFLATE_MCP_URL }}
+          KONFLATE_URL: https://konflate.alexmatthews.xyz
         with:
-          github_token: ${{ steps.app-token.outputs.token }}
+          github_token: ${{ github.token }}
           pr_number: ${{ steps.pr.outputs.number }}
           force_review: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           ai_base_url: ${{ secrets.AI_PR_REVIEW_BASE_URL || vars.AI_PR_REVIEW_BASE_URL }}
           ai_api_format: ${{ vars.AI_PR_REVIEW_API_FORMAT || 'openai' }}
           ai_model: ${{ vars.AI_PR_REVIEW_MODEL || secrets.AI_PR_REVIEW_MODEL }}
           ai_api_key: ${{ secrets.AI_PR_REVIEW_API_KEY }}
-          ai_max_tokens: ${{ vars.AI_PR_REVIEW_MAX_TOKENS || '8192' }}
+          ai_response_format: json_object
+          ai_max_tokens: ${{ vars.AI_PR_REVIEW_MAX_TOKENS || '16000' }}
           ai_temperature: ${{ vars.AI_PR_REVIEW_TEMPERATURE || '0.1' }}
           ai_primary_retries: "2"
           ai_primary_retry_delay_sec: "5"
@@ -120,20 +116,30 @@ jobs:
           on_model_failure: notice
           standards_file: .github/ai-review-rules.md
           allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com
-          publish_review_comment: "true"
-          publish_mode: comment
+          publish_mode: review_comment
+          comment_marker: "<!-- home-ops-ai-pr-review -->"
           allow_approve: "false"
           approve_forks: "false"
           inline_findings: "false"
           validate_required_checks: auto
           required_check_validation_mode: warn
           review_scope: auto
-          context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'low' }}
+          context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'normal' }}
           model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
-          tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'off' }}
+          evidence_providers_file: .github/konflate-evidence-providers.json
+          tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'plan_execute_loop' }}
+          tool_max_rounds: "2"
+          tool_max_requests: "4"
+          tool_planning_timeout_sec: "45"
+          tool_planning_max_context_bytes: "15000"
+          tool_planning_max_tokens: "1500"
+          tool_max_response_bytes: "12000"
+          tool_allowed_gh_api_repos: "*"
+          tool_request_timeout_sec: "15"
           tool_enable_for_forks: "false"
           tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS }}
           tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
           search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
-          ci_status_check: "false"
+          ci_status_check: "true"
+          ci_timeout_sec: "600"
           rereview_label: ai-review

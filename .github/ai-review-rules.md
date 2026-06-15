@@ -37,6 +37,19 @@ loss risk.
 - Flate and Image Pull check results when available.
 - Konflate rendered summaries or MCP evidence when that surface is enabled.
 
+## Evidence Handling
+
+- When evidence provider or tool harness output is present, summarize what it
+  establishes and cite the provider/source instead of only saying that evidence
+  exists.
+- Treat Konflate rendered diff evidence as the closest available view of what
+  Flux will apply. Use it to confirm whether the rendered Kubernetes resources
+  changed, whether cautions are present, and whether the raw file diff misses
+  operational impact.
+- If an enabled provider returns no findings, say which evidence surface was
+  empty or unavailable. Do not infer that no provider was configured unless the
+  corpus explicitly says that.
+
 ## Home-Ops-Specific Checks
 
 - For Kubernetes chart or image updates, look for breaking changes affecting
