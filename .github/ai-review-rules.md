@@ -56,6 +56,11 @@ loss risk.
   request under review, call `get_pr_summary`. Call `get_pr_diff` when the
   summary reports cautions, render failures, or resource changes that need
   line-level detail.
+- The `number` argument for Konflate MCP tools must be the actual pull request
+  number from the review metadata. Do not use list ordinals, line numbers, or
+  examples. If `get_pr_summary` says a pull request is not tracked but
+  `list_pull_requests` shows the PR under review, retry `get_pr_summary` with
+  the listed pull request number before writing the review.
 - Do not include an `Evidence Provider Findings` section when no evidence
   providers are configured. Summarize MCP and other tool output under
   `Tool Harness Findings`.
