@@ -88,21 +88,39 @@ jobs:
           ref: ${{ steps.pr.outputs.checkout_ref }}
           token: ${{ github.token }}
 
-      - name: Wait for Konflate render
+      - name: Prepare Konflate review context
+        id: review_context
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
         env:
           KONFLATE_URL: https://konflate.alexmatthews.xyz
           PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
+          context_file=".github/ai-review-context.md"
+          summary_file="${RUNNER_TEMP}/konflate-summary.md"
+
+          cp .github/ai-review-rules.md "${context_file}"
+          {
+            echo
+            echo "## Current Konflate Summary"
+            echo
+            echo "The workflow fetched this section for PR #${PR_NUMBER} from ${KONFLATE_URL}/api/prs/${PR_NUMBER}/summary before invoking the reviewer."
+            echo "When using Konflate MCP for this review, call tools with number ${PR_NUMBER}. Do not use any other pull request number."
+            echo
+          } >> "${context_file}"
+
           echo "Waiting for Konflate to finish rendering PR #${PR_NUMBER}..."
           if curl -fsS --retry 40 --retry-delay 5 --retry-all-errors \
             -H "Accept: text/markdown" \
             "${KONFLATE_URL}/api/prs/${PR_NUMBER}/summary" \
-            -o /dev/null; then
+            -o "${summary_file}"; then
             echo "Konflate render ready."
+            cat "${summary_file}" >> "${context_file}"
           else
             echo "Konflate not ready after retries; analysis falls back to the git diff."
+            echo "Konflate summary was unavailable after retries; use Konflate MCP or the git diff as fallback evidence." >> "${context_file}"
           fi
+
+          echo "path=${context_file}" >> "$GITHUB_OUTPUT"
 
       - name: Review Renovate PR
         if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
@@ -123,7 +141,7 @@ jobs:
           ai_request_timeout_sec: "300"
           ai_connect_timeout_sec: "10"
           on_model_failure: notice
-          standards_file: .github/ai-review-rules.md
+          standards_file: ${{ steps.review_context.outputs.path }}
           allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com,konflate.alexmatthews.xyz
           publish_mode: review_comment
           comment_marker: "<!-- home-ops-ai-pr-review -->"
