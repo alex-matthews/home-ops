@@ -24,12 +24,12 @@ CI runs purpose-built validation tools directly.
   [External Secrets](https://github.com/external-secrets/external-secrets), and
   [1Password Connect](https://1password.com/)
 - Storage: [Rook-Ceph](https://github.com/rook/rook),
-  [OpenEBS](https://github.com/openebs/openebs), and Synology NFS/SMB
+  [OpenEBS](https://github.com/openebs/openebs), and Synology NFS
 - Backups: [VolSync](https://github.com/backube/volsync)
 - Observability:
   [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
   [Grafana](https://github.com/grafana/grafana), and
-  [Gatus](https://github.com/TwiN/gatus)
+  [Gatus](https://github.com/TwiN/gatus) via gatus-sidecar
 - Automation: [Renovate](https://github.com/renovatebot/renovate),
   [Flate](https://github.com/home-operations/flate), and self-hosted GitHub
   Actions runners
