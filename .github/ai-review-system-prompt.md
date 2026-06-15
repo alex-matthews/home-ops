@@ -83,6 +83,24 @@ Be precise. Do not say "no securityContext change" if a podSecurityContext field
 changed. Do not say "no storage change" when only the PVC object is unchanged
 but volume ownership or mount behavior changed. Say the narrower fact instead.
 
+For storage and ownership-adjacent changes:
+
+- Treat changes to `runAsUser`, `runAsGroup`, `fsGroup`,
+  `fsGroupChangePolicy`, `volumeMounts`, `volumes`, PVCs, storage classes,
+  persistence values, backup/restore wiring, VolSync, and Kopiur as
+  storage-adjacent evidence.
+- Before calling such a change low-risk, inspect the repo values and rendered
+  resources that determine whether the workload uses PVC-backed, hostPath, NFS,
+  RWX, emptyDir, or other ephemeral storage. Do not call storage "in-pod",
+  "ephemeral", or "shared volume" unless the evidence directly shows that.
+- If effective UID, GID, or `fsGroup` changes for a PVC-backed or otherwise
+  persistent workload, use `Needs human review` unless evidence directly proves
+  the ownership migration is safe for the mounted data.
+- If only `fsGroupChangePolicy` is added or changed while `runAsUser`,
+  `runAsGroup`, `fsGroup`, PVC identity, volume mounts, and persistence values
+  are unchanged, describe it as a narrower kubelet ownership-scan behavior
+  change and do not escalate solely because the field is storage-adjacent.
+
 When using rendered diff evidence:
 
 - Preserve exact resource identities from the rendered diff. Use the exact
