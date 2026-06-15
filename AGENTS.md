@@ -23,6 +23,12 @@ small, reviewable, and independently reconcilable.
   or local auth/session state.
 - Do not reformat SOPS-encrypted files; their encrypted document shape is
   intentional.
+- Prefer manifest substitution such as `${SECRET_DOMAIN}`, or existing repo
+  secrets/vars such as `KONFLATE_URL`, instead of hardcoding hostnames in
+  manifests, durable docs, rules files, or workflow defaults. CI, workflow logs,
+  generated comments, and status-check links may expose configured public
+  hostnames when that is the practical integration shape; do not treat that
+  exposure as a blocker by itself.
 - Do not modify ExternalSecret names, target secret names, or secret key names
   unless explicitly requested.
 - Do not casually change PVC names, storage classes, VolSync or Kopiur objects,

@@ -80,6 +80,12 @@ Treat these as high-risk:
 - Rook-Ceph, Cilium, Flux, External Secrets, and cert-manager CRDs.
 - Namespace names and app names used by Flux, HelmRelease, alerts, dashboards, or
   backup components.
+- Hostnames in manifests, durable docs, rules files, or workflow defaults.
+  Prefer manifest substitution such as `${SECRET_DOMAIN}`, or existing repo
+  secrets/vars such as `KONFLATE_URL`, instead of hardcoding hostnames. CI,
+  workflow logs, generated comments, and status-check links may expose
+  configured public hostnames when that is the practical integration shape; do
+  not treat that exposure as a blocker by itself.
 
 If a change touches storage or backups, prefer a plan-first pass and include a
 restore or rollback validation path.
