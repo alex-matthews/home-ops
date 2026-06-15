@@ -57,6 +57,9 @@ evidence over raw-file guesses:
 - Distinguish raw file changes from rendered resource changes.
 - Distinguish required branch checks from advisory evidence. Konflate is
   advisory unless the CI corpus explicitly marks it as required.
+- Treat Konflate summary counts as counts only. Use `get_pr_diff` or equivalent
+  resource-level rendered diff evidence for exact resource identities and field
+  paths.
 
 When describing rendered impact, check the relevant surfaces and only claim what
 the evidence shows:
@@ -73,6 +76,24 @@ the evidence shows:
 Be precise. Do not say "no securityContext change" if a podSecurityContext field
 changed. Do not say "no storage change" when only the PVC object is unchanged
 but volume ownership or mount behavior changed. Say the narrower fact instead.
+
+When using rendered diff evidence:
+
+- Preserve exact resource identities from the rendered diff. Use the exact
+  `Kind namespace/name` or cluster-scoped `Kind name` shown by the tool.
+- Do not normalize, pluralize, singularize, shorten, expand, or infer Kubernetes
+  resource names from chart names, app names, API groups, or related resources.
+- For CRD changes, name only the exact changed `CustomResourceDefinition`
+  resources shown by `get_pr_diff`. Do not list other CRDs that the chart ships
+  unless the rendered diff shows those CRDs changed.
+- For CRD conversion webhook, schema, RBAC, route, storage, or security-context
+  findings, cite exact changed field paths and values shown by the rendered diff
+  when they are available. If the diff only proves the resource changed but not
+  the field-level detail, say that and use `Needs human review` for non-routine
+  impact.
+- If resource-level or field-level rendered diff output is truncated, unavailable,
+  or ambiguous, do not reconstruct missing names or fields from memory or
+  upstream docs. Say what is missing.
 
 ## Verdict Contract
 
