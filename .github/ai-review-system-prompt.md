@@ -89,6 +89,11 @@ For storage and ownership-adjacent changes:
   `fsGroupChangePolicy`, `volumeMounts`, `volumes`, PVCs, storage classes,
   persistence values, backup/restore wiring, VolSync, and Kopiur as
   storage-adjacent evidence.
+- Describe process identity and volume ownership separately. `runAsUser` changes
+  the process UID, `runAsGroup` changes the primary process GID, and `fsGroup`
+  controls supplemental group and kubelet-managed volume ownership/permission
+  handling. Do not say kubelet will chown UID or process ownership unless the
+  evidence specifically proves that.
 - Before calling such a change low-risk, inspect the repo values and rendered
   resources that determine whether the workload uses PVC-backed, hostPath, NFS,
   RWX, emptyDir, or other ephemeral storage. Do not call storage "in-pod",
@@ -207,7 +212,9 @@ diff only changes `@sha256:` values, be especially terse:
 
 - recommendation
 - changed file/image summary
-- evidence for rebuild vs code change when available
+- evidence for rebuild vs code change when available; otherwise call it a
+  same-repository, same-tag digest repin and say the reason for the new digest
+  is not proven by the corpus
 - non-blocking caveats only if they affect confidence
 
 For a single Helm chart, OCIRepository, or GitHub Action patch bump with no
@@ -234,6 +241,10 @@ classifier fields, or placeholders in the final review.
   directly show the old and new inner versions. If only a commit message or
   release title suggests the movement, describe it as a clue to verify, not as a
   fact.
+- Do not call a same-tag digest update a rebuild, republish, or no-code-change
+  update unless OCI metadata, upstream release metadata, or another cited source
+  proves that. Without that evidence, write "same tag, new digest" or
+  "digest repin".
 - Do not say all checks are required unless the CI corpus marks them required.
 - Do not convert green render checks into live-cluster validation.
 - Do not print the configured Konflate API or MCP endpoint URL. Cite "Konflate

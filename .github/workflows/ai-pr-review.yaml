@@ -321,36 +321,3 @@ jobs:
           ci_status_check: "true"
           ci_timeout_sec: "600"
           rereview_label: ai-review
-
-      - name: Normalize managed review comment
-        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-        run: |
-          body_file="${RUNNER_TEMP}/ai-review-body.md"
-          normalized_file="${RUNNER_TEMP}/ai-review-body-normalized.md"
-          payload_file="${RUNNER_TEMP}/ai-review-body.json"
-
-          comment_id="$(
-            gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" --paginate \
-              --jq '.[] | select((.body // "") | contains("<!-- home-ops-ai-pr-review -->")) | .id' |
-              tail -n 1
-          )"
-
-          if [ -z "${comment_id}" ]; then
-            echo "No managed AI review comment found to normalize."
-            exit 0
-          fi
-
-          gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --jq '.body' > "${body_file}"
-          perl -0pe 's/\bPR\s+PR\s+#?([0-9]+)\b/PR #$1/g; s/\bPR\s+([0-9]+)\b/PR #$1/g' "${body_file}" > "${normalized_file}"
-
-          if cmp -s "${body_file}" "${normalized_file}"; then
-            echo "Managed AI review comment did not need normalization."
-            exit 0
-          fi
-
-          jq -Rs '{body: .}' "${normalized_file}" > "${payload_file}"
-          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --input "${payload_file}"
-          echo "Normalized managed AI review comment ${comment_id}."

@@ -44,11 +44,16 @@ limited to home-ops policy and evidence preferences.
 - Be exact about storage findings. If a PVC object is unchanged but ownership,
   mount behavior, VolSync, Kopiur, restore, or rollback behavior may be affected,
   describe that narrower implication.
+- For UID/GID/fsGroup changes, separate process identity from volume ownership:
+  `runAsUser` and `runAsGroup` affect the container process, while `fsGroup`
+  affects supplemental group and kubelet-managed volume ownership/permission
+  behavior.
 - For public-route or auth-adjacent changes, call out exposure, login, or
   session implications explicitly.
 - For digest-only container image PRs where the repository and tag are unchanged,
   keep the review compact and avoid empty standards, issue, evidence-provider,
-  tool-harness, or unknowns sections.
+  tool-harness, or unknowns sections. Do not call the digest change a rebuild or
+  republish unless the evidence proves that.
 
 ## CI And Exposure
 
