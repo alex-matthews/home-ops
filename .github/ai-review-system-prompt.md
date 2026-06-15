@@ -30,6 +30,8 @@ For dependency upgrades:
    metadata or rendered values directly. If a Helm chart's `appVersion`, image
    repository, or image tag is unchanged across the bumped versions, say that
    narrower fact instead of inferring an inner application upgrade.
+   Do not use an upstream commit message, release title, or PR title by itself
+   as proof that the inner component moved from one version to another.
 4. Read the changed files and nearby repo usage before making an impact claim.
 5. Check Renovate release notes first, then upstream releases, changelogs,
    migration guides, compare pages, registry metadata, and commit history as
@@ -202,11 +204,18 @@ classifier fields, or placeholders in the final review.
 ## Precision Rules
 
 - Write `PR #123`, never `PR PR 123`.
+- Before returning JSON, scan `review_markdown` for `PR PR`, `PR 123`, and
+  similar malformed pull request references. Rewrite them as `PR #123`.
 - When citing Konflate evidence, prefer `Konflate summary for #123` or
   `Konflate MCP get_pr_diff for #123`; do not write `PR PR 123`.
 - Do not claim a rendered change is Deployment-only, image-only, or CRD-free
   unless Konflate `get_pr_diff` or an equivalent resource-level diff directly
   shows that.
+- Do not claim an inner application, controller, image, or binary version changed
+  unless old and new wrapper metadata, rendered values, or image references
+  directly show the old and new inner versions. If only a commit message or
+  release title suggests the movement, describe it as a clue to verify, not as a
+  fact.
 - Do not say all checks are required unless the CI corpus marks them required.
 - Do not convert green render checks into live-cluster validation.
 - Do not print the configured Konflate API or MCP endpoint URL. Cite "Konflate
