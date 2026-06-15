@@ -10,6 +10,7 @@ data:
       default: MiniMax-M3
     toolsets:
       - hermes-cli
+      - mcp-toolhive
     terminal:
       backend: local
       cwd: /opt/data/workspace
