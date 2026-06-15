@@ -1,0 +1,107 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: AI PR Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: read
+
+jobs:
+  renovate-review:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'bot-ler[bot]' &&
+      !github.event.pull_request.draft &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ai-review')
+    name: Renovate PR Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check reviewer config
+        id: config
+        env:
+          AI_PR_REVIEW_BASE_URL: ${{ secrets.AI_PR_REVIEW_BASE_URL || vars.AI_PR_REVIEW_BASE_URL }}
+          AI_PR_REVIEW_MODEL: ${{ vars.AI_PR_REVIEW_MODEL || secrets.AI_PR_REVIEW_MODEL }}
+        run: |
+          if [ -z "${AI_PR_REVIEW_BASE_URL:-}" ] || [ -z "${AI_PR_REVIEW_MODEL:-}" ]; then
+            echo "::notice::AI_PR_REVIEW_BASE_URL and AI_PR_REVIEW_MODEL are not configured; skipping AI review"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Generate token
+        if: ${{ steps.config.outputs.enabled == 'true' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-checks: read
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write
+          permission-statuses: read
+
+      - name: Checkout
+        if: ${{ steps.config.outputs.enabled == 'true' }}
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Review Renovate PR
+        if: ${{ steps.config.outputs.enabled == 'true' }}
+        uses: misospace/pr-reviewer-action@3479bf51ab9133414ae07af783bff985d3929884 # v1.3.0
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+          ai_base_url: ${{ secrets.AI_PR_REVIEW_BASE_URL || vars.AI_PR_REVIEW_BASE_URL }}
+          ai_api_format: ${{ vars.AI_PR_REVIEW_API_FORMAT || 'openai' }}
+          ai_model: ${{ vars.AI_PR_REVIEW_MODEL || secrets.AI_PR_REVIEW_MODEL }}
+          ai_api_key: ${{ secrets.AI_PR_REVIEW_API_KEY }}
+          ai_max_tokens: ${{ vars.AI_PR_REVIEW_MAX_TOKENS || '8192' }}
+          ai_temperature: ${{ vars.AI_PR_REVIEW_TEMPERATURE || '0.1' }}
+          ai_primary_retries: "2"
+          ai_primary_retry_delay_sec: "5"
+          ai_request_timeout_sec: "300"
+          ai_connect_timeout_sec: "10"
+          on_model_failure: notice
+          standards_file: .github/ai-review-rules.md
+          allowed_source_hosts: github.com,api.github.com,gitlab.com,registry.terraform.io,artifacthub.io,ghcr.io,hub.docker.com
+          publish_review_comment: "true"
+          publish_mode: comment
+          allow_approve: "false"
+          approve_forks: "false"
+          inline_findings: "false"
+          validate_required_checks: auto
+          required_check_validation_mode: warn
+          review_scope: auto
+          context_limit_mode: ${{ vars.AI_PR_REVIEW_CONTEXT_LIMIT_MODE || 'low' }}
+          model_context_tokens: ${{ vars.AI_PR_REVIEW_CONTEXT_TOKENS }}
+          tool_mode: ${{ vars.AI_PR_REVIEW_TOOL_MODE || 'off' }}
+          tool_enable_for_forks: "false"
+          tool_mcp_servers: ${{ vars.AI_PR_REVIEW_MCP_SERVERS }}
+          tool_mcp_token: ${{ secrets.AI_PR_REVIEW_MCP_TOKEN }}
+          search_url: ${{ vars.AI_PR_REVIEW_SEARCH_URL }}
+          ci_status_check: "false"
+          rereview_label: ai-review
