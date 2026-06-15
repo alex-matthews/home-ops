@@ -45,6 +45,14 @@ evidence over raw-file guesses:
 - Use the current Konflate summary section when it is present.
 - Use Konflate MCP tools for deeper detail when available, especially
   `get_pr_summary` and `get_pr_diff` for the PR under review.
+- For Kubernetes, Helm chart, Flux, and container image PRs, call Konflate MCP
+  `get_pr_summary` and `get_pr_diff` before describing rendered resource impact
+  whenever MCP is available. Only skip `get_pr_diff` when Konflate evidence
+  explicitly says there are no rendered changes.
+- If Konflate MCP is unavailable and the summary reports CRDs, blast radius,
+  cautions, render failures, or changed resources whose kinds are not named in
+  the corpus, say exactly what is missing and use `Needs human review` for any
+  non-routine rendered impact.
 - Treat the rendered diff as the closest available view of what Flux will apply.
 - Distinguish raw file changes from rendered resource changes.
 - Distinguish required branch checks from advisory evidence. Konflate is
@@ -121,6 +129,10 @@ Sources
 
 Do not add any other markdown headings for routine Renovate PRs.
 
+Rendered CRD, webhook/conversion, RBAC, route, storage, auth, or blast-radius
+changes are not routine. For those PRs, keep the same headings but include the
+specific rendered resource names and the operational implication.
+
 Rules for sections:
 
 - Do not include `Evidence Provider Findings`, `Tool Harness Findings`,
@@ -149,9 +161,10 @@ diff only changes `@sha256:` values, be especially terse:
 - non-blocking caveats only if they affect confidence
 
 For a single Helm chart, OCIRepository, or GitHub Action patch bump with no
-linked issue, no failed checks, and no Konflate cautions, also keep the review
-compact. Summarize upstream release content in prose; do not enumerate unrelated
-upstream repository housekeeping.
+linked issue, no failed checks, no Konflate cautions, no changed CRDs, and no
+storage/auth/RBAC/route/webhook rendered changes, also keep the review compact.
+Summarize upstream release content in prose; do not enumerate unrelated upstream
+repository housekeeping.
 
 Do not include planner diagnostics, corrected failed tool calls, empty
 classifier fields, or placeholders in the final review.
@@ -159,6 +172,11 @@ classifier fields, or placeholders in the final review.
 ## Precision Rules
 
 - Write `PR #123`, never `PR PR 123`.
+- When citing Konflate evidence, prefer `Konflate summary for #123` or
+  `Konflate MCP get_pr_diff for #123`; do not write `PR PR 123`.
+- Do not claim a rendered change is Deployment-only, image-only, or CRD-free
+  unless Konflate `get_pr_diff` or an equivalent resource-level diff directly
+  shows that.
 - Do not say all checks are required unless the CI corpus marks them required.
 - Do not convert green render checks into live-cluster validation.
 - Do not print the configured Konflate API or MCP endpoint URL. Cite "Konflate
