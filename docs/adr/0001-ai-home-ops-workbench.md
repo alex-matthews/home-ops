@@ -236,9 +236,10 @@ scraping approaches are not an acceptable design foundation.
 
 ## 6. Rollout Plan
 
-1. Implement [Issue #1205](https://github.com/alex-matthews/home-ops/issues/1205)
-   with `misospace/pr-reviewer-action` in advisory-only Renovate review mode.
-2. Run a small provider evaluation for MiniMax against real home-ops workloads.
+1. Continue [Issue #1205](https://github.com/alex-matthews/home-ops/issues/1205)
+   by tuning the existing `misospace/pr-reviewer-action` workflow in
+   advisory-only Renovate review mode.
+2. Continue the MiniMax evaluation against real home-ops workloads.
 3. Land repository guidance for agents, including [PR #1202](https://github.com/alex-matthews/home-ops/pull/1202)
    or an equivalent structure.
 4. Deploy ToolHive with a minimal read-only MCP set, starting with GitHub and
