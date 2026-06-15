@@ -21,6 +21,10 @@ spec:
               tag: v2026.6.5@sha256:9ad3b04ec916ea2c2da22358fd43b024c788d74073210695af88bfc2e63869b4
             env:
               HERMES_HOME: /opt/data
+              HERMES_DASHBOARD: "1"
+              HERMES_DASHBOARD_HOST: 0.0.0.0
+              HERMES_DASHBOARD_INSECURE: "1"
+              HERMES_DASHBOARD_PORT: "9119"
               HOME: /opt/data
               NO_COLOR: "1"
             envFrom:
@@ -35,23 +39,6 @@ spec:
                 cpu: 100m
               limits:
                 memory: 2Gi
-          dashboard:
-            image:
-              repository: docker.io/nousresearch/hermes-agent
-              tag: v2026.6.5@sha256:9ad3b04ec916ea2c2da22358fd43b024c788d74073210695af88bfc2e63869b4
-            env:
-              GATEWAY_HEALTH_URL: http://localhost:8642
-              NO_COLOR: "1"
-            args:
-              - dashboard
-              - --host
-              - 0.0.0.0
-              - --insecure
-            resources:
-              requests:
-                cpu: 50m
-              limits:
-                memory: 512Mi
     defaultPodOptions:
       securityContext:
         fsGroup: 10000
