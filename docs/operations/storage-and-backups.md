@@ -27,24 +27,24 @@ recovery.
 This inventory is derived from the currently included resources in
 `kubernetes/apps/default/kustomization.yaml`.
 
-| App             | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
-| --------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
-| `agregarr`      | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `autobrr`       | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `bazarr`        | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `brrpolice`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `plex`          | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
-| `prowlarr`      | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `qbittorrent`   | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `qui`           | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `radarr`        | yes           | yes            | yes         | yes        | Separate `radarr-cache` PVC.                                  |
-| `radarr-se`     | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
-| `recyclarr`     | yes           | yes            | no          | no         | CronJob workload; default VolSync capacity.                   |
-| `sabnzbd`       | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `seerr`         | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
-| `sonarr`        | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
-| `tautulli`      | yes           | yes            | no          | no         | Separate `tautulli-cache` PVC.                                |
-| `thelounge`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
+| ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
+| `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `bazarr`      | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
+| `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `plex`        | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
+| `prowlarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `qbittorrent` | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
+| `qui`         | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
+| `radarr`      | yes           | yes            | yes         | yes        | Separate `radarr-cache` PVC.                                  |
+| `radarr-se`   | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
+| `recyclarr`   | yes           | yes            | no          | no         | CronJob workload; default VolSync capacity.                   |
+| `sabnzbd`     | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
+| `seerr`       | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
+| `sonarr`      | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
+| `tautulli`    | yes           | yes            | no          | no         | Separate `tautulli-cache` PVC.                                |
+| `thelounge`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover job by itself. If a future local Kopia target uses NFS only inside
@@ -190,7 +190,7 @@ Render checks for future manifest changes:
 
 ```sh
 kubectl kustomize kubernetes/apps/default
-flate test all --allow-missing-secrets
+flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 ```
 
 ## References

@@ -19,7 +19,8 @@ GitHub Actions, Flux/Konflate/Flate, chart migrations, storage, and ingress.
 
 ## Layout
 
-- `.github/workflows/`: CI, label sync, Renovate, and tag automation.
+- `.github/workflows/`: CI, advisory AI review, label sync, Renovate, and tag
+  automation.
 - `bootstrap/`: one-time cluster bootstrap helpers.
 - `docs/`: durable documentation, including ADRs, guides, and operations docs.
 - `kubernetes/apps/`: Flux-managed application declarations.
@@ -120,17 +121,17 @@ zizmor --offline .github/workflows/*.yaml
 Flux and Kubernetes rendering:
 
 ```sh
-kubectl kustomize kubernetes/apps/flux-system
-flate test all --allow-missing-secrets
+flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 ```
 
 Image diff for Kubernetes app changes:
 
 ```sh
-FLATE_BASE=main FLATE_OUTPUT=json flate diff images
+flate diff images -p ./kubernetes/flux/cluster -o json
 ```
 
-For a specific app, render its `app/` directory when possible:
+For a quick Kustomize-only smoke test, render the touched namespace or app
+directory when possible:
 
 ```sh
 kubectl kustomize kubernetes/apps/<namespace>/<app>/app
@@ -142,8 +143,10 @@ CI runs tools directly. Do not route everything through `just`.
 
 `just` is for local/operator workflows: diagnostics, rendering helpers, live
 cluster actions, bootstrap, Talos, and restore operations. Changes to Justfiles
-are formatted by Lefthook, but `kubernetes/mod.just` is intentionally excluded
-from Flate/Image Pull change filters because it is not part of the render path.
+are formatted by Lefthook. Flate and Image Pull currently filter on
+`kubernetes/**/*`, so changes under `kubernetes/` can trigger those workflows
+even when the touched file is local/operator tooling rather than rendered
+cluster state.
 
 `mise` is used for environment variables and tool installation support. Do not
 add mise tasks unless explicitly requested.

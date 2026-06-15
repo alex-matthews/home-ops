@@ -69,15 +69,18 @@ Pull requests are checked by GitHub Actions:
 - `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
 - `Konflate` runs in-cluster and posts native advisory pull request comments and
   checks from rendered Flate diffs.
+- `AI PR Review` can post advisory reviews on eligible same-repository Renovate
+  pull requests.
 - `Labeler` and `Label Sync` keep pull request and repository labels consistent.
 - `Renovate` opens dependency update PRs for charts, containers, GitHub Actions, and
   other versioned references.
 - `Tag` handles repository release tagging.
 
 The required branch checks are the success aggregators for Flate and Image Pull.
-This lets docs-only or non-render-affecting changes pass cleanly while still
-blocking Kubernetes changes when rendering fails. Konflate is advisory and is
-not a required branch check.
+Docs-only changes skip their render/image jobs. Changes under `kubernetes/`
+still trigger the broad validators, even when the touched file is helper-only,
+and block when rendering fails. Konflate and AI PR Review are advisory and are
+not required branch checks.
 
 See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
 repository conventions.
