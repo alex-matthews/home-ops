@@ -49,6 +49,16 @@ loss risk.
 - If an enabled provider returns no findings, say which evidence surface was
   empty or unavailable. Do not infer that no provider was configured unless the
   corpus explicitly says that.
+- Do not convert green CI into stronger evidence than the check actually
+  provides. A green Flate or Konflate check is render evidence, not a live
+  cluster server-side apply or target-version proof unless that exact command
+  output is present.
+- Do not say an image was pulled on cluster nodes unless Image Pull output
+  explicitly says that. If only the check conclusion is available, phrase it as
+  "Image Pull completed successfully."
+- Use `verified` only for facts directly shown by file diffs, check output,
+  provider output, or tool output. Use `indicates`, `supports`, or `not shown`
+  for inferences.
 
 ## Home-Ops-Specific Checks
 
