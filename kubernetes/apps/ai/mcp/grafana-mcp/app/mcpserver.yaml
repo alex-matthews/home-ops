@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpserver_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServer
+metadata:
+  name: grafana
+spec:
+  image: docker.io/grafana/mcp-grafana:0.15.2@sha256:f7006c42d81e444b77694e4c63c75577a5c45a187088d9799aff23d5e13765cf
+  transport: streamable-http
+  proxyPort: 8080
+  mcpPort: 8000
+  args:
+    - -t
+    - streamable-http
+    - --address
+    - 0.0.0.0:8000
+    - --disable-admin
+    - --disable-incident
+    - --disable-oncall
+    - --disable-provisioning
+    - --disable-rendering
+    - --disable-sift
+    - --disable-write
+  env:
+    - name: GRAFANA_URL
+      value: http://grafana-service.observability.svc.cluster.local:3000
+  secrets:
+    - name: grafana-mcp-secret
+      key: GRAFANA_SERVICE_ACCOUNT_TOKEN
+      targetEnvName: GRAFANA_SERVICE_ACCOUNT_TOKEN
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  groupRef:
+    name: mcp-tools
