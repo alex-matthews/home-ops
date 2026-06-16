@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcpserverentry_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPServerEntry
+metadata:
+  name: github
+spec:
+  remoteUrl: https://api.githubcopilot.com/mcp/readonly
+  transport: streamable-http
+  groupRef:
+    name: mcp-tools
+  headerForward:
+    addPlaintextHeaders:
+      X-MCP-Readonly: "true"
+      X-MCP-Toolsets: context,repos,issues,pull_requests,actions
+    addHeadersFromSecret:
+      - headerName: Authorization
+        valueSecretRef:
+          name: github-mcp-secret
+          key: Authorization
