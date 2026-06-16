@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/toolhive.stacklok.dev/mcptoolconfig_v1beta1.json
+apiVersion: toolhive.stacklok.dev/v1beta1
+kind: MCPToolConfig
+metadata:
+  name: grafana
+spec:
+  toolsFilter:
+    - analyze_loki_labels
+    - generate_deeplink
+    - get_annotation_tags
+    - get_annotations
+    - get_dashboard_by_uid
+    - get_dashboard_panel_queries
+    - get_dashboard_property
+    - get_dashboard_summary
+    - get_datasource
+    - list_datasources
+    - list_loki_label_names
+    - list_loki_label_values
+    - list_prometheus_label_names
+    - list_prometheus_label_values
+    - list_prometheus_metric_metadata
+    - list_prometheus_metric_names
+    - query_loki_logs
+    - query_loki_patterns
+    - query_loki_stats
+    - query_prometheus
+    - query_prometheus_histogram
+    - search_dashboards
+    - search_folders
+    - suggest_loki_alloy_label_config
