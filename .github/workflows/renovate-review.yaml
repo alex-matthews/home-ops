@@ -5,17 +5,14 @@ name: Renovate Research Review
 on:
   pull_request:
     types:
-      - labeled
+      - opened
+      - synchronize
+      - reopened
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Pull request number to review
-        required: true
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -28,41 +25,15 @@ permissions:
 jobs:
   renovate-review:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft &&
-        github.event.label.name == 'ai-renovate-review'
-      )
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'bot-ler[bot]' &&
+      !github.event.pull_request.draft
     name: Renovate Research Review
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Resolve PR context
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
-        run: |
-          head_repo="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.repo.full_name')"
-          head_sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
-          author="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.user.login')"
-          draft="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.draft')"
-
-          eligible=true
-          if [ "$head_repo" != "$GITHUB_REPOSITORY" ] || [ "$author" != "bot-ler[bot]" ] || [ "$draft" = "true" ]; then
-            eligible=false
-            echo "::notice::PR #${PR_NUMBER} is not an eligible same-repository bot-ler Renovate PR; skipping review"
-          fi
-
-          echo "eligible=${eligible}" >> "$GITHUB_OUTPUT"
-          echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
-          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-
       - name: Check reviewer config
         id: config
-        if: ${{ steps.pr.outputs.eligible == 'true' }}
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
@@ -75,21 +46,20 @@ jobs:
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Checkout
-        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        if: ${{ steps.config.outputs.enabled == 'true' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: ${{ steps.pr.outputs.head_sha }}
-          token: ${{ github.token }}
 
       - name: Review Renovate PR
-        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        id: claude
+        if: ${{ steps.config.outputs.enabled == 'true' }}
         uses: anthropics/claude-code-action@4d7e1f0cd85743fdc93b1c8040ab54395da024e2 # v1.0.149
         env:
           GH_TOKEN: ${{ github.token }}
           KONFLATE_URL: ${{ secrets.KONFLATE_URL || vars.KONFLATE_URL }}
-          PR: ${{ steps.pr.outputs.number }}
+          PR: ${{ github.event.pull_request.number }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "bot-ler[bot]"
@@ -103,7 +73,7 @@ jobs:
             or request changes.
 
             REPO: ${{ github.repository }}
-            PR: #${{ steps.pr.outputs.number }}
+            PR: #${{ github.event.pull_request.number }}
 
             ## Context
 
@@ -281,3 +251,29 @@ jobs:
 
             When citing GitHub URLs in the review body, rewrite
             `github.com` to `redirect.github.com` to avoid backlink spam.
+
+      - name: Verify Claude result
+        if: ${{ always() && steps.config.outputs.enabled == 'true' }}
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "$EXECUTION_FILE" ]; then
+            echo "::error::Claude execution output is missing"
+            exit 1
+          fi
+
+          subtype="$(jq -r '[.[] | select(.type == "result")][-1].subtype // "missing"' "$EXECUTION_FILE")"
+          is_error="$(jq -r '[.[] | select(.type == "result")][-1].is_error // "missing"' "$EXECUTION_FILE")"
+          turns="$(jq -r '[.[] | select(.type == "result")][-1].num_turns // "missing"' "$EXECUTION_FILE")"
+
+          echo "Claude result: subtype=${subtype} is_error=${is_error} turns=${turns}"
+
+          if [ "$subtype" = "missing" ]; then
+            echo "::error::Claude did not emit a result message"
+            exit 1
+          fi
+
+          if [ "$is_error" = "true" ]; then
+            echo "::error::Claude exited with is_error=true"
+            exit 1
+          fi
