@@ -262,14 +262,19 @@ jobs:
             exit 1
           fi
 
-          subtype="$(jq -r '[.[] | select(.type == "result")][-1].subtype // "missing"' "$EXECUTION_FILE")"
-          is_error="$(jq -r '[.[] | select(.type == "result")][-1].is_error // "missing"' "$EXECUTION_FILE")"
-          turns="$(jq -r '[.[] | select(.type == "result")][-1].num_turns // "missing"' "$EXECUTION_FILE")"
+          subtype="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("subtype") then .subtype else "missing" end' "$EXECUTION_FILE")"
+          is_error="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("is_error") then .is_error else "missing" end' "$EXECUTION_FILE")"
+          turns="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("num_turns") then .num_turns else "missing" end' "$EXECUTION_FILE")"
 
           echo "Claude result: subtype=${subtype} is_error=${is_error} turns=${turns}"
 
           if [ "$subtype" = "missing" ]; then
             echo "::error::Claude did not emit a result message"
+            exit 1
+          fi
+
+          if [ "$is_error" = "missing" ]; then
+            echo "::error::Claude result did not include is_error"
             exit 1
           fi
 
