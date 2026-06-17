@@ -1,7 +1,8 @@
 # Repo Guide
 
-This is a compact map for making safe changes in this GitOps repo. Prefer the
-patterns already present here over introducing new structure.
+This is a compact map for this GitOps repo's layout, app patterns, and validation
+commands. Agent behavior and change-control rules live in
+[`../../AGENTS.md`](../../AGENTS.md).
 
 ## Reference Repos
 
@@ -9,6 +10,7 @@ Use these as design references, not sources to copy blindly:
 
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops)
+- [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
 - [home-operations/cluster-template](https://github.com/home-operations/cluster-template)
 
 Prefer this repo's existing layout and conventions when they differ.
@@ -19,8 +21,10 @@ GitHub Actions, Flux/Konflate/Flate, chart migrations, storage, and ingress.
 
 ## Layout
 
-- `.github/workflows/`: CI, advisory AI review, label sync, Renovate, and tag
-  automation.
+- `.github/workflows/`: CI, Renovate Research Review, label sync, Renovate, and
+  tag automation.
+- `.agents/instructions/`: narrow reusable agent instructions, currently YAML
+  ordering.
 - `bootstrap/`: one-time cluster bootstrap helpers.
 - `docs/`: durable documentation, including ADRs, guides, and operations docs.
 - `kubernetes/apps/`: Flux-managed application declarations.
@@ -61,9 +65,8 @@ Prefer existing bjw-s app-template values for app workloads:
 - `defaultPodOptions`
 - `service`
 - `route`
+- `configMaps`
 - `persistence`
-- `resources`
-- `securityContext`
 
 Use existing image, route, probe, security, and persistence patterns from nearby
 apps before adding a new style.
@@ -91,21 +94,14 @@ Treat these as high-risk:
 If a change touches storage or backups, prefer a plan-first pass and include a
 restore or rollback validation path.
 
-## Change Control
+## YAML Ordering
 
-For infra, workflow, GitOps, and automation work, write down the intended diff,
-reference-repo comparison, validation plan, and acceptance criteria before
-editing unless the user explicitly asks for immediate implementation.
+When editing YAML, preserve the repo's established ordering instead of blindly
+sorting every key. For reusable ordering rules, see
+[`../../.agents/instructions/yaml-ordering.instructions.md`](../../.agents/instructions/yaml-ordering.instructions.md).
 
-Do not introduce bespoke scripts, provider systems, permissions, webhooks,
-storage, auth surfaces, public routes, or new external services without explicit
-justification and approval. If the change diverges from a reference repo, say
-why first.
-
-Use PR branches for high-risk changes unless the user explicitly approves
-direct-to-main edits. If live verification shows unexpected behavior, stop and
-report the result before layering more changes. When finishing, summarize what
-changed, what passed validation, and any remaining gap or risk.
+If nearby manifests use a chart-specific order, follow the nearby pattern unless
+that conflicts with the reusable ordering rules.
 
 ## Validation
 

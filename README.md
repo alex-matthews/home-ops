@@ -69,8 +69,8 @@ Pull requests are checked by GitHub Actions:
 - `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
 - `Konflate` runs in-cluster and posts native advisory pull request comments and
   checks from rendered Flate diffs.
-- `AI PR Review` can post advisory reviews on eligible same-repository Renovate
-  pull requests.
+- `Renovate Research Review` can post advisory Claude-backed research reviews on
+  eligible same-repository Renovate pull requests.
 - `Labeler` and `Label Sync` keep pull request and repository labels consistent.
 - `Renovate` opens dependency update PRs for charts, containers, GitHub Actions, and
   other versioned references.
@@ -79,8 +79,8 @@ Pull requests are checked by GitHub Actions:
 The required branch checks are the success aggregators for Flate and Image Pull.
 Docs-only changes skip their render/image jobs. Changes under `kubernetes/`
 still trigger the broad validators, even when the touched file is helper-only,
-and block when rendering fails. Konflate and AI PR Review are advisory and are
-not required branch checks.
+and block when rendering fails. Konflate and Renovate Research Review are
+advisory and are not required branch checks.
 
 See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
 repository conventions.
@@ -104,6 +104,8 @@ unless a workflow has a specific reason to do so.
 
 ## Operations Docs
 
+- [AI Workbench Prompts](docs/operations/ai-workbench.md) collects starter
+  Hermes and ToolHive MCP prompts.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
   current backup posture and Kopia migration criteria.
 
