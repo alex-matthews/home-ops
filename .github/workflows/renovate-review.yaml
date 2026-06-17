@@ -354,6 +354,53 @@ jobs:
             exit 1
           fi
 
+      - name: Record review fingerprint
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
+        env:
+          FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
+          review_body="${RUNNER_TEMP}/renovate-review-body.md"
+          updated_body="${RUNNER_TEMP}/renovate-review-body-updated.md"
+          payload="${RUNNER_TEMP}/renovate-review-body.json"
+
+          review_id="$(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" \
+              --jq '[.[] | select(.body != null and (.body | contains("<!-- home-ops-renovate-research -->")))] | last | .id // empty'
+          )"
+
+          if [ -z "${review_id}" ]; then
+            echo "::error::Could not find a Renovate research review to fingerprint"
+            exit 1
+          fi
+
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews/${review_id}" \
+            --jq '.body // ""' > "${review_body}"
+
+          if grep -Fq "${marker}" "${review_body}"; then
+            echo "Review fingerprint already recorded."
+            exit 0
+          fi
+
+          if grep -Eq '<!-- home-ops-renovate-research fingerprint:[0-9a-f]+ -->' "${review_body}"; then
+            sed -E "s#<!-- home-ops-renovate-research fingerprint:[0-9a-f]+ -->#${marker}#" \
+              "${review_body}" > "${updated_body}"
+          else
+            {
+              echo "${marker}"
+              cat "${review_body}"
+            } > "${updated_body}"
+          fi
+
+          jq -n --rawfile body "${updated_body}" '{body: $body}' > "${payload}"
+          gh api \
+            --method PUT \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews/${review_id}" \
+            --input "${payload}" \
+            --silent
+
       - name: Remove re-review label
         if: ${{ always() && github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
         env:
