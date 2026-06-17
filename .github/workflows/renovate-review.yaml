@@ -8,17 +8,19 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
     branches:
       - main
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 permissions:
   checks: read
   contents: read
   id-token: write
+  issues: write
   pull-requests: write
   statuses: read
 
@@ -27,7 +29,8 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login == 'bot-ler[bot]' &&
-      !github.event.pull_request.draft
+      !github.event.pull_request.draft &&
+      (github.event.action != 'labeled' || github.event.label.name == 'renovate-review')
     name: Renovate Research Review
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -74,6 +77,7 @@ jobs:
 
             REPO: ${{ github.repository }}
             PR: #${{ github.event.pull_request.number }}
+            Manual re-review requested: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
 
             ## Context
 
@@ -103,9 +107,11 @@ jobs:
             Before researching, check existing PR reviews and comments with
             `gh pr view --json reviews,comments` or `gh api`.
 
-            If a prior review body contains `<!-- home-ops-renovate-research -->`
-            for the same package/version tuple currently in the PR diff, stop
-            without posting another review. If versions changed, continue.
+            If manual re-review was not requested and a prior review body
+            contains `<!-- home-ops-renovate-research -->` for the same
+            package/version tuple currently in the PR diff, stop without posting
+            another review. If manual re-review was requested, or if versions
+            changed, continue.
 
             ## Evidence workflow
 
@@ -305,3 +311,14 @@ jobs:
             echo "::error::Claude exited with is_error=true"
             exit 1
           fi
+
+      - name: Remove re-review label
+        if: ${{ always() && github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/renovate-review" \
+            --silent
