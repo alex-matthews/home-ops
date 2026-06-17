@@ -140,10 +140,12 @@ jobs:
             ## Evidence workflow
 
             1. Read the PR with `gh pr view` and `gh pr diff`.
-               Identify each upgraded package, old version, new version, update
-               type, touched file, and whether this is a wrapper dependency such
-               as a chart wrapping an app or a container wrapping upstream
-               software.
+               Identify each outer artifact being upgraded, old version, new
+               version, update type, touched file, and whether it is a wrapper
+               dependency such as a chart wrapping an app, a container image
+               wrapping upstream software, or a GitHub Action wrapping a CLI
+               tool. For wrapper dependencies, identify the inner component and
+               its version change when the evidence shows one.
 
             2. Check CI with `gh pr checks`.
                Do not use the legacy commit status API as check-run evidence. If
@@ -162,11 +164,28 @@ jobs:
                RBAC, routes, webhooks, or secrets, research those rendered
                changes before giving a verdict. Do not print endpoint URLs.
 
-            4. Research upstream. Start from release notes in the PR body, then
-               GitHub Releases, changelogs, upgrade guides, chart templates,
-               wrapper repositories, commit history, registry metadata, and web
-               search as needed. Do not stop at the first source when the PR
-               touches CRDs, webhooks, storage, or security context.
+            4. Research upstream by tracing the dependency chain to its origin.
+               Changelogs live at the source, not always at the wrapper. Start
+               from release notes in the PR body, then follow this order as
+               needed:
+               - GitHub Releases for every version between old and new, not
+                 only the final version.
+               - CHANGELOG, UPGRADING, migration, and release-note files in the
+                 upstream repository.
+               - Wrapper changelogs for charts, images, meta-packages, and
+                 GitHub Actions, plus the underlying component changelog.
+               - Documentation sites for migration guides, compatibility
+                 matrices, deprecations, and breaking-change notes.
+               - Commit history between the two versions, scanning for
+                 breaking, deprecat, remov, renam, migrat, drop, and require.
+               - Registry metadata and README links when releases or changelogs
+                 are absent.
+               - Web search as a last resort for hard-to-find changelogs or
+                 community migration reports.
+
+               Do not stop at the first source when it is only a wrapper
+               release or lacks migration detail. Cross-check enough evidence to
+               decide whether the change affects this repository.
 
             5. Map upstream findings to this repo. Read the local manifests that
                consume the dependency: `OCIRepository`, `HelmRelease`,
@@ -181,6 +200,18 @@ jobs:
                - New features: call out only when they are worth adopting
                  because they simplify config, remove workarounds, or improve
                  reliability for this repo.
+
+               Map each category against actual repository usage. A breaking
+               change that affects a feature this repo does not use is not
+               actionable; mention it only when it helps explain the verdict.
+
+            ## Dead ends
+
+            If a dependency has no useful releases, changelog, upgrade guide,
+            registry metadata, or commit history, say exactly what you checked
+            and what could not be verified. Do not fabricate release notes or
+            infer safety from "patch release" alone when the PR touches CRDs,
+            webhooks, storage, RBAC, routes, auth, or security context.
 
             ## High-risk checks
 
