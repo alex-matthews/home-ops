@@ -274,6 +274,29 @@ jobs:
           fi
 
           if [ "$is_error" = "true" ]; then
+            echo "::group::Claude error diagnostic"
+            echo "Captured message types:"
+            jq -r '[.[] | .type] | join(", ")' "$EXECUTION_FILE"
+            echo
+            echo "Last assistant/error excerpt:"
+            jq -r '
+              def flatten_text:
+                if type == "string" then .
+                elif type == "array" then map(flatten_text) | join("\n")
+                elif type == "object" then
+                  (.text // .content // .message // .error // .errors // empty | flatten_text)
+                else empty end;
+
+              (
+                [.[] | select(.type == "assistant" or .type == "error")] | last | flatten_text
+              ) // "No assistant or error message was captured."
+            ' "$EXECUTION_FILE" |
+              sed -E 's#https?://[^[:space:]<>")]+#[redacted-url]#g' |
+              sed -E 's#(sk-[A-Za-z0-9_-]{12,})#[redacted-token]#g' |
+              sed -E 's#(gh[pousr]_[A-Za-z0-9_]{20,})#[redacted-token]#g' |
+              head -c 4000
+            echo
+            echo "::endgroup::"
             echo "::error::Claude exited with is_error=true"
             exit 1
           fi
