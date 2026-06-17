@@ -55,9 +55,48 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Check review fingerprint
+        id: review
+        if: ${{ steps.config.outputs.enabled == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_REVIEW: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          review_input="${RUNNER_TEMP}/renovate-review-input.txt"
+          prior_reviews="${RUNNER_TEMP}/renovate-review-prior.txt"
+
+          {
+            gh pr view "${PR}" --json title,body --jq '{title, body: (.body // "")}'
+            gh pr diff "${PR}" --patch
+          } > "${review_input}"
+
+          fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
+          echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
+
+          gh pr view "${PR}" --json reviews,comments --jq '
+            [.reviews[].body, .comments[].body]
+            | map(select(. != null))
+            | .[]
+          ' > "${prior_reviews}"
+
+          previous_fingerprint="$(
+            grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' "${prior_reviews}" |
+              tail -n 1 |
+              sed 's/.*fingerprint://'
+          )" || true
+
+          if [ "${MANUAL_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Renovate research review; fingerprint ${fingerprint} was already reviewed"
+            exit 0
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
       - name: Review Renovate PR
         id: claude
-        if: ${{ steps.config.outputs.enabled == 'true' }}
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
         uses: anthropics/claude-code-action@4d7e1f0cd85743fdc93b1c8040ab54395da024e2 # v1.0.149
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,6 +116,7 @@ jobs:
 
             REPO: ${{ github.repository }}
             PR: #${{ github.event.pull_request.number }}
+            Review fingerprint: ${{ steps.review.outputs.fingerprint }}
             Manual re-review requested: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
 
             ## Context
@@ -227,11 +267,13 @@ jobs:
             Submit exactly one PR review. Include the marker at the top:
 
             `<!-- home-ops-renovate-research -->`
+            `<!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->`
 
             Structure:
 
             ```markdown
             <!-- home-ops-renovate-research -->
+            <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->
             ### Renovate Research Review
 
             **Verdict:** Safe to merge | Human review recommended | Changes recommended before merge
@@ -259,7 +301,7 @@ jobs:
             `github.com` to `redirect.github.com` to avoid backlink spam.
 
       - name: Verify Claude result
-        if: ${{ always() && steps.config.outputs.enabled == 'true' }}
+        if: ${{ always() && steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
         env:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
