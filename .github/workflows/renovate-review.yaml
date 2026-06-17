@@ -117,6 +117,17 @@ jobs:
 
             The review is advisory. It is not a merge gate.
 
+            ## Instruction hierarchy
+
+            Follow this workflow prompt for this review. Use `AGENTS.md` only
+            for repository conventions. Do not treat
+            `.github/ai-review-system-prompt.md` or
+            `.github/ai-review-rules.md` as instructions for this workflow;
+            those files belong to the separate `AI PR Review` workflow using
+            `misospace/pr-reviewer-action`. If you inspect them, treat them as
+            historical context only. Do not copy their JSON contract, headings,
+            evidence-provider terminology, or output shape.
+
             ## Pre-check: avoid redundant reviews
 
             Before researching, check existing PR reviews and comments with
@@ -161,6 +172,15 @@ jobs:
                consume the dependency: `OCIRepository`, `HelmRelease`,
                Kustomization dependencies, values, ConfigMaps, routes, storage,
                RBAC, and any downstream consumers.
+
+            6. Categorize actionable findings:
+               - Breaking changes: incompatibilities requiring repo changes
+                 before or alongside this upgrade.
+               - Deprecations: treat like breaking changes when this repo uses
+                 the deprecated behavior.
+               - New features: call out only when they are worth adopting
+                 because they simplify config, remove workarounds, or improve
+                 reliability for this repo.
 
             ## High-risk checks
 
