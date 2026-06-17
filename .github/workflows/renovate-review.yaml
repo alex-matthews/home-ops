@@ -1,0 +1,283 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Renovate Research Review
+
+on:
+  pull_request:
+    types:
+      - labeled
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to review
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  checks: read
+  contents: read
+  id-token: write
+  pull-requests: write
+  statuses: read
+
+jobs:
+  renovate-review:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login == 'bot-ler[bot]' &&
+        !github.event.pull_request.draft &&
+        github.event.label.name == 'ai-renovate-review'
+      )
+    name: Renovate Research Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve PR context
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          head_repo="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.repo.full_name')"
+          head_sha="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          author="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.user.login')"
+          draft="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.draft')"
+
+          eligible=true
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ] || [ "$author" != "bot-ler[bot]" ] || [ "$draft" = "true" ]; then
+            eligible=false
+            echo "::notice::PR #${PR_NUMBER} is not an eligible same-repository bot-ler Renovate PR; skipping review"
+          fi
+
+          echo "eligible=${eligible}" >> "$GITHUB_OUTPUT"
+          echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
+          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Check reviewer config
+        id: config
+        if: ${{ steps.pr.outputs.eligible == 'true' }}
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN is not configured; skipping Renovate research review"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ steps.pr.outputs.head_sha }}
+          token: ${{ github.token }}
+
+      - name: Review Renovate PR
+        if: ${{ steps.pr.outputs.eligible == 'true' && steps.config.outputs.enabled == 'true' }}
+        uses: anthropics/claude-code-action@4d7e1f0cd85743fdc93b1c8040ab54395da024e2 # v1.0.149
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KONFLATE_URL: ${{ secrets.KONFLATE_URL || vars.KONFLATE_URL }}
+          PR: ${{ steps.pr.outputs.number }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "bot-ler[bot]"
+          claude_args: |
+            --model ${{ vars.CLAUDE_RENOVATE_REVIEW_MODEL || 'claude-sonnet-4-6' }}
+            --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr review:*),Bash(gh api:*),Bash(gh release view:*),Bash(gh release list:*),Bash(git log:*),Bash(git diff:*),Bash(curl:*),WebFetch,WebSearch"
+          prompt: |
+            You research same-repository Renovate pull requests in this Flux
+            GitOps repository and submit exactly one GitHub PR review comment
+            with your findings. You do not modify files, push commits, approve,
+            or request changes.
+
+            REPO: ${{ github.repository }}
+            PR: #${{ steps.pr.outputs.number }}
+
+            ## Context
+
+            This repository manages a Kubernetes cluster with Flux. Renovate
+            commonly updates:
+
+            - OCI Helm chart tags in Flux `OCIRepository` resources.
+            - Container image tags or digests in HelmRelease values.
+            - GitHub Actions and other workflow dependencies.
+            - Regex-managed YAML dependencies.
+
+            The review is advisory. It is not a merge gate.
+
+            ## Instruction hierarchy
+
+            Follow this workflow prompt for this review. Use `AGENTS.md` only
+            for repository conventions. Do not treat
+            `.github/ai-review-system-prompt.md` or
+            `.github/ai-review-rules.md` as instructions for this workflow;
+            those files belong to the separate `AI PR Review` workflow using
+            `misospace/pr-reviewer-action`. If you inspect them, treat them as
+            historical context only. Do not copy their JSON contract, headings,
+            evidence-provider terminology, or output shape.
+
+            ## Pre-check: avoid redundant reviews
+
+            Before researching, check existing PR reviews and comments with
+            `gh pr view --json reviews,comments` or `gh api`.
+
+            If a prior review body contains `<!-- home-ops-renovate-research -->`
+            for the same package/version tuple currently in the PR diff, stop
+            without posting another review. If versions changed, continue.
+
+            ## Evidence workflow
+
+            1. Read the PR with `gh pr view` and `gh pr diff`.
+               Identify each outer artifact being upgraded, old version, new
+               version, update type, touched file, and whether it is a wrapper
+               dependency such as a chart wrapping an app, a container image
+               wrapping upstream software, or a GitHub Action wrapping a CLI
+               tool. For wrapper dependencies, identify the inner component and
+               its version change when the evidence shows one.
+
+            2. Check CI with `gh pr checks`.
+               Do not use the legacy commit status API as check-run evidence. If
+               a status endpoint returns `total_count: 0`, that means legacy
+               statuses are absent; it does not mean GitHub Actions checks are
+               absent, pending, or passing.
+
+            3. If `KONFLATE_URL` is configured and the PR touches Kubernetes,
+               Helm, Flux, CRDs, RBAC, routes, storage, secrets, or container
+               images, fetch the Konflate summary:
+
+               `curl -fsS -H 'Accept: text/markdown' "${KONFLATE_URL}/api/prs/${PR}/summary"`
+
+               Treat Konflate as advisory rendered-diff evidence. If the summary
+               mentions cautions, CRDs, blast radius, removed resources, storage,
+               RBAC, routes, webhooks, or secrets, research those rendered
+               changes before giving a verdict. Do not print endpoint URLs.
+
+            4. Research upstream by tracing the dependency chain to its origin.
+               Changelogs live at the source, not always at the wrapper. Start
+               from release notes in the PR body, then follow this order as
+               needed:
+               - GitHub Releases for every version between old and new, not
+                 only the final version.
+               - CHANGELOG, UPGRADING, migration, and release-note files in the
+                 upstream repository.
+               - Wrapper changelogs for charts, images, meta-packages, and
+                 GitHub Actions, plus the underlying component changelog.
+               - Documentation sites for migration guides, compatibility
+                 matrices, deprecations, and breaking-change notes.
+               - Commit history between the two versions, scanning for
+                 breaking, deprecat, remov, renam, migrat, drop, and require.
+               - Registry metadata and README links when releases or changelogs
+                 are absent.
+               - Web search as a last resort for hard-to-find changelogs or
+                 community migration reports.
+
+               Do not stop at the first source when it is only a wrapper
+               release or lacks migration detail. Cross-check enough evidence to
+               decide whether the change affects this repository.
+
+            5. Map upstream findings to this repo. Read the local manifests that
+               consume the dependency: `OCIRepository`, `HelmRelease`,
+               Kustomization dependencies, values, ConfigMaps, routes, storage,
+               RBAC, and any downstream consumers.
+
+            6. Categorize actionable findings:
+               - Breaking changes: incompatibilities requiring repo changes
+                 before or alongside this upgrade.
+               - Deprecations: treat like breaking changes when this repo uses
+                 the deprecated behavior.
+               - New features: call out only when they are worth adopting
+                 because they simplify config, remove workarounds, or improve
+                 reliability for this repo.
+
+               Map each category against actual repository usage. A breaking
+               change that affects a feature this repo does not use is not
+               actionable; mention it only when it helps explain the verdict.
+
+            ## Dead ends
+
+            If a dependency has no useful releases, changelog, upgrade guide,
+            registry metadata, or commit history, say exactly what you checked
+            and what could not be verified. Do not fabricate release notes or
+            infer safety from "patch release" alone when the PR touches CRDs,
+            webhooks, storage, RBAC, routes, auth, or security context.
+
+            ## High-risk checks
+
+            Treat these as material even when the source diff is one line:
+
+            - CRD schema, served/storage versions, or `conversion.webhook`.
+            - Webhook Service/Deployment/certificate changes.
+            - RBAC or ServiceAccount changes.
+            - PVC, storage class, backup, VolSync, or Kopiur changes.
+            - Pod `runAsUser`, `runAsGroup`, `fsGroup`, or `fsGroupChangePolicy`
+              changes when persistence is enabled.
+            - Route, Gateway, Ingress, or public hostname changes.
+            - Image digest changes where upstream provenance is unclear.
+
+            For CRD conversion webhooks, verify that the corresponding webhook
+            Service and Deployment render or already exist. If you cannot verify
+            that, say so and mark confidence low.
+
+            For UID/GID/fsGroup changes with persistence, identify the PVC,
+            mount path, `fsGroupChangePolicy`, and whether the risk is a likely
+            blocker or a post-rollout watch item.
+
+            ## Verdicts
+
+            Use one of:
+
+            - Safe to merge
+            - Human review recommended
+            - Changes recommended before merge
+
+            Because this workflow is experimental, always submit a comment-style
+            review with `gh pr review --comment`. Do not use `--approve` or
+            `--request-changes`.
+
+            ## Review body
+
+            Submit exactly one PR review. Include the marker at the top:
+
+            `<!-- home-ops-renovate-research -->`
+
+            Structure:
+
+            ```markdown
+            <!-- home-ops-renovate-research -->
+            ### Renovate Research Review
+
+            **Verdict:** Safe to merge | Human review recommended | Changes recommended before merge
+
+            **What changed**
+            - ...
+
+            **Findings**
+            - ...
+
+            **Evidence**
+            - GitHub: ...
+            - Konflate: ...
+            - Upstream: ...
+            - Repository usage: ...
+
+            **Unknowns**
+            - ...
+            ```
+
+            Keep it concise but evidence-backed. If there are no material
+            findings, do not pad the response.
+
+            When citing GitHub URLs in the review body, rewrite
+            `github.com` to `redirect.github.com` to avoid backlink spam.
