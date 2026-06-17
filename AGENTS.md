@@ -3,30 +3,27 @@
 This repository is the GitOps source of truth for the cluster. Keep changes
 small, reviewable, and independently reconcilable.
 
-## Instruction Model
+## Entry Points
 
 - This file is the canonical agent entrypoint.
-- `CLAUDE.md` is a shim for Claude Code and must not duplicate these rules.
 - `docs/guides/repo-guide.md` contains repo layout, app patterns, and
   validation commands. Read it before non-trivial repo, workflow, or GitOps
   edits.
 - `.agents/instructions/` is reserved for narrow reusable instructions such as
   YAML ordering. Load only the files relevant to the task.
-- `backlog.md`, if present, is scratch state. Do not commit it unless explicitly
-  requested.
+- `backlog.md`, if present, is scratch state.
 
 ## Before Editing
 
 - For infra, workflow, GitOps, and automation changes, state the intended diff,
   reference-repo comparison, validation plan, and acceptance criteria before
-  editing unless the user explicitly asks for immediate implementation.
+  editing unless immediate implementation is explicitly requested.
 - Read the relevant manifests, workflows, docs, or scripts before proposing a
   fix.
-- Keep changes close to the requested scope. Do not bundle unrelated cleanup.
-- If a branch or PR is the active iteration surface, amend that branch rather
-  than accumulating work on `main`.
-- If a Renovate PR has human companion commits, do not assume it is safe to
-  rebase or let Renovate rewrite it.
+- Keep changes close to the requested scope. If a branch or PR is the active
+  iteration surface, amend that branch rather than accumulating work on `main`.
+- If a Renovate PR has human companion commits, do not rebase it or let Renovate
+  rewrite it unless the user accepts that risk.
 - Use peer repositories as design references, not sources to copy blindly.
   onedr0p/home-ops and buroa/k8s-gitops are useful for lean workflow posture;
   bjw-s-labs/home-ops and joryirving/home-ops are useful for agent guidance and
@@ -71,6 +68,8 @@ small, reviewable, and independently reconcilable.
   and the surrounding files' established pattern.
 - Keep `just` focused on local/operator workflows. CI should call purpose-built
   tools directly unless there is a specific reason to do otherwise.
+- Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
+  available on the ambient `PATH`.
 
 ## Communication
 
@@ -78,9 +77,8 @@ small, reviewable, and independently reconcilable.
 
 ## Validation
 
-Use the smallest validation set that matches the change and report the commands
-run. For repo layout, app patterns, and command examples, see
-`docs/guides/repo-guide.md`.
+Use the smallest validation set that matches the change. For repo layout, app
+patterns, and command examples, see `docs/guides/repo-guide.md`.
 
 When a task is done, state what changed, what was validated, and any remaining
 gap or risk plainly.

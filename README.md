@@ -87,9 +87,9 @@ repository conventions.
 
 ## Local Workflow
 
-Local environment variables are defined in `.mise/config.toml`; local secrets and auth
-state such as `age.key`, `kubeconfig`, `talosconfig`, and `.secrets.env` are
-ignored by Git.
+Local environment variables and repo toolchain activation are defined in
+`.mise/config.toml`; local secrets and auth state such as `age.key`,
+`kubeconfig`, `talosconfig`, and `.secrets.env` are ignored by Git.
 
 Useful entry points:
 
@@ -102,6 +102,8 @@ mise install
 Talos operations, and VolSync restore helpers. CI does not route through `just`
 unless a workflow has a specific reason to do so.
 
+When a repo-pinned tool might not be on `PATH`, use `mise exec -- <tool> ...`.
+
 ## Operations Docs
 
 - [AI Workbench Prompts](docs/operations/ai-workbench.md) collects starter
@@ -112,9 +114,9 @@ unless a workflow has a specific reason to do so.
 ## Thanks
 
 This repository builds on patterns from
-[onedr0p/cluster-template](https://github.com/onedr0p/cluster-template),
 [onedr0p/home-ops](https://github.com/onedr0p/home-ops),
-[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops), and the
+[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops),
+[bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops), and the
 [Home Operations](https://discord.gg/home-operations) community.
 
 [kubesearch.dev](https://kubesearch.dev/) remains a great way to find examples of

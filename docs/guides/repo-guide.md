@@ -11,7 +11,6 @@ Use these as design references, not sources to copy blindly:
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops)
 - [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
-- [home-operations/cluster-template](https://github.com/home-operations/cluster-template)
 
 Prefer this repo's existing layout and conventions when they differ.
 When a task is modeled on a reference repo, compare the relevant files or PRs
@@ -35,10 +34,6 @@ GitHub Actions, Flux/Konflate/Flate, chart migrations, storage, and ingress.
   glue.
 - `talos/`: Talos machine config templates and local helpers.
 - `volsync/`: local/operator restore templates and workflows.
-
-`backlog.md`, if present in a working tree, is scratch state. Do not treat it as
-durable repo documentation or commit it unless the user explicitly changes that
-policy.
 
 ## App Pattern
 
@@ -111,6 +106,7 @@ Formatting and workflow checks:
 
 ```sh
 oxfmt --check .
+actionlint .github/workflows/*.yaml
 zizmor --offline .github/workflows/*.yaml
 ```
 
@@ -144,13 +140,32 @@ are formatted by Lefthook. Flate and Image Pull currently filter on
 even when the touched file is local/operator tooling rather than rendered
 cluster state.
 
-`mise` is used for environment variables and tool installation support. Do not
-add mise tasks unless explicitly requested.
+`mise` owns the repo-local environment and toolchain contract. Use it for
+environment variables, project-specific tool installation, and reproducible
+tool activation. When a required repo tool might not be on `PATH`, prefer:
+
+```sh
+mise exec -- <tool> <args>
+```
+
+Keep personal workstation preferences, shell/editor configuration, auth state,
+and user-specific tools in dotfiles rather than this repo. Do not store secrets,
+session state, kubeconfig, talosconfig, or 1Password material in mise config.
+
+Do not move live-cluster or restore recipes from `just` to mise tasks. Mise
+tasks may be useful later for small, non-mutating validation aliases, but add
+them only when they reduce duplication and do not blur the operator safety
+boundary.
+
+If this repo adopts a committed `mise.lock`, treat it as a reproducibility and
+supply-chain decision. Renovate can update mise config and lockfiles, but
+lockfile refresh requires running `mise lock`, so enable that only after the
+Renovate execution model has been reviewed.
 
 ## Change Heuristics
 
-- For workflow/tooling changes, validate with `oxfmt`, `zizmor`, and the
-  affected GitHub Actions logic.
+- For workflow/tooling changes, validate with `oxfmt`, `actionlint`, `zizmor`,
+  and the affected GitHub Actions logic.
 - For app changes, validate with app-level `kubectl kustomize`, cluster Flate,
   and image diff when image refs may change.
 - For storage or backup changes, identify affected PVCs and backup objects
