@@ -38,7 +38,6 @@ CI runs purpose-built validation tools directly.
 
 ```text
 .
-├── .github/            # GitHub Actions, labels, and repository automation
 ├── bootstrap/          # One-time cluster bootstrap helpers
 ├── docs/               # ADRs, repo guidance, and operational notes
 ├── kubernetes/
