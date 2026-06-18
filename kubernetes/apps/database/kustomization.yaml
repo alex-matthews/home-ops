@@ -2,13 +2,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: ai
+namespace: database
 components:
   - ../../components/alerts
-  - ../../components/sops
 resources:
   - ./namespace.yaml
-  - ./hermes/ks.yaml
-  - ./litellm/ks.yaml
-  - ./mcp
-  - ./toolhive/ks.yaml
+  - ./dragonfly-operator/ks.yaml
