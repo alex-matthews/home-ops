@@ -8,6 +8,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
     branches:
       - main
   workflow_dispatch:
@@ -18,11 +19,11 @@ on:
         type: number
 
 env:
-  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
+  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' || (github.event.action == 'labeled' && github.event.label.name == 'renovate-review') }}
   PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 permissions:
@@ -41,7 +42,11 @@ jobs:
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft
+        !github.event.pull_request.draft &&
+        (
+          github.event.action != 'labeled' ||
+          github.event.label.name == 'renovate-review'
+        )
       )
     name: Renovate Research Review
     runs-on: ubuntu-latest
@@ -103,32 +108,91 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout
-        if: ${{ steps.config.outputs.enabled == 'true' }}
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          ref: refs/pull/${{ env.PR_NUMBER }}/merge
-
-      - name: Check review fingerprint
-        id: review
+      - name: Check review scope
+        id: scope
         if: ${{ steps.config.outputs.enabled == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
           PR: ${{ env.PR_NUMBER }}
         run: |
+          changed_files="${RUNNER_TEMP}/renovate-review-files.txt"
+
+          gh pr view "${PR}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --json files \
+            --jq '.files[].path' > "${changed_files}"
+
+          if grep -Fxq ".github/workflows/renovate-review.yaml" "${changed_files}"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Renovate research review; Claude app-token validation requires the reviewer workflow to match the default branch."
+            exit 0
+          fi
+
+          if [ "${MANUAL_REVIEW}" = "true" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Manual Renovate research review requested; bypassing path scope."
+            exit 0
+          fi
+
+          if grep -Eq '^(kubernetes|bootstrap|talos)/' "${changed_files}"; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Skipping Renovate research review; PR does not touch kubernetes/, bootstrap/, or talos/."
+
+      - name: Checkout
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' }}
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: refs/pull/${{ env.PR_NUMBER }}/merge
+
+      - name: Prepare review
+        id: review
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
+          PR: ${{ env.PR_NUMBER }}
+        run: |
+          policy_version="3"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
+          review_diff="${RUNNER_TEMP}/renovate-review-diff.patch"
+          review_files="${RUNNER_TEMP}/renovate-review-files.json"
           prior_reviews="${RUNNER_TEMP}/renovate-review-prior.txt"
 
-          {
-            gh pr view "${PR}" --json title,body --jq '{title, body: (.body // "")}'
-            gh pr diff "${PR}" --patch
-          } > "${review_input}"
+          gh pr view "${PR}" \
+            --json title,body,files,headRefOid,baseRefOid \
+            --jq '
+              {
+                title,
+                headRefOid,
+                baseRefOid,
+                files: [.files[].path],
+                renovateTable: ((.body // "") | split("---")[0])
+              }
+            ' > "${review_files}"
+
+          gh pr diff "${PR}" --patch |
+            sed -E '/^(diff --git|index |@@ |--- |\+\+\+ )/d' |
+            sed -E '/^ /d' |
+            sed -E '/^\\ No newline at end of file$/d' > "${review_diff}"
+
+          jq --arg policy_version "${policy_version}" \
+            --rawfile diff "${review_diff}" \
+            '. + {policyVersion: $policy_version, normalizedDiff: $diff}' \
+            "${review_files}" > "${review_input}"
 
           fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
           echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
+          head_sha="$(jq -r '.headRefOid' "${review_files}")"
+          echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
 
           gh pr view "${PR}" --json reviews,comments --jq '
             [.reviews[].body, .comments[].body]
@@ -144,7 +208,7 @@ jobs:
 
           if [ "${MANUAL_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate research review; fingerprint ${fingerprint} was already reviewed"
+            echo "::notice::Skipping Renovate research review; review key ${fingerprint} was already reviewed"
             exit 0
           fi
 
@@ -152,7 +216,7 @@ jobs:
 
       - name: Review Renovate PR
         id: claude
-        if: ${{ steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
         uses: anthropics/claude-code-action@4d7e1f0cd85743fdc93b1c8040ab54395da024e2 # v1.0.149
         env:
           GH_TOKEN: ${{ github.token }}
@@ -194,16 +258,11 @@ jobs:
             and validation conventions, and `.agents/instructions/` only for
             narrow reusable instructions such as YAML ordering.
 
-            ## Pre-check: avoid redundant reviews
+            ## Pre-check
 
-            Before researching, check existing PR reviews and comments with
-            `gh pr view --json reviews,comments` or `gh api`.
-
-            If manual re-review was not requested and a prior review body
-            contains `<!-- home-ops-renovate-research -->` for the same
-            package/version tuple currently in the PR diff, stop without posting
-            another review. If manual re-review was requested, or if versions
-            changed, continue.
+            The workflow preflight has already decided this review should run.
+            Do not perform duplicate-review skipping. Do not stop early because
+            an older Renovate Research Review exists.
 
             ## Evidence workflow
 
@@ -353,7 +412,7 @@ jobs:
             `github.com` to `redirect.github.com` to avoid backlink spam.
 
       - name: Verify Claude result
-        if: ${{ always() && steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
+        if: ${{ always() && steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
         env:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
@@ -406,49 +465,49 @@ jobs:
             exit 1
           fi
 
-      - name: Record review fingerprint
-        if: ${{ steps.config.outputs.enabled == 'true' && steps.review.outputs.skip != 'true' }}
+      - name: Verify fresh review
+        if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
         env:
           FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
           GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.review.outputs.head_sha }}
           PR: ${{ env.PR_NUMBER }}
+          REVIEW_STARTED_AT: ${{ steps.review.outputs.started_at }}
         run: |
           marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
-          review_body="${RUNNER_TEMP}/renovate-review-body.md"
-          updated_body="${RUNNER_TEMP}/renovate-review-body-updated.md"
-          payload="${RUNNER_TEMP}/renovate-review-body.json"
+          expected_author="claude[bot]"
+          reviews_json="${RUNNER_TEMP}/renovate-research-reviews.json"
 
-          review_id="$(
-            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" \
-              --jq '[.[] | select(.body != null and (.body | contains("<!-- home-ops-renovate-research -->")))] | last | .id // empty'
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" > "${reviews_json}"
+
+          review="$(
+            jq --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
+                [
+                  .[]
+                  | select(.body != null and (.body | contains($marker)))
+                  | select(.submitted_at >= $started)
+                ]
+                | last // empty
+              ' "${reviews_json}"
           )"
 
-          if [ -z "${review_id}" ]; then
-            echo "::error::Could not find a Renovate research review to fingerprint"
+          if [ -z "${review}" ]; then
+            echo "::error::Claude did not submit a fresh Renovate research review with marker ${marker}"
             exit 1
           fi
 
-          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews/${review_id}" \
-            --jq '.body // ""' > "${review_body}"
+          review_author="$(jq -r '.user.login' <<< "${review}")"
+          review_commit="$(jq -r '.commit_id' <<< "${review}")"
+          review_submitted_at="$(jq -r '.submitted_at' <<< "${review}")"
 
-          if grep -Fq "${marker}" "${review_body}"; then
-            echo "Review fingerprint already recorded."
-            exit 0
+          if [ "${review_author}" != "${expected_author}" ]; then
+            echo "::error::Fresh review was authored by ${review_author}; expected ${expected_author}"
+            exit 1
           fi
 
-          if grep -Eq '<!-- home-ops-renovate-research fingerprint:[0-9a-f]+ -->' "${review_body}"; then
-            sed -E "s#<!-- home-ops-renovate-research fingerprint:[0-9a-f]+ -->#${marker}#" \
-              "${review_body}" > "${updated_body}"
-          else
-            {
-              echo "${marker}"
-              cat "${review_body}"
-            } > "${updated_body}"
+          if [ "${review_commit}" != "${HEAD_SHA}" ]; then
+            echo "::error::Fresh review is attached to ${review_commit}; expected current PR head ${HEAD_SHA}"
+            exit 1
           fi
 
-          jq -n --rawfile body "${updated_body}" '{body: $body}' > "${payload}"
-          gh api \
-            --method PUT \
-            "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews/${review_id}" \
-            --input "${payload}" \
-            --silent
+          echo "Verified fresh Renovate research review from ${review_author} at ${review_submitted_at} for ${review_commit}."
