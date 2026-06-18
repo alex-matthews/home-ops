@@ -6,8 +6,8 @@
 
 > Scope: this ADR covers the home-ops AI workbench architecture, model/provider
 > routing, MCP surface, memory and state boundaries, community signal intake, and
-> rollout sequence. It deliberately excludes the separate app-builder and local
-> developer-velocity stack except where pull request review overlaps.
+> rollout sequence. It deliberately excludes a separate app-builder or
+> developer-velocity stack.
 
 ## 1. Context
 
@@ -368,7 +368,6 @@ operational model are ready.
    machine-readable feed?
 7. Which MCPs should be allowed write access, if any, and what approval boundary
    is required?
-8. Should the app-builder/developer-velocity workbench receive a separate ADR?
 
 ## 10. References
 

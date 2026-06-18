@@ -11,12 +11,15 @@ Use these as design references, not sources to copy blindly:
 - [onedr0p/home-ops](https://github.com/onedr0p/home-ops)
 - [buroa/k8s-gitops](https://github.com/buroa/k8s-gitops)
 - [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops)
+- [joryirving/home-ops](https://github.com/joryirving/home-ops)
 
 Prefer this repo's existing layout and conventions when they differ.
 When a task is modeled on a reference repo, compare the relevant files or PRs
-before editing. Treat unexplained divergence from onedr0p/home-ops or
-buroa/k8s-gitops as something to call out before implementation, especially for
-GitHub Actions, Flux/Konflate/Flate, chart migrations, storage, and ingress.
+before editing. For lean workflow and GitOps plumbing, onedr0p/home-ops and
+buroa/k8s-gitops are useful references. For AI-workbench and agent tooling,
+bjw-s-labs/home-ops and joryirving/home-ops are useful references. Call out
+material divergence before implementing when a change intentionally follows or
+departs from one of those patterns.
 
 ## Layout
 
