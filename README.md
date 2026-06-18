@@ -34,11 +34,12 @@ CI runs purpose-built validation tools directly.
   [Flate](https://github.com/home-operations/flate), and self-hosted GitHub
   Actions runners
 
-## Repository Layout
+## Key Paths
 
 ```text
 .
 ├── bootstrap/          # One-time cluster bootstrap helpers
+├── docs/               # ADRs, repo guidance, and operational notes
 ├── kubernetes/
 │   ├── apps/           # Flux-managed applications, grouped by namespace
 │   ├── components/     # Shared Kustomize components, SOPS, alerts, VolSync
@@ -63,39 +64,36 @@ Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
 
 ## Automation
 
+Renovate opens dependency update pull requests for charts, containers, GitHub
+Actions, and other versioned references.
+
 Pull requests are checked by GitHub Actions:
 
 - `Flate` renders and validates the Flux tree with missing secrets allowed.
 - `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
 - `Konflate` runs in-cluster and posts native advisory pull request comments and
   checks from rendered Flate diffs.
-- `AI PR Review` can post advisory reviews on eligible same-repository Renovate
-  pull requests.
+- `Renovate Research Review` can post advisory Claude-backed research reviews on
+  eligible same-repository Renovate pull requests.
 - `Labeler` and `Label Sync` keep pull request and repository labels consistent.
-- `Renovate` opens dependency update PRs for charts, containers, GitHub Actions, and
-  other versioned references.
-- `Tag` handles repository release tagging.
 
-The required branch checks are the success aggregators for Flate and Image Pull.
-Docs-only changes skip their render/image jobs. Changes under `kubernetes/`
-still trigger the broad validators, even when the touched file is helper-only,
-and block when rendering fails. Konflate and AI PR Review are advisory and are
-not required branch checks.
+Flate and Image Pull are the required branch-check gates. Konflate and Renovate
+Research Review are advisory.
 
 See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
 repository conventions.
 
 ## Local Workflow
 
-Local environment variables are defined in `.mise/config.toml`; local secrets and auth
-state such as `age.key`, `kubeconfig`, `talosconfig`, and `.secrets.env` are
-ignored by Git.
+Local environment variables and repo toolchain activation are defined in
+`.mise/config.toml`; local secrets and auth state such as `age.key`,
+`kubeconfig`, `talosconfig`, and `.secrets.env` are ignored by Git.
 
 Useful entry points:
 
 ```sh
-just -l
 mise install
+just -l
 ```
 
 `just` is for local/operator workflows such as bootstrap, Kubernetes diagnostics,
@@ -104,15 +102,17 @@ unless a workflow has a specific reason to do so.
 
 ## Operations Docs
 
+- [AI Workbench Prompts](docs/operations/ai-workbench.md) collects starter
+  Hermes and ToolHive MCP prompts.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
   current backup posture and Kopia migration criteria.
 
 ## Thanks
 
 This repository builds on patterns from
-[onedr0p/cluster-template](https://github.com/onedr0p/cluster-template),
 [onedr0p/home-ops](https://github.com/onedr0p/home-ops),
-[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops), and the
+[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops),
+[bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops), and the
 [Home Operations](https://discord.gg/home-operations) community.
 
 [kubesearch.dev](https://kubesearch.dev/) remains a great way to find examples of

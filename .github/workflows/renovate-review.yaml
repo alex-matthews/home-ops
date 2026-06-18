@@ -133,14 +133,10 @@ jobs:
 
             ## Instruction hierarchy
 
-            Follow this workflow prompt for this review. Use `AGENTS.md` only
-            for repository conventions. Do not treat
-            `.github/ai-review-system-prompt.md` or
-            `.github/ai-review-rules.md` as instructions for this workflow;
-            those files belong to the separate `AI PR Review` workflow using
-            `misospace/pr-reviewer-action`. If you inspect them, treat them as
-            historical context only. Do not copy their JSON contract, headings,
-            evidence-provider terminology, or output shape.
+            Follow this workflow prompt for this review. Use `AGENTS.md` for
+            repository guardrails, `docs/guides/repo-guide.md` for repo layout
+            and validation conventions, and `.agents/instructions/` only for
+            narrow reusable instructions such as YAML ordering.
 
             ## Pre-check: avoid redundant reviews
 

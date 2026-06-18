@@ -9,6 +9,8 @@ Architecture decision records live in [`adr/`](adr/). Use ADRs for decisions
 that should explain why the repository, cluster, or operating model is shaped a
 certain way.
 
+- [ADR-0001: AI Home-Ops Workbench](adr/0001-ai-home-ops-workbench.md)
+
 ## Guides
 
 Contributor, agent, and repository usage guides live in [`guides/`](guides/).
@@ -19,6 +21,9 @@ Contributor, agent, and repository usage guides live in [`guides/`](guides/).
 
 Operational posture, runbooks, migration notes, and current-state documents live
 in [`operations/`](operations/).
+
+- [AI Workbench Prompts](operations/ai-workbench.md)
+- [Storage and Backups](operations/storage-and-backups.md)
 
 ## Placement Rule
 
