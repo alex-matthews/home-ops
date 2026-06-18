@@ -35,7 +35,5 @@
 - name: type/major
   color: "f6412d"
 # Uncategorized
-- name: renovate-review
-  color: "5319e7"
 - name: hold
   color: "ee0701"
