@@ -62,8 +62,8 @@ The current architecture is:
 | MCP gateway             | Use ToolHive to expose approved read-only MCPs through explicit trust boundaries.                                    |
 | Agent clients           | Treat Hermes, future OpenClaw, CI reviewers, and scheduled triage jobs as clients of the same trusted MCP surface.   |
 | Memory                  | Evaluate Memini or a similar shared backend after the workbench is useful.                                           |
-| Model routing           | Deploy LiteLLM only when multiple consumers, provider aliases, metrics, or fallback routing justify it.              |
-| Dragonfly               | Deploy only when real consumers need Redis-compatible cache, session, queue, rate-limit, or memory support.          |
+| Model routing           | Deploy a small internal LiteLLM MVP for provider aliases, metrics, and Redis-backed cache/router coordination.       |
+| Dragonfly               | Deploy Dragonfly-operator with a non-persistent LiteLLM Dragonfly instance; defer durable/shared state until needed. |
 | Backlog source of truth | Use GitHub Issues, optionally GitHub Projects, with ADRs for durable architecture decisions.                         |
 | Community signal        | Prefer GitHub-first peer-repo monitoring and sanctioned digest exports. Do not use Discord scraping.                 |
 
@@ -90,9 +90,9 @@ Cluster
   ├─ Hermes
   ├─ future OpenClaw assistant
   ├─ future scheduled triage workers
-  ├─ future shared memory service
-  ├─ future Dragonfly, if shared state consumers justify it
-  └─ LiteLLM, if provider routing becomes useful enough
+  ├─ LiteLLM, internal-only MVP
+  │    └─ Dragonfly cache/router state
+  └─ future shared memory service
 
 External services
   ├─ GitHub
@@ -141,7 +141,12 @@ LiteLLM is useful only if it earns its place as a small gateway:
 - Prometheus-visible latency, error, and usage metrics;
 - cache or budget controls that do not require PostgreSQL.
 
-Do not deploy LiteLLM solely because peer repositories run it.
+The initial deployment is an internal-only MVP: one LiteLLM replica, no public
+route, no PostgreSQL, and no durable LiteLLM state. Dragonfly is used only as
+non-persistent Redis-compatible cache/router state for LiteLLM. Public access,
+auth frontends, provider budget enforcement, durable spend tracking, and broader
+fallback routing remain separate follow-up decisions. Do not deploy or expand
+LiteLLM solely because peer repositories run it.
 
 ### 4.4 MCP trust boundaries
 
@@ -303,12 +308,12 @@ a self-hosted metasearch endpoint.
 
 ### 5.6 Dragonfly first
 
-Deferred. Dragonfly-operator is a reasonable substrate if the workbench grows
-toward the bjw-s-labs shape, where several AI-adjacent workloads use
-Redis-compatible backing. It should not be deployed only because it is useful in
-theory. It becomes justified when real consumers need cache, session, queue,
-rate-limit, or shared-memory backing, such as SearXNG limiter support,
-Memini/shared memory, LiteLLM cache or coordination, or OpenClaw/Hermes state.
+Partially adopted. Dragonfly-operator is justified by LiteLLM cache/router
+coordination, but the first Dragonfly instance should be non-persistent and
+app-local. Durable Redis-compatible state remains deferred until a consumer needs
+it. Likely future consumers include SearXNG limiter support, Memini/shared
+memory, OpenClaw/Hermes state, or broader LiteLLM routing and rate-limit
+coordination.
 
 ### 5.7 Discord bot or Discord scraping
 
@@ -324,7 +329,11 @@ Implemented:
 2. Deploy Hermes as the interactive workbench surface.
 3. Deploy ToolHive with read-only Context7, GitHub, Konflate, Flux, and Grafana
    MCP surfaces.
-4. Capture starter Hermes prompts in
+4. Deploy LiteLLM as an internal-only model gateway MVP without PostgreSQL or
+   public ingress.
+5. Deploy Dragonfly-operator and a non-persistent LiteLLM Dragonfly instance for
+   Redis-compatible cache/router state.
+6. Capture starter Hermes prompts in
    [`docs/operations/ai-workbench.md`](../operations/ai-workbench.md).
 
 Next:
@@ -334,8 +343,10 @@ Next:
    predictable re-review behavior.
 3. Evaluate shared assistant memory, likely Memini or a similar backend, and
    design retrieval and reranking deliberately.
-4. Add Dragonfly when the first real consumer needs Redis-compatible backing.
-5. Revisit LiteLLM once multiple model consumers or routing/metrics needs exist.
+4. Decide whether LiteLLM should become the default model endpoint for Hermes,
+   Claude Code, future reviewers, or OpenClaw.
+5. Decide when Dragonfly should become a shared/durable state substrate rather
+   than LiteLLM-only cache/router state.
 6. Deploy OpenClaw as an always-on assistant only after the read-only MCP and
    memory stack is sane.
 7. Add peer-repository trend summarisation through GitHub-first ingestion.
@@ -376,19 +387,20 @@ operational model are ready.
 - The first version will be less autonomous than some peer stacks.
 - Community trend monitoring will be weaker than full Discord access unless a
   sanctioned digest export is available.
-- LiteLLM may not be worth its operational cost until there are multiple model
-  consumers.
-- Dragonfly adds another operator and stateful substrate, so it should wait for
-  concrete consumers.
+- LiteLLM adds another model gateway surface, so it should stay internal and
+  minimal until real consumers justify expansion.
+- Dragonfly adds another operator and cluster-scoped RBAC. The first instance is
+  intentionally non-persistent cache/router state rather than a durable database.
 
 ## 9. Deferred / Open Questions
 
 1. Which shared memory backend should Hermes and future agents use, and is a
    reranker required from day one?
-2. Should LiteLLM be deployed before there is a second active model consumer?
+2. Which clients should use LiteLLM first, and should any external route exist?
 3. Should `misospace/pr-reviewer-action` be revisited behind LiteLLM, or should
    the Claude-backed Renovate Research Review remain the primary reviewer?
-4. Which first consumer, if any, justifies Dragonfly-operator?
+4. When should Dragonfly become a durable/shared state substrate instead of
+   LiteLLM-only cache/router state?
 5. What is the minimum safe OpenClaw deployment shape for read-only triage and
    notifications?
 6. Can the existing daily home-ops digest be exposed through a sanctioned
