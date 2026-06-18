@@ -8,29 +8,41 @@ on:
       - opened
       - synchronize
       - reopened
-      - labeled
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to review
+        required: true
+        type: number
+
+env:
+  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}
   cancel-in-progress: true
 
 permissions:
   checks: read
   contents: read
   id-token: write
-  issues: write
+  issues: read
   pull-requests: write
   statuses: read
 
 jobs:
   renovate-review:
     if: >-
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.user.login == 'bot-ler[bot]' &&
-      !github.event.pull_request.draft &&
-      (github.event.action != 'labeled' || github.event.label.name == 'renovate-review')
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login == 'bot-ler[bot]' &&
+        !github.event.pull_request.draft
+      )
     name: Renovate Research Review
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -48,20 +60,64 @@ jobs:
 
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
+      - name: Check PR eligibility
+        if: ${{ steps.config.outputs.enabled == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ env.PR_NUMBER }}
+        run: |
+          pr_json="$(
+            gh pr view "${PR}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json author,baseRefName,headRepository,isDraft,state
+          )"
+
+          author="$(jq -r '.author.login' <<< "${pr_json}")"
+          base_ref="$(jq -r '.baseRefName' <<< "${pr_json}")"
+          head_repo="$(jq -r '.headRepository.nameWithOwner' <<< "${pr_json}")"
+          is_draft="$(jq -r '.isDraft' <<< "${pr_json}")"
+          state="$(jq -r '.state' <<< "${pr_json}")"
+
+          if [ "${state}" != "OPEN" ]; then
+            echo "::error::PR #${PR} is ${state}; only open Renovate PRs can be reviewed"
+            exit 1
+          fi
+
+          if [ "${base_ref}" != "main" ]; then
+            echo "::error::PR #${PR} targets ${base_ref}; expected main"
+            exit 1
+          fi
+
+          if [ "${head_repo}" != "${GITHUB_REPOSITORY}" ]; then
+            echo "::error::PR #${PR} is from ${head_repo}; only same-repository PRs can be reviewed"
+            exit 1
+          fi
+
+          if [ "${author}" != "bot-ler[bot]" ] && [ "${author}" != "app/bot-ler" ]; then
+            echo "::error::PR #${PR} author is ${author}; expected bot-ler[bot]"
+            exit 1
+          fi
+
+          if [ "${is_draft}" = "true" ]; then
+            echo "::error::PR #${PR} is a draft"
+            exit 1
+          fi
+
       - name: Checkout
         if: ${{ steps.config.outputs.enabled == 'true' }}
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: refs/pull/${{ env.PR_NUMBER }}/merge
 
       - name: Check review fingerprint
         id: review
         if: ${{ steps.config.outputs.enabled == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          MANUAL_REVIEW: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
-          PR: ${{ github.event.pull_request.number }}
+          MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
+          PR: ${{ env.PR_NUMBER }}
         run: |
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           prior_reviews="${RUNNER_TEMP}/renovate-review-prior.txt"
@@ -101,7 +157,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           KONFLATE_URL: ${{ secrets.KONFLATE_URL || vars.KONFLATE_URL }}
-          PR: ${{ github.event.pull_request.number }}
+          PR: ${{ env.PR_NUMBER }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "bot-ler[bot]"
@@ -115,9 +171,9 @@ jobs:
             or request changes.
 
             REPO: ${{ github.repository }}
-            PR: #${{ github.event.pull_request.number }}
+            PR: #${{ env.PR_NUMBER }}
             Review fingerprint: ${{ steps.review.outputs.fingerprint }}
-            Manual re-review requested: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
+            Manual re-review requested: ${{ env.MANUAL_REVIEW }}
 
             ## Context
 
@@ -355,7 +411,7 @@ jobs:
         env:
           FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
+          PR: ${{ env.PR_NUMBER }}
         run: |
           marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
           review_body="${RUNNER_TEMP}/renovate-review-body.md"
@@ -395,15 +451,4 @@ jobs:
             --method PUT \
             "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews/${review_id}" \
             --input "${payload}" \
-            --silent
-
-      - name: Remove re-review label
-        if: ${{ always() && github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |
-          gh api \
-            --method DELETE \
-            "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/renovate-review" \
             --silent
