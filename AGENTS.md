@@ -24,12 +24,16 @@ small, reviewable, and independently reconcilable.
   iteration surface, amend that branch rather than accumulating work on `main`.
 - If a Renovate PR has human companion commits, do not rebase it or let Renovate
   rewrite it unless the user accepts that risk.
-- Use peer repositories as design references, not sources to copy blindly.
-  onedr0p/home-ops and buroa/k8s-gitops are useful for lean workflow posture;
-  bjw-s-labs/home-ops and joryirving/home-ops are useful for agent guidance and
-  AI-workbench patterns. Prefer this repo's existing conventions; when modeling
-  work on a peer repo, compare the relevant files or PRs and call out material
-  divergence before implementation.
+- Use peer repositories as domain-specific references, not constraints or
+  sources to copy blindly. onedr0p/home-ops and buroa/k8s-gitops are useful for
+  lean GitOps and workflow posture; bjw-s-labs/home-ops, eleboucher/homelab,
+  and m00nwtchr/homelab-cluster are useful for AI-workbench patterns;
+  Tanguille/cluster and bjw-s-labs/home-ops are useful for compact agent
+  guidance; bo0tzz/clusterfuck and joryirving/home-ops are useful for AI
+  reviewer behavior; rcdailey/home-ops is a useful pattern and caution library
+  for agent-oriented diagnostics, not a baseline to copy. Prefer this repo's
+  existing conventions; when modeling work on a peer repo, compare the relevant
+  files or PRs and call out material divergence before implementation.
 
 ## Safety Boundaries
 

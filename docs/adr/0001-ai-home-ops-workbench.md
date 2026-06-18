@@ -242,13 +242,40 @@ it must preserve their different responsibilities:
 Agents may recommend coordinated changes across repositories, but each change
 should land in the repository that owns the affected concern.
 
+### 4.8 Peer reference posture
+
+Peer repositories should be used by domain, not as wholesale target
+architectures.
+
+- onedr0p/home-ops and buroa/k8s-gitops are the main references for lean GitOps,
+  workflow pruning, and Home Operations chart posture.
+- bjw-s-labs/home-ops, eleboucher/homelab, and m00nwtchr/homelab-cluster are
+  the main AI-workbench references for ToolHive, Hermes, OpenClaw, Memini,
+  LiteLLM, MCP grouping, search, memory, and future routing patterns.
+- bo0tzz/clusterfuck and joryirving/home-ops are useful for AI pull request
+  reviewer behavior, especially release research, dead-end handling, re-review
+  triggers, and model/tool loop tuning.
+- Tanguille/cluster and bjw-s-labs/home-ops are useful for compact agent
+  guidance and on-demand `.agents/` style context.
+- rcdailey/home-ops is useful as a pattern and caution library for
+  agent-oriented diagnostics, investigation docs, and ToolHive/session
+  reliability concerns. It is intentionally not a baseline to copy because it
+  carries much more bespoke helper and documentation surface than this repo
+  should adopt by default.
+
+Heavy peer choices such as local inference, PostgreSQL, vector databases,
+public authenticated MCP routes, agentgateway/kgateway, SearXNG, Dragonfly, or
+large helper CLIs must be justified by concrete local consumers before adoption.
+
 ## 5. Alternatives Considered
 
 ### 5.1 Copy a peer AI stack wholesale
 
 Rejected for the initial rollout. Peer repositories are useful references, but
 many run local inference, PostgreSQL-backed state, or broader automation surfaces
-than this cluster should adopt now.
+than this cluster should adopt now. This specifically includes treating Jory's
+multi-cluster, local-inference, and LiteLLM/Postgres-heavy setup as a useful
+domain reference rather than a baseline architecture for this cluster.
 
 ### 5.2 Local inference first
 
@@ -379,8 +406,13 @@ operational model are ready.
 - [`dragonflydb/dragonfly-operator`](https://github.com/dragonflydb/dragonfly-operator)
 - [`misospace/pr-reviewer-action`](https://github.com/misospace/pr-reviewer-action)
 - [`eleboucher/memini`](https://github.com/eleboucher/memini)
-- [`eleboucher/homelab`](https://github.com/eleboucher/homelab)
+- [`onedr0p/home-ops`](https://github.com/onedr0p/home-ops)
+- [`buroa/k8s-gitops`](https://github.com/buroa/k8s-gitops)
 - [`bjw-s-labs/home-ops`](https://github.com/bjw-s-labs/home-ops)
+- [`eleboucher/homelab`](https://github.com/eleboucher/homelab)
+- [`m00nwtchr/homelab-cluster`](https://github.com/m00nwtchr/homelab-cluster)
+- [`bo0tzz/clusterfuck`](https://github.com/bo0tzz/clusterfuck)
 - [`joryirving/home-ops`](https://github.com/joryirving/home-ops)
+- [`rcdailey/home-ops`](https://github.com/rcdailey/home-ops)
 - [`Tanguille/cluster`](https://github.com/Tanguille/cluster)
 - [`jfroy/flatops`](https://github.com/jfroy/flatops)
