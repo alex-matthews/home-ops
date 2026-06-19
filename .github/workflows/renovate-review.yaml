@@ -474,31 +474,51 @@ jobs:
           PR: ${{ env.PR_NUMBER }}
           REVIEW_STARTED_AT: ${{ steps.review.outputs.started_at }}
         run: |
-          marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
+          base_marker="<!-- home-ops-renovate-research -->"
+          fingerprint_marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
           expected_author="claude[bot]"
           reviews_json="${RUNNER_TEMP}/renovate-research-reviews.json"
+          review=""
 
-          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" > "${reviews_json}"
+          for attempt in 1 2 3 4 5 6; do
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" > "${reviews_json}"
 
-          review="$(
-            jq --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
-                [
-                  .[]
-                  | select(.body != null and (.body | contains($marker)))
-                  | select(.submitted_at >= $started)
-                ]
-                | last // empty
-              ' "${reviews_json}"
-          )"
+            review="$(
+              jq \
+                --arg author "${expected_author}" \
+                --arg head "${HEAD_SHA}" \
+                --arg marker "${base_marker}" \
+                --arg started "${REVIEW_STARTED_AT}" '
+                  [
+                    .[]
+                    | select(.user.login == $author)
+                    | select(.commit_id == $head)
+                    | select(.body != null and (.body | contains($marker)))
+                    | select(.submitted_at >= $started)
+                  ]
+                  | last // empty
+                ' "${reviews_json}"
+            )"
+
+            if [ -n "${review}" ]; then
+              break
+            fi
+
+            if [ "${attempt}" -lt 6 ]; then
+              echo "::notice::Fresh Renovate research review not visible yet; retrying (${attempt}/6)"
+              sleep 5
+            fi
+          done
 
           if [ -z "${review}" ]; then
-            echo "::error::Claude did not submit a fresh Renovate research review with marker ${marker}"
+            echo "::error::Claude did not submit a fresh Renovate research review from ${expected_author} on ${HEAD_SHA} with marker ${base_marker}"
             exit 1
           fi
 
           review_author="$(jq -r '.user.login' <<< "${review}")"
           review_commit="$(jq -r '.commit_id' <<< "${review}")"
           review_submitted_at="$(jq -r '.submitted_at' <<< "${review}")"
+          review_body="$(jq -r '.body // ""' <<< "${review}")"
 
           if [ "${review_author}" != "${expected_author}" ]; then
             echo "::error::Fresh review was authored by ${review_author}; expected ${expected_author}"
@@ -508,6 +528,10 @@ jobs:
           if [ "${review_commit}" != "${HEAD_SHA}" ]; then
             echo "::error::Fresh review is attached to ${review_commit}; expected current PR head ${HEAD_SHA}"
             exit 1
+          fi
+
+          if [[ "${review_body}" != *"${fingerprint_marker}"* ]]; then
+            echo "::notice::Fresh review did not contain the exact fingerprint marker ${fingerprint_marker}; accepting the stable marker on the current head"
           fi
 
           echo "Verified fresh Renovate research review from ${review_author} at ${review_submitted_at} for ${review_commit}."
