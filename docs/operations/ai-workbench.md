@@ -13,6 +13,9 @@ repository docs.
 
 - The current ToolHive workbench surface is read-only by default and is intended
   for Context7, GitHub, Konflate, Flux, and Grafana evidence.
+- The internal ToolHive route is for trusted LAN or WireGuard clients such as
+  Hermes and Codex. Do not expose it through `envoy-external` without a separate
+  authentication decision.
 - Prefer summary tools first. Drill into broad resource lists only after the
   summary shows a problem.
 - Ask for evidence from the named MCP surface rather than accepting a generic
@@ -30,6 +33,22 @@ restart the Hermes gateway from the UI, then run:
 ```text
 /reload-mcp now
 ```
+
+## Codex MCP Access
+
+Codex can consume the same ToolHive vMCP surface through the internal route:
+
+```sh
+codex mcp add toolhive --url "https://toolhive.${SECRET_DOMAIN}/mcp"
+```
+
+Keep local Codex MCP configuration, OAuth state, and bearer tokens out of this
+repository. If Codex is not on the trusted internal network, use a temporary
+`kubectl port-forward` instead of adding a public route.
+
+The current route is an internal-only bridge for stress-testing the workbench
+surface. Before exposing ToolHive more broadly, switch the vMCP to ToolHive
+native OIDC or an equivalent explicit auth boundary.
 
 ## Flux Health
 
