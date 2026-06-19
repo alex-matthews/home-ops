@@ -154,32 +154,46 @@ jobs:
           MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          policy_version="3"
+          policy_version="4"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_diff="${RUNNER_TEMP}/renovate-review-diff.patch"
           review_files="${RUNNER_TEMP}/renovate-review-files.json"
-          prior_reviews="${RUNNER_TEMP}/renovate-review-prior.txt"
+          review_previous_diff="${RUNNER_TEMP}/renovate-review-previous-diff.patch"
+          review_previous_raw="${RUNNER_TEMP}/renovate-review-previous.json"
+          prior_review_meta="${RUNNER_TEMP}/renovate-review-prior-reviews.json"
+          previous_review_body="${RUNNER_TEMP}/renovate-review-previous-body.txt"
+
+          normalize_patch() {
+            sed -E '/^(From [0-9a-f]{40} |From: |Date: |Subject: |MIME-Version: |Content-Type: |Content-Transfer-Encoding: |---$)/d' |
+              sed -E '/^(diff --git|index |@@ |--- |\+\+\+ )/d' |
+              sed -E '/^ /d' |
+              sed -E '/^\\ No newline at end of file$/d' |
+              sed -E '/^$/d'
+          }
 
           gh pr view "${PR}" \
-            --json title,body,files,headRefOid,baseRefOid \
+            --json title,body,commits,files,headRefOid \
             --jq '
               {
                 title,
                 headRefOid,
-                baseRefOid,
+                commitCount: (.commits | length),
                 files: [.files[].path],
                 renovateTable: ((.body // "") | split("---")[0])
               }
             ' > "${review_files}"
 
-          gh pr diff "${PR}" --patch |
-            sed -E '/^(diff --git|index |@@ |--- |\+\+\+ )/d' |
-            sed -E '/^ /d' |
-            sed -E '/^\\ No newline at end of file$/d' > "${review_diff}"
+          gh pr diff "${PR}" --patch | normalize_patch > "${review_diff}"
 
           jq --arg policy_version "${policy_version}" \
             --rawfile diff "${review_diff}" \
-            '. + {policyVersion: $policy_version, normalizedDiff: $diff}' \
+            '{
+              title,
+              files: (.files | sort),
+              renovateTable,
+              policyVersion: $policy_version,
+              normalizedDiff: $diff
+            }' \
             "${review_files}" > "${review_input}"
 
           fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
@@ -188,15 +202,33 @@ jobs:
 
           head_sha="$(jq -r '.headRefOid' "${review_files}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
+          commit_count="$(jq -r '.commitCount' "${review_files}")"
 
-          gh pr view "${PR}" --json reviews,comments --jq '
-            [.reviews[].body, .comments[].body]
-            | map(select(. != null))
-            | .[]
-          ' > "${prior_reviews}"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" --paginate > "${prior_review_meta}"
+
+          latest_review="$(
+            jq -c '
+              [
+                .[]
+                | select(.user.login == "claude[bot]")
+                | select(.body != null and (.body | contains("home-ops-renovate-research")))
+              ]
+              | sort_by(.submitted_at)
+              | last // {}
+            ' "${prior_review_meta}"
+          )"
+
+          previous_review_commit="$(jq -r '.commit_id // ""' <<< "${latest_review}")"
+          jq -r '.body // ""' <<< "${latest_review}" > "${previous_review_body}"
+
+          if [ "${MANUAL_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Renovate research review; current head ${head_sha} already has a Claude review marker"
+            exit 0
+          fi
 
           previous_fingerprint="$(
-            grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' "${prior_reviews}" |
+            grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' "${previous_review_body}" |
               tail -n 1 |
               sed 's/.*fingerprint://'
           )" || true
@@ -205,6 +237,22 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping Renovate research review; review key ${fingerprint} was already reviewed"
             exit 0
+          fi
+
+          # Pre-v4 markers included moving SHAs. Avoid one extra review for simple Renovate rebases.
+          if [ "${MANUAL_REVIEW}" != "true" ] && [ "${commit_count}" = "1" ] && [ -n "${previous_review_commit}" ] && [ "${previous_review_commit}" != "${head_sha}" ]; then
+            if gh api "repos/${GITHUB_REPOSITORY}/commits/${previous_review_commit}" > "${review_previous_raw}"; then
+              jq -r '.files[].patch // empty' "${review_previous_raw}" |
+                normalize_patch > "${review_previous_diff}"
+
+              if cmp -s "${review_diff}" "${review_previous_diff}"; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "::notice::Skipping Renovate research review; normalized diff matches previously reviewed commit ${previous_review_commit}"
+                exit 0
+              fi
+            else
+              echo "::notice::Could not fetch previously reviewed commit ${previous_review_commit}; continuing with review"
+            fi
           fi
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
