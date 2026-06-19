@@ -8,9 +8,11 @@ on:
       - opened
       - synchronize
       - reopened
-      - labeled
     branches:
       - main
+  issues:
+    types:
+      - labeled
   workflow_dispatch:
     inputs:
       pr:
@@ -19,11 +21,11 @@ on:
         type: number
 
 env:
-  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' || (github.event.action == 'labeled' && github.event.label.name == 'renovate-review') }}
-  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'renovate-review') }}
+  PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr || github.ref }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 permissions:
@@ -42,11 +44,13 @@ jobs:
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft &&
-        (
-          github.event.action != 'labeled' ||
-          github.event.label.name == 'renovate-review'
-        )
+        !github.event.pull_request.draft
+      ) ||
+      (
+        github.event_name == 'issues' &&
+        github.event.action == 'labeled' &&
+        github.event.label.name == 'renovate-review' &&
+        github.event.issue.pull_request
       )
     name: Renovate Research Review
     runs-on: ubuntu-latest
