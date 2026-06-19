@@ -333,7 +333,9 @@ Implemented:
    public ingress.
 5. Deploy Dragonfly-operator and a non-persistent LiteLLM Dragonfly instance for
    Redis-compatible cache/router state.
-6. Capture starter Hermes prompts in
+6. Route Hermes through the internal LiteLLM gateway as the first model
+   consumer.
+7. Capture starter Hermes prompts in
    [`docs/operations/ai-workbench.md`](../operations/ai-workbench.md).
 
 Next:
@@ -343,8 +345,8 @@ Next:
    predictable re-review behavior.
 3. Evaluate shared assistant memory, likely Memini or a similar backend, and
    design retrieval and reranking deliberately.
-4. Decide whether LiteLLM should become the default model endpoint for Hermes,
-   Claude Code, future reviewers, or OpenClaw.
+4. Decide whether Claude Code, future reviewers, or OpenClaw should also use
+   LiteLLM.
 5. Decide when Dragonfly should become a shared/durable state substrate rather
    than LiteLLM-only cache/router state.
 6. Deploy OpenClaw as an always-on assistant only after the read-only MCP and
@@ -396,7 +398,8 @@ operational model are ready.
 
 1. Which shared memory backend should Hermes and future agents use, and is a
    reranker required from day one?
-2. Which clients should use LiteLLM first, and should any external route exist?
+2. Which additional clients should use LiteLLM, and should any external route
+   exist?
 3. Should `misospace/pr-reviewer-action` be revisited behind LiteLLM, or should
    the Claude-backed Renovate Research Review remain the primary reviewer?
 4. When should Dragonfly become a durable/shared state substrate instead of
