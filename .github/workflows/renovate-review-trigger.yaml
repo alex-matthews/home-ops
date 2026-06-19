@@ -1,0 +1,100 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Renovate Review Trigger
+
+on:
+  # zizmor: ignore[dangerous-triggers]
+  # This workflow does not checkout or execute PR content. It only dispatches
+  # the default-branch reviewer workflow for same-repo Renovate PRs.
+  pull_request_target:
+    types:
+      - labeled
+    branches:
+      - main
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  dispatch-review:
+    if: >-
+      github.event.label.name == 'renovate-review' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !github.event.pull_request.draft
+    name: Renovate Review Trigger
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check PR eligibility
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          pr_json="$(
+            gh pr view "${PR}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json author,baseRefName,headRepository,isDraft,state
+          )"
+
+          author="$(jq -r '.author.login' <<< "${pr_json}")"
+          base_ref="$(jq -r '.baseRefName' <<< "${pr_json}")"
+          head_repo="$(jq -r '.headRepository.nameWithOwner' <<< "${pr_json}")"
+          is_draft="$(jq -r '.isDraft' <<< "${pr_json}")"
+          state="$(jq -r '.state' <<< "${pr_json}")"
+
+          if [ "${state}" != "OPEN" ]; then
+            echo "::notice::Skipping Renovate review dispatch; PR #${PR} is ${state}"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${base_ref}" != "main" ]; then
+            echo "::notice::Skipping Renovate review dispatch; PR #${PR} targets ${base_ref}"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${head_repo}" != "${GITHUB_REPOSITORY}" ]; then
+            echo "::notice::Skipping Renovate review dispatch; PR #${PR} is from ${head_repo}"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${author}" != "bot-ler[bot]" ] && [ "${author}" != "app/bot-ler" ]; then
+            echo "::notice::Skipping Renovate review dispatch; PR #${PR} author is ${author}"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${is_draft}" = "true" ]; then
+            echo "::notice::Skipping Renovate review dispatch; PR #${PR} is a draft"
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch Renovate review
+        if: ${{ steps.pr.outputs.eligible == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh workflow run renovate-review.yaml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref main \
+            -f "pr=${PR}"
+
+      - name: Remove trigger label
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr edit "${PR}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --remove-label renovate-review

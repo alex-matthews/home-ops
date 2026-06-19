@@ -10,14 +10,6 @@ on:
       - reopened
     branches:
       - main
-  # zizmor: ignore[dangerous-triggers]
-  # Manual labels must run from the default-branch workflow; the job is limited
-  # to same-repo bot-ler Renovate PRs before checkout.
-  pull_request_target:
-    types:
-      - labeled
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       pr:
@@ -26,11 +18,11 @@ on:
         type: number
 
 env:
-  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_target' && github.event.action == 'labeled' && github.event.label.name == 'renovate-review') }}
+  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
   PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}${{ github.event.action == 'labeled' && format('-label-{0}', github.run_id) || '' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -47,14 +39,6 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft
-      ) ||
-      (
-        github.event_name == 'pull_request_target' &&
-        github.event.action == 'labeled' &&
-        github.event.label.name == 'renovate-review' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'bot-ler[bot]' &&
         !github.event.pull_request.draft
