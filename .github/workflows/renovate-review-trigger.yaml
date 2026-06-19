@@ -16,7 +16,7 @@ permissions:
   actions: write
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   dispatch-review:
@@ -95,6 +95,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          gh pr edit "${PR}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --remove-label renovate-review
+          if ! gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/renovate-review"; then
+            echo "::notice::Could not remove renovate-review label automatically"
+          fi
