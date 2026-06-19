@@ -81,12 +81,19 @@ jobs:
         uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           cache: false
-          install_args: talosctl
+          install: false
 
       - name: Pull image
         env:
           IMAGE: ${{ matrix.image }}
-        run: mise exec -- talosctl --nodes "${NODE}" image pull "${IMAGE}"
+        run: |
+          TALOSCTL_VERSION="$(awk -F'"' '$1 == "talosctl = " { print $2 }' .mise/config.toml)"
+          if [ -z "${TALOSCTL_VERSION}" ]; then
+            echo "::error::Could not read talosctl version from .mise/config.toml"
+            exit 1
+          fi
+
+          mise exec -C /tmp "talosctl@${TALOSCTL_VERSION}" -- talosctl --nodes "${NODE}" image pull "${IMAGE}"
 
   success:
     if: ${{ !cancelled() }}
