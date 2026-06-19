@@ -46,9 +46,47 @@ Keep local Codex MCP configuration, OAuth state, and bearer tokens out of this
 repository. If Codex is not on the trusted internal network, use a temporary
 `kubectl port-forward` instead of adding a public route.
 
+Fresh Codex sessions load MCP configuration at startup. If `toolhive` was added
+after a session started, open a new Codex session before expecting the tools to
+appear.
+
+For non-interactive `codex exec` smoke tests, avoid broad bypass flags. Configure
+ToolHive as an approved, allow-listed MCP server in local Codex config instead.
+A minimal smoke-test shape is:
+
+```toml
+[mcp_servers.toolhive]
+url = "https://toolhive.${SECRET_DOMAIN}/mcp"
+default_tools_approval_mode = "approve"
+enabled_tools = [
+  "github_get_me",
+  "flux_get_flux_instance",
+  "konflate_list_pull_requests",
+]
+```
+
+Keep the real allow-list aligned with the current read-only ToolHive inventory.
+Do not remove the allow-list just to make newly added tools appear; first verify
+the new tools are read-only and useful.
+
 The current route is an internal-only bridge for stress-testing the workbench
 surface. Before exposing ToolHive more broadly, switch the vMCP to ToolHive
 native OIDC or an equivalent explicit auth boundary.
+
+Tested Codex smoke prompts:
+
+```text
+Use the ToolHive MCP tool konflate_list_pull_requests exactly once. Do not call
+shell commands. Return only: tool_call_ok=<true|false> and a count if available.
+```
+
+```text
+Use ToolHive MCP only. Call github_get_me once and flux_get_flux_instance once.
+Do not call shell commands. Return exactly three lines:
+github_login=<login>
+flux_kustomization_failing=<number or unknown>
+flux_helmrelease_failing=<number or unknown>
+```
 
 ## Flux Health
 
