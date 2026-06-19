@@ -39,12 +39,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install Flate
-        uses: home-operations/flate/action@dfa3992ed14feb4b04df25fe3397606345f87374 # v0.4.7
+      - name: Setup Mise
+        uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          cache: false
+          install_args: github:home-operations/flate
 
       - name: Run Flate
         id: flate
-        run: flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
+        run: mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 
   success:
     if: ${{ !cancelled() }}
