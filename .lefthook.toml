@@ -8,3 +8,7 @@ skip = true
 
 [pre-commit.commands.format-yaml]
 exclude = ["?*.sops.yaml", "?*.sops.yml"]
+
+[pre-commit.commands.actionlint]
+glob = [".github/workflows/*.yaml"]
+run = "actionlint {staged_files}"
