@@ -20,18 +20,19 @@ permissions:
 
 jobs:
   dispatch-review:
-    # Eligibility is enforced declaratively here; base=main comes from
-    # on.branches. State (open) is left to the reviewer's own check.
+    # Run for any renovate-review label on a same-repo, non-draft PR so the
+    # label always self-cleans; only Renovate-authored PRs actually dispatch
+    # (base=main comes from on.branches; open state is left to the reviewer).
     if: >-
       github.event.label.name == 'renovate-review' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.user.login == 'bot-ler[bot]' &&
       !github.event.pull_request.draft
     name: Renovate Review Trigger
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Dispatch Renovate review
+        if: ${{ github.event.pull_request.user.login == 'bot-ler[bot]' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
