@@ -10,6 +10,10 @@ on:
       - reopened
     branches:
       - main
+    paths:
+      - kubernetes/**
+      - bootstrap/**
+      - talos/**
   workflow_dispatch:
     inputs:
       pr:
@@ -61,7 +65,9 @@ jobs:
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Check PR eligibility
-        if: ${{ steps.config.outputs.enabled == 'true' }}
+        # pull_request is already gated by the job if: + on.branches; only the
+        # workflow_dispatch path arrives without validated event context.
+        if: ${{ steps.config.outputs.enabled == 'true' && env.MANUAL_REVIEW == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
@@ -108,35 +114,18 @@ jobs:
         if: ${{ steps.config.outputs.enabled == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          changed_files="${RUNNER_TEMP}/renovate-review-files.txt"
-
-          gh pr view "${PR}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --json files \
-            --jq '.files[].path' > "${changed_files}"
-
-          if grep -Fxq ".github/workflows/renovate-review.yaml" "${changed_files}"; then
+          # Path scope is handled by on.pull_request.paths; workflow_dispatch
+          # bypasses it. This guard stays: Claude app-token validation requires
+          # the reviewer workflow to match the default branch, so skip self-edits.
+          if gh pr view "${PR}" --repo "${GITHUB_REPOSITORY}" --json files \
+              --jq '.files[].path' | grep -Fxq ".github/workflows/renovate-review.yaml"; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate research review; Claude app-token validation requires the reviewer workflow to match the default branch."
-            exit 0
-          fi
-
-          if [ "${MANUAL_REVIEW}" = "true" ]; then
+            echo "::notice::Skipping; reviewer workflow self-edit must match the default branch."
+          else
             echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Manual Renovate research review requested; bypassing path scope."
-            exit 0
           fi
-
-          if grep -Eq '^(kubernetes|bootstrap|talos)/' "${changed_files}"; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "skip=true" >> "$GITHUB_OUTPUT"
-          echo "::notice::Skipping Renovate research review; PR does not touch kubernetes/, bootstrap/, or talos/."
 
       - name: Checkout
         if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' }}
@@ -158,8 +147,6 @@ jobs:
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_diff="${RUNNER_TEMP}/renovate-review-diff.patch"
           review_files="${RUNNER_TEMP}/renovate-review-files.json"
-          review_previous_diff="${RUNNER_TEMP}/renovate-review-previous-diff.patch"
-          review_previous_raw="${RUNNER_TEMP}/renovate-review-previous.json"
           prior_review_meta="${RUNNER_TEMP}/renovate-review-prior-reviews.json"
           previous_review_body="${RUNNER_TEMP}/renovate-review-previous-body.txt"
 
@@ -172,12 +159,11 @@ jobs:
           }
 
           gh pr view "${PR}" \
-            --json title,body,commits,files,headRefOid \
+            --json title,body,files,headRefOid \
             --jq '
               {
                 title,
                 headRefOid,
-                commitCount: (.commits | length),
                 files: [.files[].path],
                 renovateTable: ((.body // "") | split("---")[0])
               }
@@ -202,7 +188,6 @@ jobs:
 
           head_sha="$(jq -r '.headRefOid' "${review_files}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
-          commit_count="$(jq -r '.commitCount' "${review_files}")"
 
           gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" --paginate > "${prior_review_meta}"
 
@@ -237,22 +222,6 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping Renovate research review; review key ${fingerprint} was already reviewed"
             exit 0
-          fi
-
-          # Pre-v4 markers included moving SHAs. Avoid one extra review for simple Renovate rebases.
-          if [ "${MANUAL_REVIEW}" != "true" ] && [ "${commit_count}" = "1" ] && [ -n "${previous_review_commit}" ] && [ "${previous_review_commit}" != "${head_sha}" ]; then
-            if gh api "repos/${GITHUB_REPOSITORY}/commits/${previous_review_commit}" > "${review_previous_raw}"; then
-              jq -r '.files[].patch // empty' "${review_previous_raw}" |
-                normalize_patch > "${review_previous_diff}"
-
-              if cmp -s "${review_diff}" "${review_previous_diff}"; then
-                echo "skip=true" >> "$GITHUB_OUTPUT"
-                echo "::notice::Skipping Renovate research review; normalized diff matches previously reviewed commit ${previous_review_commit}"
-                exit 0
-              fi
-            else
-              echo "::notice::Could not fetch previously reviewed commit ${previous_review_commit}; continuing with review"
-            fi
           fi
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
