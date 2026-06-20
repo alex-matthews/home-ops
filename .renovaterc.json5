@@ -57,6 +57,30 @@
       automergeType: "branch",
       ignoreTests: true,
     },
+    // Auto-merge mise hygiene tools once Lint passes
+    {
+      description: "Auto-merge mise hygiene tools",
+      matchManagers: ["mise"],
+      matchDepNames: ["actionlint", "oxfmt", "zizmor", "lefthook"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+      automergeType: "pr",
+      ignoreTests: false,
+    },
+    // mise cluster-coupled CLIs must track talos/machineconfig.yaml.j2 — manual
+    {
+      description: "Manual mise cluster-coupled tools",
+      matchManagers: ["mise"],
+      matchDepNames: ["kubectl", "talosctl"],
+      automerge: false,
+    },
+    // mise flate must stay in lockstep with CI render — manual
+    {
+      description: "Manual mise flate",
+      matchManagers: ["mise"],
+      matchDepNames: ["github:home-operations/flate"],
+      automerge: false,
+    },
     // Grouping rules
     {
       description: "Actions Runner Controller Group",
@@ -114,6 +138,28 @@
       },
       minimumGroupSize: 2,
     },
+    {
+      description: "Align kubectl CLI with the Kubernetes version",
+      groupName: "kubernetes",
+      matchManagers: ["mise"],
+      matchDepNames: ["kubectl"],
+    },
+    {
+      description: "Talos node image and CLI",
+      groupName: "talos",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["siderolabs/talos"],
+      minimumGroupSize: 2,
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+    },
+    {
+      description: "Align talosctl CLI with the Talos version",
+      groupName: "talos",
+      matchManagers: ["mise"],
+      matchDepNames: ["talosctl"],
+    },
     // Labeling rules
     {
       matchUpdateTypes: ["major"],
@@ -146,6 +192,10 @@
     {
       matchDatasources: ["github-releases"],
       addLabels: ["renovate/github-release"],
+    },
+    {
+      matchManagers: ["mise"],
+      addLabels: ["renovate/mise"],
     },
   ],
 }
