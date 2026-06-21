@@ -24,27 +24,31 @@ recovery.
 
 ## UID/GID And Mover Permissions
 
-The current default for VolSync-backed apps is to run the app and the VolSync
-Restic movers as UID `1032` and GID `100`. This matches the NAS-side `docker`
-user/group convention and keeps single-app PVC backup and restore paths
-unprivileged in principle:
+Linux storage permissions are numeric. Names such as `docker`, `node`, or
+`admin` are only labels on the system that defines them. For backups and
+restores, keep three identities separate:
 
-- app pods should usually set `runAsUser: 1032`, `runAsGroup: 100`, and
-  `fsGroup: 100`;
-- the shared VolSync component defaults `VOLSYNC_PUID` to `1032` and
-  `VOLSYNC_PGID` to `100`;
-- use per-app `VOLSYNC_PUID` or `VOLSYNC_PGID` only when an app genuinely must
-  write its PVC as a different identity.
+- the app data owner: the UID/GID that owns files in the source PVC;
+- the mover identity: the UID/GID used by the backup or restore job;
+- the NAS/export identity: the UID/GID or server-side mapping used by NFS paths
+  when the app or backup repository touches Synology storage.
+
+The current default for VolSync-backed apps is `1032:100` for both the app pod
+and the VolSync Restic movers. This matches the NAS-side `docker` convention and
+keeps most single-app PVC backup and restore paths unprivileged in principle.
+It is this cluster's convention, not a Kopiur requirement.
 
 The `default` namespace currently allows VolSync privileged movers. Treat that
 as a compatibility escape hatch, not the normal permission model. For a
-single-app PVC, prefer matching the mover identity to the workload identity. Use
-privileged movers only for mixed ownership, root-owned data, or restore cases
-that must preserve arbitrary original ownership.
+single-app PVC, prefer matching the mover identity to the workload identity:
+backup movers must be able to read the source PVC, and restore movers should
+write files with ownership the app can use afterward.
 
 For NAS/NFS paths, do not rely on `fsGroup` to fix server-side ownership. NFS
 exports may apply root squash or server-side UID/GID mapping. Match the UID/GID
-the NAS expects, or use a deliberate shared group/server-side remap.
+the NAS expects, or use a deliberate shared group/server-side remap. If a future
+Kopia repository uses NFS, repository write permissions are a separate problem
+from source PVC read permissions.
 
 Before migrating any app to Kopiur, verify the actual numeric ownership and file
 modes on the PVC. Kopiur movers are separate pods too; every app needs an
