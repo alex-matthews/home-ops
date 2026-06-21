@@ -68,6 +68,7 @@ spec:
         existingClaim: "{{ .Release.Name }}"
       tmpfs:
         type: emptyDir
+        sizeLimit: 1Gi
         advancedMounts:
           thelounge:
             app:
