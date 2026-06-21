@@ -8,44 +8,42 @@ on:
       - opened
       - synchronize
       - reopened
+      - labeled
     branches:
       - main
     paths:
       - kubernetes/**
       - bootstrap/**
       - talos/**
-  workflow_dispatch:
-    inputs:
-      pr:
-        description: Pull request number to review
-        required: true
-        type: number
 
 env:
-  MANUAL_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
-  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+  FORCE_REVIEW: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   checks: read
   contents: read
   id-token: write
-  issues: read
+  issues: write
   pull-requests: write
   statuses: read
 
 jobs:
   renovate-review:
     if: >-
-      github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft
+        !github.event.pull_request.draft &&
+        (
+          github.event.action != 'labeled' ||
+          github.event.label.name == 'renovate-review'
+        )
       )
     name: Renovate Research Review
     runs-on: ubuntu-latest
@@ -64,51 +62,6 @@ jobs:
 
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
-      - name: Check PR eligibility
-        # pull_request is already gated by the job if: + on.branches; only the
-        # workflow_dispatch path arrives without validated event context.
-        if: ${{ steps.config.outputs.enabled == 'true' && env.MANUAL_REVIEW == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ env.PR_NUMBER }}
-        run: |
-          pr_json="$(
-            gh pr view "${PR}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --json author,baseRefName,headRepository,isDraft,state
-          )"
-
-          author="$(jq -r '.author.login' <<< "${pr_json}")"
-          base_ref="$(jq -r '.baseRefName' <<< "${pr_json}")"
-          head_repo="$(jq -r '.headRepository.nameWithOwner' <<< "${pr_json}")"
-          is_draft="$(jq -r '.isDraft' <<< "${pr_json}")"
-          state="$(jq -r '.state' <<< "${pr_json}")"
-
-          if [ "${state}" != "OPEN" ]; then
-            echo "::error::PR #${PR} is ${state}; only open Renovate PRs can be reviewed"
-            exit 1
-          fi
-
-          if [ "${base_ref}" != "main" ]; then
-            echo "::error::PR #${PR} targets ${base_ref}; expected main"
-            exit 1
-          fi
-
-          if [ "${head_repo}" != "${GITHUB_REPOSITORY}" ]; then
-            echo "::error::PR #${PR} is from ${head_repo}; only same-repository PRs can be reviewed"
-            exit 1
-          fi
-
-          if [ "${author}" != "bot-ler[bot]" ] && [ "${author}" != "app/bot-ler" ]; then
-            echo "::error::PR #${PR} author is ${author}; expected bot-ler[bot]"
-            exit 1
-          fi
-
-          if [ "${is_draft}" = "true" ]; then
-            echo "::error::PR #${PR} is a draft"
-            exit 1
-          fi
-
       - name: Check review scope
         id: scope
         if: ${{ steps.config.outputs.enabled == 'true' }}
@@ -116,9 +69,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          # Path scope is handled by on.pull_request.paths; workflow_dispatch
-          # bypasses it. This guard stays: Claude app-token validation requires
-          # the reviewer workflow to match the default branch, so skip self-edits.
+          # Claude app-token validation requires the reviewer workflow to match
+          # the default branch, so skip self-edits.
           if gh pr view "${PR}" --repo "${GITHUB_REPOSITORY}" --json files \
               --jq '.files[].path' | grep -Fxq ".github/workflows/renovate-review.yaml"; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -139,8 +91,8 @@ jobs:
         id: review
         if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' }}
         env:
+          FORCE_REVIEW: ${{ env.FORCE_REVIEW }}
           GH_TOKEN: ${{ github.token }}
-          MANUAL_REVIEW: ${{ env.MANUAL_REVIEW }}
           PR: ${{ env.PR_NUMBER }}
         run: |
           policy_version="4"
@@ -204,7 +156,7 @@ jobs:
           previous_review_commit="$(jq -r '.commit_id // ""' <<< "${latest_review}")"
           jq -r '.body // ""' <<< "${latest_review}" > "${previous_review_body}"
 
-          if [ "${MANUAL_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
+          if [ "${FORCE_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping Renovate research review; current head ${head_sha} already has a Claude review marker"
             exit 0
@@ -216,7 +168,7 @@ jobs:
               sed 's/.*fingerprint://'
           )" || true
 
-          if [ "${MANUAL_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
+          if [ "${FORCE_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping Renovate research review; review key ${fingerprint} was already reviewed"
             exit 0
@@ -247,7 +199,7 @@ jobs:
             REPO: ${{ github.repository }}
             PR: #${{ env.PR_NUMBER }}
             Review fingerprint: ${{ steps.review.outputs.fingerprint }}
-            Manual re-review requested: ${{ env.MANUAL_REVIEW }}
+            Force re-review requested: ${{ env.FORCE_REVIEW }}
 
             ## Context
 
@@ -545,3 +497,15 @@ jobs:
           fi
 
           echo "Verified fresh Renovate research review from ${review_author} at ${review_submitted_at} for ${review_commit}."
+
+      - name: Remove trigger label
+        if: ${{ always() && env.FORCE_REVIEW == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ env.PR_NUMBER }}
+        run: |
+          if ! gh api \
+            --method DELETE \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/renovate-review"; then
+            echo "::notice::Could not remove renovate-review label automatically"
+          fi
