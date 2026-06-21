@@ -22,6 +22,34 @@ The remote target is intentional. Any future Kopia design must preserve both a
 local target for fast restores and a remote object-storage target for disaster
 recovery.
 
+## UID/GID And Mover Permissions
+
+The current default for VolSync-backed apps is to run the app and the VolSync
+Restic movers as UID `1032` and GID `100`. This matches the NAS-side `docker`
+user/group convention and keeps single-app PVC backup and restore paths
+unprivileged in principle:
+
+- app pods should usually set `runAsUser: 1032`, `runAsGroup: 100`, and
+  `fsGroup: 100`;
+- the shared VolSync component defaults `VOLSYNC_PUID` to `1032` and
+  `VOLSYNC_PGID` to `100`;
+- use per-app `VOLSYNC_PUID` or `VOLSYNC_PGID` only when an app genuinely must
+  write its PVC as a different identity.
+
+The `default` namespace currently allows VolSync privileged movers. Treat that
+as a compatibility escape hatch, not the normal permission model. For a
+single-app PVC, prefer matching the mover identity to the workload identity. Use
+privileged movers only for mixed ownership, root-owned data, or restore cases
+that must preserve arbitrary original ownership.
+
+For NAS/NFS paths, do not rely on `fsGroup` to fix server-side ownership. NFS
+exports may apply root squash or server-side UID/GID mapping. Match the UID/GID
+the NAS expects, or use a deliberate shared group/server-side remap.
+
+Before migrating an app to Kopiur, verify the actual numeric ownership and file
+modes on the PVC. Kopiur movers are separate pods too; configure them to inherit
+or explicitly match the workload identity before trusting a snapshot.
+
 ## Backup Inventory
 
 This inventory is derived from the currently included resources in
