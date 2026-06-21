@@ -50,6 +50,11 @@ Before migrating an app to Kopiur, verify the actual numeric ownership and file
 modes on the PVC. Kopiur movers are separate pods too; configure them to inherit
 or explicitly match the workload identity before trusting a snapshot.
 
+Known exceptions: `tautulli` and `thelounge` currently run as UID/GID
+`1000:1000` while the shared VolSync movers keep the default `1032:100`
+identity. Leave that alone for now and rely on privileged VolSync movers, but do
+not migrate either app to Kopiur without explicit mover identity handling.
+
 ## Backup Inventory
 
 This inventory is derived from the currently included resources in
@@ -72,8 +77,8 @@ This inventory is derived from the currently included resources in
 | `sabnzbd`     | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `seerr`       | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
 | `sonarr`      | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
-| `tautulli`    | yes           | yes            | no          | no         | Separate `tautulli-cache` PVC.                                |
-| `thelounge`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `tautulli`    | yes           | yes            | no          | no         | Runs as `1000:1000`; separate `tautulli-cache` PVC.           |
+| `thelounge`   | yes           | yes            | no          | no         | Runs as `1000:1000`; handle explicitly before Kopiur.         |
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover job by itself. If a future local Kopia target uses NFS only inside
