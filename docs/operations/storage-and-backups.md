@@ -46,14 +46,16 @@ For NAS/NFS paths, do not rely on `fsGroup` to fix server-side ownership. NFS
 exports may apply root squash or server-side UID/GID mapping. Match the UID/GID
 the NAS expects, or use a deliberate shared group/server-side remap.
 
-Before migrating an app to Kopiur, verify the actual numeric ownership and file
-modes on the PVC. Kopiur movers are separate pods too; configure them to inherit
-or explicitly match the workload identity before trusting a snapshot.
+Before migrating any app to Kopiur, verify the actual numeric ownership and file
+modes on the PVC. Kopiur movers are separate pods too; every app needs an
+explicit mover identity decision before trusting a snapshot. For apps already
+aligned to `1032:100`, that can be inheritance or an explicit matching context.
 
-Known exceptions: `tautulli` and `thelounge` currently run as UID/GID
-`1000:1000` while the shared VolSync movers keep the default `1032:100`
+Known non-default VolSync cases: `tautulli` and `thelounge` currently run as
+UID/GID `1000:1000` while the shared VolSync movers keep the default `1032:100`
 identity. Leave that alone for now and rely on privileged VolSync movers, but do
-not migrate either app to Kopiur without explicit mover identity handling.
+not migrate either app to Kopiur without explicit `1000:1000` or inherited mover
+identity handling.
 
 ## Backup Inventory
 
