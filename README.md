@@ -34,6 +34,13 @@ CI runs purpose-built validation tools directly.
   [Flate](https://github.com/home-operations/flate), and self-hosted GitHub
   Actions runners
 
+### Hardware
+
+The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM
+and a 500 GB Samsung SSD 870 system/scratch disk. Ceph uses one 1 TB NVMe disk
+per node: `m1` has a Sabrent Rocket 4.0 Plus, while `m2` and `m3` have Samsung
+SSD 980 PRO 1TB disks.
+
 ## Key Paths
 
 ```text
