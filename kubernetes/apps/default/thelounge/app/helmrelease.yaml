@@ -24,6 +24,7 @@ spec:
               # Avoid Node 22 dual-stack connection failures for IRC hosts when IPv6 is
               # resolvable from the pod but not routable from the cluster.
               NODE_OPTIONS: "--no-network-family-autoselection"
+              SQLITE_TMPDIR: /tmp
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
@@ -65,3 +66,10 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          thelounge:
+            app:
+              - path: /tmp
+                subPath: tmp
