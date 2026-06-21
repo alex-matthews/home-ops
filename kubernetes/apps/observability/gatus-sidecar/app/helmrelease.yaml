@@ -9,23 +9,6 @@ spec:
     kind: OCIRepository
     name: gatus-sidecar
   interval: 1h
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: Deployment
-              name: gatus-sidecar
-            patch: |-
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: gatus-sidecar
-              spec:
-                strategy:
-                  type: RollingUpdate
-                  rollingUpdate:
-                    maxSurge: 0
-                    maxUnavailable: 1
   values:
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
