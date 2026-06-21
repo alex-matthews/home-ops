@@ -95,7 +95,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          policy_version="4"
+          policy_version="5"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_files="${RUNNER_TEMP}/renovate-review-files.json"
           prior_review_meta="${RUNNER_TEMP}/renovate-review-prior-reviews.json"
@@ -115,29 +115,37 @@ jobs:
           head_sha="$(jq -r '.headRefOid' "${review_files}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
 
-          # Use the PR head patch, not the base-relative PR diff. A manual
-          # rebase can change the latter while replaying the same Renovate patch.
-          git fetch --no-tags --depth=1 origin "${head_sha}"
-          patch_id="$(
-            git show --format= --patch "${head_sha}" |
+          # Normalize the whole PR patch so same-content rebases skip while
+          # companion commits still change the review key.
+          pr_patch_ids="$(
+            gh pr diff "${PR}" --repo "${GITHUB_REPOSITORY}" --patch |
               git patch-id --stable |
-              cut -d " " -f 1
+              awk '{print $1}' |
+              sort
           )"
 
+          if [ -z "${pr_patch_ids}" ]; then
+            echo "::notice::PR diff produced no stable patch ids; using an empty patch marker"
+            pr_patch_ids="empty"
+          fi
+
+          pr_patch_id="$(printf "%s\n" "${pr_patch_ids}" | sha256sum | cut -d " " -f 1)"
+
           jq --arg policy_version "${policy_version}" \
-            --arg patch_id "${patch_id}" \
+            --arg pr_patch_id "${pr_patch_id}" \
             '{
               title,
               files: (.files | sort),
               renovateTable,
               policyVersion: $policy_version,
-              stablePatchId: $patch_id
+              stablePrPatchId: $pr_patch_id
             }' \
             "${review_files}" > "${review_input}"
 
           fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
           echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
           echo "started_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+          echo "::notice::Prepared Renovate review key policy=${policy_version} head=${head_sha} pr_patch=${pr_patch_id} fingerprint=${fingerprint}"
 
           gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" --paginate > "${prior_review_meta}"
 

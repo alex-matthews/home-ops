@@ -20,13 +20,22 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
+      - name: Get changed actionlint files
+        id: actionlint-files
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
+        with:
+          patterns: |
+            .github/actionlint.yaml
+            .github/workflows/**/*.yaml
+            .github/workflows/**/*.yml
+
       - name: Get changed workflow files
         id: workflow-files
         if: ${{ github.event_name == 'pull_request' }}
         uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
         with:
           patterns: |
-            .github/actionlint.yaml
             .github/workflows/**/*.yaml
             .github/workflows/**/*.yml
 
@@ -45,34 +54,59 @@ jobs:
             !**/*.sops.yaml
             !**/*.sops.yml
 
-      - name: Checkout
+      - name: Plan lint tools
+        id: lint-tools
         if: >-
           ${{
             github.event_name == 'workflow_dispatch' ||
+            steps.actionlint-files.outputs.changed_files != '[]' ||
             steps.workflow-files.outputs.changed_files != '[]' ||
             steps.formatted-files.outputs.changed_files != '[]'
           }}
+        env:
+          ACTIONLINT_FILES: ${{ steps.actionlint-files.outputs.changed_files }}
+          FORMATTED_FILES: ${{ steps.formatted-files.outputs.changed_files }}
+          WORKFLOW_FILES: ${{ steps.workflow-files.outputs.changed_files }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "install_args=actionlint oxfmt zizmor" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          tools=()
+
+          if [ "${ACTIONLINT_FILES}" != "[]" ]; then
+            tools+=(actionlint)
+          fi
+
+          if [ "${FORMATTED_FILES}" != "[]" ]; then
+            tools+=(oxfmt)
+          fi
+
+          if [ "${WORKFLOW_FILES}" != "[]" ]; then
+            tools+=(zizmor)
+          fi
+
+          echo "install_args=${tools[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: ${{ steps.lint-tools.outputs.install_args != '' }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Setup Mise
-        if: >-
-          ${{
-            github.event_name == 'workflow_dispatch' ||
-            steps.workflow-files.outputs.changed_files != '[]' ||
-            steps.formatted-files.outputs.changed_files != '[]'
-          }}
+        if: ${{ steps.lint-tools.outputs.install_args != '' }}
         uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           cache: false
-          install_args: actionlint oxfmt zizmor
+          install_args: ${{ steps.lint-tools.outputs.install_args }}
 
       - name: Lint workflows
         if: >-
           ${{
             github.event_name == 'workflow_dispatch' ||
-            steps.workflow-files.outputs.changed_files != '[]'
+            steps.actionlint-files.outputs.changed_files != '[]'
           }}
         run: mise exec -- actionlint
 
@@ -96,6 +130,7 @@ jobs:
         if: >-
           ${{
             github.event_name == 'pull_request' &&
+            steps.actionlint-files.outputs.changed_files == '[]' &&
             steps.workflow-files.outputs.changed_files == '[]' &&
             steps.formatted-files.outputs.changed_files == '[]'
           }}
