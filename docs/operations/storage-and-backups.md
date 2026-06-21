@@ -30,6 +30,7 @@ This inventory is derived from the currently included resources in
 | App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
 | ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
 | `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `atuin`       | yes           | yes            | no          | no         | First Kopiur pilot candidate; 1Gi VolSync capacity.           |
 | `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `bazarr`      | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
@@ -142,13 +143,13 @@ positive signal, but this cluster still needs its own restore evidence.
 
 ## Suggested Pilot
 
-Use Atuin as the first Kopiur pilot after it is deployed. Track that deployment
-in [Deploy atuin](https://github.com/alex-matthews/home-ops/issues/1266).
+Use Atuin as the first Kopiur pilot. Track the deployment in
+[Deploy atuin](https://github.com/alex-matthews/home-ops/issues/1266).
 
 Atuin is a good pilot because it is useful, small, and lower-risk than the
 media-adjacent workloads. Do not add Kopiur resources for it until the Atuin app
-and PVC exist and the deployment issue has captured any dotfiles and domain
-exposure decisions.
+and VolSync-protected PVC are healthy and the client dotfiles integration is
+understood.
 
 Pilot success means:
 
