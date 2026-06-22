@@ -108,7 +108,7 @@ jobs:
             github.event_name == 'workflow_dispatch' ||
             steps.actionlint-files.outputs.changed_files != '[]'
           }}
-        run: mise exec -- actionlint
+        run: mise exec --no-deps -- actionlint
 
       - name: Audit workflows
         if: >-
@@ -116,7 +116,7 @@ jobs:
             github.event_name == 'workflow_dispatch' ||
             steps.workflow-files.outputs.changed_files != '[]'
           }}
-        run: mise exec -- zizmor --offline .github/workflows
+        run: mise exec --no-deps -- zizmor --offline .github/workflows
 
       - name: Check formatting
         if: >-
@@ -124,7 +124,7 @@ jobs:
             github.event_name == 'workflow_dispatch' ||
             steps.formatted-files.outputs.changed_files != '[]'
           }}
-        run: mise exec -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
+        run: mise exec --no-deps -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
 
       - name: Nothing to lint
         if: >-
