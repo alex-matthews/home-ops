@@ -13,7 +13,7 @@ spec:
             absent(up{job="volsync-metrics"})
           annotations:
             summary: >-
-              Volsync component has disappeared from Prometheus service discovery
+              VolSync component has disappeared from Prometheus service discovery
           for: 5m
           labels:
             severity: critical
