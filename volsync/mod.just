@@ -9,9 +9,8 @@ default:
 [doc('List snapshots (and corresponding previous offset integers) in the restic repo for an app')]
 [script]
 list-previous ns app:
-    kubectl -n "{{ ns }}" get secret "{{ app }}-volsync-secret" \
-        -o go-template='{{ "{{" }}range $k,$v := .data{{ "}}" }}'\
-        '{{ "{{" }}printf "export %s=%s\n" $k ($v|base64decode){{ "}}" }}{{ "{{" }}end{{ "}}" }}' \
+    kubectl -n "{{ ns }}" get secret "{{ app }}-volsync-secret" -o json \
+        | jq -r '.data | to_entries[] | "export \(.key)=\(.value | @base64d | @sh)"' \
         | bash -euo pipefail -c 'source /dev/stdin && restic snapshots --json' \
         | jq -r '[.. | objects | select(has("id") and has("time")) | {id: (.short_id // .id[0:8]), time: (.time | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 | strflocaltime("%Y-%m-%d %H:%M:%S")), host: (.hostname // ""), tags: ((.tags // []) | join(",")), paths: ((.paths // []) | join(",")), bytes: (.summary.total_bytes_processed // 0)}] | unique_by(.id) | sort_by(.time) | reverse | to_entries[] | [(.key | tostring), .value.id, .value.time, .value.host, .value.tags, .value.paths, (.value.bytes | tostring)] | @tsv' \
         | awk -F $'\t' 'function humansize(n, mib, gib, tib){mib=1024*1024; gib=mib*1024; tib=gib*1024; if(n>=tib)return sprintf("%.3f TiB",n/tib); if(n>=gib)return sprintf("%.3f GiB",n/gib); if(n>=mib)return sprintf("%.3f MiB",n/mib); if(n>=1024)return sprintf("%.3f KiB",n/1024); return sprintf("%d B",n)} BEGIN{printf "%-4s  %-8s  %-19s  %-10s  %-10s  %-5s  %s\n","Prev","ID","Time","Host","Tags","Paths","Size"; print "--------------------------------------------------------------------------------"} {printf "%-4s  %-8s  %-19s  %-10s  %-10s  %-5s  %s\n",$1,$2,$3,$4,$5,$6,humansize($7+0)} END{print "--------------------------------------------------------------------------------"}'
