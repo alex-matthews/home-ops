@@ -57,7 +57,7 @@ The current architecture is:
 
 | Area                    | Decision                                                                                                             |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Pull request review     | Use Claude-backed Renovate Research Review. Keep `misospace/pr-reviewer-action` and MiniMax deferred for comparison. |
+| Pull request review     | Use Claude-backed Renovate PR Review. Keep `misospace/pr-reviewer-action` and MiniMax deferred for comparison.       |
 | Agent workbench         | Use Hermes as the first interactive home-ops workbench.                                                              |
 | MCP gateway             | Use ToolHive to expose approved read-only MCPs through explicit trust boundaries.                                    |
 | Agent clients           | Treat Hermes, future OpenClaw, CI reviewers, and scheduled triage jobs as clients of the same trusted MCP surface.   |
@@ -77,7 +77,7 @@ boundary is clear.
 
 ```text
 GitHub Actions
-  └─ Renovate Research Review
+  └─ Renovate PR Review
        └─ Claude Code action
 
 Cluster
@@ -324,8 +324,8 @@ scraping approaches are not an acceptable design foundation.
 
 Implemented:
 
-1. Replace the legacy misospace reviewer with the Claude-backed Renovate
-   Research Review workflow.
+1. Replace the legacy misospace reviewer with the Claude-backed Renovate PR
+   Review workflow.
 2. Deploy Hermes as the interactive workbench surface.
 3. Deploy ToolHive with read-only Context7, GitHub, Konflate, Flux, and Grafana
    MCP surfaces.
@@ -341,7 +341,7 @@ Implemented:
 Next:
 
 1. Stabilize ToolHive MCP surfaces and prompt examples through actual use.
-2. Continue hardening Renovate Research Review for usefulness, cost control, and
+2. Continue hardening Renovate PR Review for usefulness, cost control, and
    predictable re-review behavior.
 3. Evaluate shared assistant memory, likely Memini or a similar backend, and
    design retrieval and reranking deliberately.
@@ -401,7 +401,7 @@ operational model are ready.
 2. Which additional clients should use LiteLLM, and should any external route
    exist?
 3. Should `misospace/pr-reviewer-action` be revisited behind LiteLLM, or should
-   the Claude-backed Renovate Research Review remain the primary reviewer?
+   the Claude-backed Renovate PR Review remain the primary reviewer?
 4. When should Dragonfly become a durable/shared state substrate instead of
    LiteLLM-only cache/router state?
 5. What is the minimum safe OpenClaw deployment shape for read-only triage and

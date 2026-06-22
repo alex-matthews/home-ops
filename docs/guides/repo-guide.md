@@ -14,7 +14,7 @@ divergence before implementation.
 
 | Domain                             | References                                                                                  | Use for                                                                 | Avoid copying                                                              |
 | ---------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Lean GitOps posture                | [onedr0p/home-ops], [buroa/k8s-gitops]                                                      | Workflow pruning, Konflate/Flate posture, app layout, lean CI           | Assuming every omission fits this cluster                                  |
+| Lean GitOps posture                | [onedr0p/home-ops], [buroa/k8s-gitops]                                                      | Workflow pruning, Konflate/Downflate posture, app layout, lean CI       | Assuming every omission fits this cluster                                  |
 | App and chart conventions          | [onedr0p/home-ops], [buroa/k8s-gitops], [bjw-s-labs/home-ops]                               | HelmRelease value shape, app-template idioms, Home Operations charts    | Reordering or reshaping files against this repo's nearby pattern           |
 | AI workbench architecture          | [bjw-s-labs/home-ops], [eleboucher/homelab], [m00nwtchr/homelab-cluster]                    | ToolHive, Hermes, OpenClaw, Memini, LiteLLM, MCP layout                 | Postgres, vector, local inference, or public MCP complexity before needed  |
 | MCP and ToolHive patterns          | [eleboucher/homelab], [m00nwtchr/homelab-cluster], [bjw-s-labs/home-ops], [jfroy/flatops]   | vMCP grouping, internal/external routes, OIDC examples, infra MCPs      | Treating public authenticated MCP as the default shape                     |
@@ -46,8 +46,7 @@ divergence before implementation.
 
 ## Layout
 
-- `.github/workflows/`: CI, Renovate Research Review, label sync, Renovate, and
-  tag automation.
+- `.github/workflows/`: CI, Renovate, Renovate PR Review, and label sync.
 - `.agents/instructions/`: narrow reusable agent instructions, currently YAML
   ordering.
 - `bootstrap/`: one-time cluster bootstrap helpers.
@@ -55,7 +54,8 @@ divergence before implementation.
 - `kubernetes/apps/`: Flux-managed application declarations.
 - `kubernetes/components/`: reusable Kustomize components, including SOPS,
   VolSync, and zeroscaler.
-- `kubernetes/flux/cluster`: top-level Flux cluster entrypoint used by Flate.
+- `kubernetes/flux/cluster`: top-level Flux cluster entrypoint used by render
+  tooling.
 - `kubernetes/mod.just`: local/operator Kubernetes commands, not CI validation
   glue.
 - `talos/`: Talos machine config templates and local helpers.
@@ -161,10 +161,9 @@ CI runs tools directly. Do not route everything through `just`.
 
 `just` is for local/operator workflows: diagnostics, rendering helpers, live
 cluster actions, bootstrap, Talos, and restore operations. Changes to Justfiles
-are formatted by Lefthook. Flate and Image Pull currently filter on
-`kubernetes/**/*`, so changes under `kubernetes/` can trigger those workflows
-even when the touched file is local/operator tooling rather than rendered
-cluster state.
+are formatted by Lefthook. Image Pull currently filters on `kubernetes/**/*`, so
+changes under `kubernetes/` can trigger it even when the touched file is
+local/operator tooling rather than rendered cluster state.
 
 `mise` owns the repo-local environment and toolchain contract. Use it for
 environment variables, project-specific tool installation, and reproducible
@@ -192,8 +191,8 @@ Renovate execution model has been reviewed.
 
 - For workflow/tooling changes, validate with `oxfmt`, `actionlint`, `zizmor`,
   and the affected GitHub Actions logic.
-- For app changes, validate with app-level `kubectl kustomize`, cluster Flate,
-  and image diff when image refs may change.
+- For app changes, validate with app-level `kubectl kustomize`, cluster render
+  with Flate, and image diff when image refs may change.
 - For storage or backup changes, identify affected PVCs and backup objects
   before editing, then document restore testing.
 - For operator or CRD changes, make the PR narrow and include the reason the new

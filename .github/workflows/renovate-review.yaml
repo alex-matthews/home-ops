@@ -1,6 +1,6 @@
 ---
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Renovate Research Review
+name: Renovate PR Review
 
 on:
   pull_request:
@@ -45,7 +45,7 @@ jobs:
           github.event.label.name == 'renovate-review'
         )
       )
-    name: Renovate Research Review
+    name: Renovate PR Review
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -55,7 +55,7 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
-            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN is not configured; skipping Renovate research review"
+            echo "::notice::CLAUDE_CODE_OAUTH_TOKEN is not configured; skipping Renovate PR review"
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -166,7 +166,7 @@ jobs:
 
           if [ "${FORCE_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate research review; current head ${head_sha} already has a Claude review marker"
+            echo "::notice::Skipping Renovate PR review; current head ${head_sha} already has a Claude review marker"
             exit 0
           fi
 
@@ -178,7 +178,7 @@ jobs:
 
           if [ "${FORCE_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate research review; review key ${fingerprint} was already reviewed"
+            echo "::notice::Skipping Renovate PR review; review key ${fingerprint} was already reviewed"
             exit 0
           fi
 
@@ -232,7 +232,7 @@ jobs:
 
             The workflow preflight has already decided this review should run.
             Do not perform duplicate-review skipping. Do not stop early because
-            an older Renovate Research Review exists.
+            an older Renovate PR Review exists.
 
             ## Evidence workflow
 
@@ -355,7 +355,7 @@ jobs:
             ```markdown
             <!-- home-ops-renovate-research -->
             <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->
-            ### Renovate Research Review
+            ### Renovate PR Review
 
             **Verdict:** Safe to merge | Human review recommended | Changes recommended before merge
 
@@ -475,13 +475,13 @@ jobs:
             fi
 
             if [ "${attempt}" -lt 6 ]; then
-              echo "::notice::Fresh Renovate research review not visible yet; retrying (${attempt}/6)"
+              echo "::notice::Fresh Renovate PR review not visible yet; retrying (${attempt}/6)"
               sleep 5
             fi
           done
 
           if [ -z "${review}" ]; then
-            echo "::error::Claude did not submit a fresh Renovate research review from ${expected_author} on ${HEAD_SHA} with marker ${base_marker}"
+            echo "::error::Claude did not submit a fresh Renovate PR review from ${expected_author} on ${HEAD_SHA} with marker ${base_marker}"
             exit 1
           fi
 
@@ -504,7 +504,7 @@ jobs:
             echo "::notice::Fresh review did not contain the exact fingerprint marker ${fingerprint_marker}; accepting the stable marker on the current head"
           fi
 
-          echo "Verified fresh Renovate research review from ${review_author} at ${review_submitted_at} for ${review_commit}."
+          echo "Verified fresh Renovate PR review from ${review_author} at ${review_submitted_at} for ${review_commit}."
 
       - name: Remove trigger label
         if: ${{ always() && env.FORCE_REVIEW == 'true' }}

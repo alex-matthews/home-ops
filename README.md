@@ -31,8 +31,8 @@ CI runs purpose-built validation tools directly.
   [Grafana](https://github.com/grafana/grafana), and
   [Gatus](https://github.com/TwiN/gatus) via gatus-sidecar
 - Automation: [Renovate](https://github.com/renovatebot/renovate),
-  [Flate](https://github.com/home-operations/flate), and self-hosted GitHub
-  Actions runners
+  [Konflate](https://github.com/home-operations/konflate), and
+  [GitHub Actions](https://github.com/features/actions)
 
 ### Hardware
 
@@ -50,7 +50,7 @@ SSD 980 PRO 1TB disks.
 ├── kubernetes/
 │   ├── apps/           # Flux-managed applications, grouped by namespace
 │   ├── components/     # Shared Kustomize components, SOPS, alerts, VolSync
-│   └── flux/cluster/   # Top-level Flux entrypoint used by Flate
+│   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
 ├── talos/              # Talos config templates and operator commands
 └── volsync/            # Local restore and snapshot helpers
 ```
@@ -74,18 +74,19 @@ Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
 Renovate opens dependency update pull requests for charts, containers, GitHub
 Actions, and other versioned references.
 
-Pull requests are checked by GitHub Actions:
+Pull request gates and reviewers are:
 
-- `Flate` renders and validates the Flux tree with missing secrets allowed.
+- `Lint` checks workflow, YAML, JSON, Markdown, and TOML changes.
 - `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
-- `Konflate` runs in-cluster and posts native advisory pull request comments and
-  checks from rendered Flate diffs.
-- `Renovate Research Review` can post advisory Claude-backed research reviews on
-  eligible same-repository Renovate pull requests.
-- `Labeler` and `Label Sync` keep pull request and repository labels consistent.
+- `Konflate` runs in-cluster and posts native pull request comments and checks
+  from rendered Flate diffs.
+- `Renovate PR Review` can post advisory Claude-backed reviews on eligible
+  same-repository Renovate pull requests.
 
-Flate and Image Pull are the required branch-check gates. Konflate and Renovate
-Research Review are advisory.
+Konflate is the required render gate, while Image Pull is the current required
+image-pull gate. Lint is also required. Renovate PR Review is advisory.
+
+`Label Sync` keeps repository labels consistent.
 
 See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
 repository conventions.
