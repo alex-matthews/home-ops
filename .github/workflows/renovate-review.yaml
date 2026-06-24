@@ -269,8 +269,8 @@ jobs:
               description changes; do not call the impact image-only.
               Do not fetch, link, name, or quote the interactive Konflate UI,
               configured hostnames, or raw non-GitHub URLs.
-              Do not repeat Konflate resource/app/CRD counts in the visible
-              summary; summarize only cautions or repo impact.
+              Do not repeat Konflate resource/app/CRD counts anywhere in the
+              review body; summarize only cautions or repo impact.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -306,7 +306,8 @@ jobs:
             changed risk surfaces; use Low when material evidence is unavailable.
             Keep the visible summary compact; put detail in `<details>`.
             Do not link the current PR. Use `redirect.github.com` links for
-            upstream evidence; no bare `owner/repo#123` refs.
+            upstream evidence; include 1-3 proper Markdown links and no bare
+            `owner/repo#123` refs.
             Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
