@@ -259,13 +259,18 @@ jobs:
               version when evidence shows one.
             - Check CI with `gh pr checks`. Legacy status API `total_count: 0`
               means no legacy statuses, not absent/pending/passing Actions. Do
-              not cite checks from this Renovate PR Review workflow as evidence.
+              not cite or summarize this Renovate PR Review workflow.
             - Read `.renovate-review/konflate-summary.md` as advisory rendered
               evidence. If it says unavailable, report that plainly. If it
               mentions cautions, CRDs, blast radius, removals, storage, RBAC,
               routes, webhooks, or secrets, research those before the verdict.
-              If CRDs changed, inspect Konflate's rendered diff and summarize
-              all schema/description changes; do not call the impact image-only.
+              If CRDs changed, use this summary to identify affected resources,
+              then inspect upstream CRD source diffs and summarize all schema or
+              description changes; do not call the impact image-only.
+              Do not fetch, link, name, or quote the interactive Konflate UI,
+              configured hostnames, or raw non-GitHub URLs.
+              Do not repeat Konflate resource/app/CRD counts in the visible
+              summary; summarize only cautions or repo impact.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -300,36 +305,39 @@ jobs:
             only when Konflate and upstream/local-impact evidence cover the
             changed risk surfaces; use Low when material evidence is unavailable.
             Keep the visible summary compact; put detail in `<details>`.
-            Use `redirect.github.com` links; no bare `owner/repo#123` refs.
+            Do not link the current PR. Use `redirect.github.com` links for
+            upstream evidence; no bare `owner/repo#123` refs.
             Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
             <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} recommendation:safe|human-review|changes-recommended confidence:high|medium|low konflate:ok|unavailable gate:false -->
             ### Renovate PR Review
 
-            | Field | Value |
-            |---|---|
-            | Recommendation | Safe to merge / Human review recommended / Changes recommended before merge |
-            | Confidence | High / Medium / Low |
-            | Operator action | ... |
-            | Rendered impact | ... |
-            | Needs attention | None. / ... |
+            **Recommendation:** Safe to merge / Human review recommended / Changes recommended before merge
+            **Confidence:** High / Medium / Low
+            **Operator action:** ...
+            **Needs attention:** None. / ...
 
             **Why**
             - ...
 
-            <details><summary>Review details</summary>
+            <details>
+            <summary>Review details</summary>
 
             **What changed**
             - ...
+
             </details>
 
-            <details><summary>Evidence and unknowns</summary>
+            <details>
+            <summary>Evidence checked</summary>
+
             - GitHub: ...
             - Konflate: ...
             - Upstream: ...
             - Repository usage: ...
             - Unknowns: ...
+
             </details>
             ```
 
