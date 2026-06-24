@@ -259,7 +259,7 @@ jobs:
               version when evidence shows one.
             - Check CI with `gh pr checks`. Legacy status API `total_count: 0`
               means no legacy statuses, not absent/pending/passing Actions. Do
-              not cite this Renovate PR Review workflow as review evidence.
+              not cite checks from this Renovate PR Review workflow as evidence.
             - Read `.renovate-review/konflate-summary.md` as advisory rendered
               evidence. If it says unavailable, report that plainly. If it
               mentions cautions, CRDs, blast radius, removals, storage, RBAC,
@@ -274,7 +274,8 @@ jobs:
               Do not stop at wrapper-only notes; cross-check repo impact.
             - Map findings to local usage in `OCIRepository`, `HelmRelease`,
               Kustomization deps, values, ConfigMaps, routes, storage, RBAC, and
-              consumers.
+              consumers. Distinguish rendered manifest changes from upstream
+              runtime behavior changes that affect operator-created workloads.
             - Classify only actionable repo impact: breaking changes, used
               deprecations, and new features worth adopting because they remove
               workarounds or improve reliability. Unused breaking changes are
