@@ -258,11 +258,14 @@ jobs:
               (chart->app, image->software, Action->CLI), and inner component
               version when evidence shows one.
             - Check CI with `gh pr checks`. Legacy status API `total_count: 0`
-              means no legacy statuses, not absent/pending/passing Actions.
+              means no legacy statuses, not absent/pending/passing Actions. Do
+              not cite this Renovate PR Review workflow as review evidence.
             - Read `.renovate-review/konflate-summary.md` as advisory rendered
               evidence. If it says unavailable, report that plainly. If it
               mentions cautions, CRDs, blast radius, removals, storage, RBAC,
               routes, webhooks, or secrets, research those before the verdict.
+              If CRDs changed, inspect Konflate's rendered diff and summarize
+              all schema/description changes; do not call the impact image-only.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -296,22 +299,26 @@ jobs:
             only when Konflate and upstream/local-impact evidence cover the
             changed risk surfaces; use Low when material evidence is unavailable.
             Keep the visible summary compact; put detail in `<details>`.
-            Rewrite GitHub links to `redirect.github.com`. Use this exact structure:
+            Use `redirect.github.com` links; no bare `owner/repo#123` refs.
+            Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
             <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} recommendation:safe|human-review|changes-recommended confidence:high|medium|low konflate:ok|unavailable gate:false -->
             ### Renovate PR Review
 
-            **Recommendation:** Safe to merge | Human review recommended | Changes recommended before merge
-            **Confidence:** High | Medium | Low
-            **Operator action:** ...
-            **Rendered impact:** ...
-            **Main reason:** ...
-            **Needs attention:** None. | ...
+            | Field | Value |
+            |---|---|
+            | Recommendation | Safe to merge / Human review recommended / Changes recommended before merge |
+            | Confidence | High / Medium / Low |
+            | Operator action | ... |
+            | Rendered impact | ... |
+            | Needs attention | None. / ... |
 
-            <details><summary>Review details</summary>
             **Why**
             - ...
+
+            <details><summary>Review details</summary>
+
             **What changed**
             - ...
             </details>
