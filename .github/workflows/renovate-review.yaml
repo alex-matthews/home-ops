@@ -8,49 +8,110 @@ on:
       - opened
       - synchronize
       - reopened
-      - labeled
     branches:
       - main
     paths:
       - kubernetes/**
       - bootstrap/**
       - talos/**
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Renovate PR number to review
+        required: true
+        type: number
 
 env:
-  FORCE_REVIEW: ${{ github.event.action == 'labeled' && github.event.label.name == 'renovate-review' }}
-  PR_NUMBER: ${{ github.event.pull_request.number }}
+  FORCE_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
+  PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  checks: read
-  contents: read
-  id-token: write
-  issues: write
-  pull-requests: write
-  statuses: read
+permissions: {}
 
 jobs:
   renovate-review:
     if: >-
+      github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'pull_request' &&
         github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'bot-ler[bot]' &&
-        !github.event.pull_request.draft &&
-        (
-          github.event.action != 'labeled' ||
-          github.event.label.name == 'renovate-review'
-        )
+        !github.event.pull_request.draft
       )
     name: Renovate PR Review
+    permissions:
+      checks: read
+      contents: read
+      id-token: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Check review scope
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ env.PR_NUMBER }}
+        run: |
+          skip() {
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$1"
+            exit 0
+          }
+
+          pr_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
+          pr_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.txt"
+          pr_file_paths_json="${RUNNER_TEMP}/renovate-review-file-paths.json"
+
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}" > "${pr_meta}"
+
+          pr_state="$(jq -r '.state' "${pr_meta}")"
+          pr_author="$(jq -r '.user.login' "${pr_meta}")"
+          pr_base="$(jq -r '.base.ref' "${pr_meta}")"
+          pr_draft="$(jq -r '.draft' "${pr_meta}")"
+          pr_head_repo="$(jq -r '.head.repo.full_name // ""' "${pr_meta}")"
+
+          if [ "${pr_state}" != "open" ]; then
+            skip "Skipping; PR #${PR} is ${pr_state}."
+          fi
+
+          if [ "${pr_author}" != "bot-ler[bot]" ]; then
+            skip "Skipping; PR #${PR} author is ${pr_author}, not bot-ler[bot]."
+          fi
+
+          if [ "${pr_head_repo}" != "${GITHUB_REPOSITORY}" ]; then
+            skip "Skipping; PR #${PR} head repository is ${pr_head_repo}, not ${GITHUB_REPOSITORY}."
+          fi
+
+          if [ "${pr_base}" != "main" ]; then
+            skip "Skipping; PR #${PR} targets ${pr_base}, not main."
+          fi
+
+          if [ "${pr_draft}" = "true" ]; then
+            skip "Skipping; PR #${PR} is a draft."
+          fi
+
+          gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files" \
+            --jq '.[].filename' > "${pr_file_paths}"
+
+          jq -R . < "${pr_file_paths}" | jq -s . > "${pr_file_paths_json}"
+
+          if ! grep -Eq '^(kubernetes|bootstrap|talos)/' "${pr_file_paths}"; then
+            skip "Skipping; PR #${PR} does not touch reviewed paths."
+          fi
+
+          if grep -Fxq ".github/workflows/renovate-review.yaml" "${pr_file_paths}"; then
+            skip "Skipping; reviewer workflow self-edit must match the default branch."
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
       - name: Check reviewer config
         id: config
+        if: ${{ steps.scope.outputs.skip != 'true' }}
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
@@ -62,30 +123,13 @@ jobs:
 
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
-      - name: Check review scope
-        id: scope
-        if: ${{ steps.config.outputs.enabled == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ env.PR_NUMBER }}
-        run: |
-          # Claude app-token validation requires the reviewer workflow to match
-          # the default branch, so skip self-edits.
-          if gh pr view "${PR}" --repo "${GITHUB_REPOSITORY}" --json files \
-              --jq '.files[].path' | grep -Fxq ".github/workflows/renovate-review.yaml"; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping; reviewer workflow self-edit must match the default branch."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout
         if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' }}
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: refs/pull/${{ env.PR_NUMBER }}/merge
+          ref: refs/pull/${{ env.PR_NUMBER }}/head
 
       - name: Prepare review
         id: review
@@ -97,26 +141,13 @@ jobs:
         run: |
           policy_version="5"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
-          review_files="${RUNNER_TEMP}/renovate-review-files.json"
+          review_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
+          review_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.json"
           prior_review_meta="${RUNNER_TEMP}/renovate-review-prior-reviews.json"
-          previous_review_body="${RUNNER_TEMP}/renovate-review-previous-body.txt"
 
-          gh pr view "${PR}" \
-            --json title,body,files,headRefOid \
-            --jq '
-              {
-                title,
-                headRefOid,
-                files: [.files[].path],
-                renovateTable: ((.body // "") | split("---")[0])
-              }
-            ' > "${review_files}"
-
-          head_sha="$(jq -r '.headRefOid' "${review_files}")"
+          head_sha="$(jq -r '.head.sha' "${review_meta}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
 
-          # Normalize the whole PR patch so same-content rebases skip while
-          # companion commits still change the review key.
           pr_patch_ids="$(
             gh pr diff "${PR}" --repo "${GITHUB_REPOSITORY}" --patch |
               git patch-id --stable |
@@ -133,14 +164,15 @@ jobs:
 
           jq --arg policy_version "${policy_version}" \
             --arg pr_patch_id "${pr_patch_id}" \
+            --slurpfile files "${review_file_paths}" \
             '{
               title,
-              files: (.files | sort),
-              renovateTable,
+              files: ($files[0] | sort),
+              renovateTable: ((.body // "") | split("---")[0]),
               policyVersion: $policy_version,
               stablePrPatchId: $pr_patch_id
             }' \
-            "${review_files}" > "${review_input}"
+            "${review_meta}" > "${review_input}"
 
           fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
           echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
@@ -162,7 +194,6 @@ jobs:
           )"
 
           previous_review_commit="$(jq -r '.commit_id // ""' <<< "${latest_review}")"
-          jq -r '.body // ""' <<< "${latest_review}" > "${previous_review_body}"
 
           if [ "${FORCE_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -171,7 +202,8 @@ jobs:
           fi
 
           previous_fingerprint="$(
-            grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' "${previous_review_body}" |
+            jq -r '.body // ""' <<< "${latest_review}" |
+              grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' |
               tail -n 1 |
               sed 's/.*fingerprint://'
           )" || true
@@ -190,244 +222,134 @@ jobs:
         uses: anthropics/claude-code-action@2fee15510437d71399d9139ed60433470484a8fb # v1.0.153
         env:
           GH_TOKEN: ${{ github.token }}
-          KONFLATE_URL: ${{ secrets.KONFLATE_URL || vars.KONFLATE_URL }}
+          KONFLATE_URL: ${{ vars.KONFLATE_URL }}
           PR: ${{ env.PR_NUMBER }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_bots: "bot-ler[bot],github-actions[bot]"
+          allowed_bots: "bot-ler[bot]"
           claude_args: |
             --model ${{ vars.CLAUDE_RENOVATE_REVIEW_MODEL || 'claude-sonnet-4-6' }}
             --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr review:*),Bash(gh api:*),Bash(gh release view:*),Bash(gh release list:*),Bash(git log:*),Bash(git diff:*),Bash(curl:*),WebFetch,WebSearch"
           prompt: |
             You research same-repository Renovate pull requests in this Flux
-            GitOps repository and submit exactly one GitHub PR review comment
-            with your findings. You do not modify files, push commits, approve,
-            or request changes.
+            GitOps repository and submit exactly one advisory GitHub PR review
+            comment. Do not modify files, push commits, approve, or request
+            changes. The review is advisory, not a merge gate.
 
             REPO: ${{ github.repository }}
             PR: #${{ env.PR_NUMBER }}
             Review fingerprint: ${{ steps.review.outputs.fingerprint }}
             Force re-review requested: ${{ env.FORCE_REVIEW }}
+            Follow this prompt, then `AGENTS.md`, `docs/guides/repo-guide.md`,
+            and only relevant `.agents/instructions/`. Preflight already chose
+            this PR; do not duplicate-skip or stop because an older review exists.
+            Review contract:
+            - Read `gh pr view` and `gh pr diff`. For each upgraded artifact,
+              note old/new version, update type, touched file, wrapper type
+              (chart->app, image->software, Action->CLI), and inner component
+              version when evidence shows one.
+            - Check CI with `gh pr checks`. Legacy status API `total_count: 0`
+              means no legacy statuses, not absent/pending/passing Actions.
+            - If `KONFLATE_URL` is set and the PR touches Kubernetes/Helm/Flux,
+              CRDs, RBAC, routes, storage, secrets, or images, fetch advisory
+              rendered evidence with:
+              `curl -fsS -H 'Accept: text/markdown' "${KONFLATE_URL}/api/prs/${PR}/summary"`
+              Research any Konflate cautions, CRDs, blast radius, removals,
+              storage, RBAC, routes, webhooks, or secrets. Do not print endpoint
+              URLs.
+            - Trace upstream to origin. Start with PR release notes, then use
+              GitHub Releases for every version, CHANGELOG/UPGRADING/migration
+              docs, wrapper plus underlying changelogs, compatibility/breaking
+              docs, commit history scanning breaking/deprecat/remov/renam/
+              migrat/drop/require, registry metadata/README, and web search last.
+              Do not stop at wrapper-only notes; cross-check repo impact.
+            - Map findings to local usage in `OCIRepository`, `HelmRelease`,
+              Kustomization deps, values, ConfigMaps, routes, storage, RBAC, and
+              consumers.
+            - Classify only actionable repo impact: breaking changes, used
+              deprecations, and new features worth adopting because they remove
+              workarounds or improve reliability. Unused breaking changes are
+              context, not action items.
+            Treat these one-line diffs as high risk: CRD schema/version/
+            `conversion.webhook`; webhook Service/Deployment/certs; RBAC or
+            ServiceAccount; PVC/storage/backup/VolSync/Kopiur; runAsUser,
+            runAsGroup, fsGroup, or fsGroupChangePolicy with persistence; routes,
+            gateways, ingresses, public hostnames; image digests with unclear
+            provenance. For CRD conversion webhooks, verify the webhook Service
+            and Deployment render or already exist, or mark confidence low. For
+            UID/GID/fsGroup changes, identify PVC, mount path, policy, and
+            blocker-vs-watch risk.
 
-            ## Context
-
-            This repository manages a Kubernetes cluster with Flux. Renovate
-            commonly updates:
-
-            - OCI Helm chart tags in Flux `OCIRepository` resources.
-            - Container image tags or digests in HelmRelease values.
-            - GitHub Actions and other workflow dependencies.
-            - Regex-managed YAML dependencies.
-
-            The review is advisory. It is not a merge gate.
-
-            ## Instruction hierarchy
-
-            Follow this workflow prompt for this review. Use `AGENTS.md` for
-            repository guardrails, `docs/guides/repo-guide.md` for repo layout
-            and validation conventions, and `.agents/instructions/` only for
-            narrow reusable instructions such as YAML ordering.
-
-            ## Pre-check
-
-            The workflow preflight has already decided this review should run.
-            Do not perform duplicate-review skipping. Do not stop early because
-            an older Renovate PR Review exists.
-
-            ## Evidence workflow
-
-            1. Read the PR with `gh pr view` and `gh pr diff`.
-               Identify each outer artifact being upgraded, old version, new
-               version, update type, touched file, and whether it is a wrapper
-               dependency such as a chart wrapping an app, a container image
-               wrapping upstream software, or a GitHub Action wrapping a CLI
-               tool. For wrapper dependencies, identify the inner component and
-               its version change when the evidence shows one.
-
-            2. Check CI with `gh pr checks`.
-               Do not use the legacy commit status API as check-run evidence. If
-               a status endpoint returns `total_count: 0`, that means legacy
-               statuses are absent; it does not mean GitHub Actions checks are
-               absent, pending, or passing.
-
-            3. If `KONFLATE_URL` is configured and the PR touches Kubernetes,
-               Helm, Flux, CRDs, RBAC, routes, storage, secrets, or container
-               images, fetch the Konflate summary:
-
-               `curl -fsS -H 'Accept: text/markdown' "${KONFLATE_URL}/api/prs/${PR}/summary"`
-
-               Treat Konflate as advisory rendered-diff evidence. If the summary
-               mentions cautions, CRDs, blast radius, removed resources, storage,
-               RBAC, routes, webhooks, or secrets, research those rendered
-               changes before giving a verdict. Do not print endpoint URLs.
-
-            4. Research upstream by tracing the dependency chain to its origin.
-               Changelogs live at the source, not always at the wrapper. Start
-               from release notes in the PR body, then follow this order as
-               needed:
-               - GitHub Releases for every version between old and new, not
-                 only the final version.
-               - CHANGELOG, UPGRADING, migration, and release-note files in the
-                 upstream repository.
-               - Wrapper changelogs for charts, images, meta-packages, and
-                 GitHub Actions, plus the underlying component changelog.
-               - Documentation sites for migration guides, compatibility
-                 matrices, deprecations, and breaking-change notes.
-               - Commit history between the two versions, scanning for
-                 breaking, deprecat, remov, renam, migrat, drop, and require.
-               - Registry metadata and README links when releases or changelogs
-                 are absent.
-               - Web search as a last resort for hard-to-find changelogs or
-                 community migration reports.
-
-               Do not stop at the first source when it is only a wrapper
-               release or lacks migration detail. Cross-check enough evidence to
-               decide whether the change affects this repository.
-
-            5. Map upstream findings to this repo. Read the local manifests that
-               consume the dependency: `OCIRepository`, `HelmRelease`,
-               Kustomization dependencies, values, ConfigMaps, routes, storage,
-               RBAC, and any downstream consumers.
-
-            6. Categorize actionable findings:
-               - Breaking changes: incompatibilities requiring repo changes
-                 before or alongside this upgrade.
-               - Deprecations: treat like breaking changes when this repo uses
-                 the deprecated behavior.
-               - New features: call out only when they are worth adopting
-                 because they simplify config, remove workarounds, or improve
-                 reliability for this repo.
-
-               Map each category against actual repository usage. A breaking
-               change that affects a feature this repo does not use is not
-               actionable; mention it only when it helps explain the verdict.
-
-            ## Dead ends
-
-            If a dependency has no useful releases, changelog, upgrade guide,
-            registry metadata, or commit history, say exactly what you checked
-            and what could not be verified. Do not fabricate release notes or
-            infer safety from "patch release" alone when the PR touches CRDs,
-            webhooks, storage, RBAC, routes, auth, or security context.
-
-            ## High-risk checks
-
-            Treat these as material even when the source diff is one line:
-
-            - CRD schema, served/storage versions, or `conversion.webhook`.
-            - Webhook Service/Deployment/certificate changes.
-            - RBAC or ServiceAccount changes.
-            - PVC, storage class, backup, VolSync, or Kopiur changes.
-            - Pod `runAsUser`, `runAsGroup`, `fsGroup`, or `fsGroupChangePolicy`
-              changes when persistence is enabled.
-            - Route, Gateway, Ingress, or public hostname changes.
-            - Image digest changes where upstream provenance is unclear.
-
-            For CRD conversion webhooks, verify that the corresponding webhook
-            Service and Deployment render or already exist. If you cannot verify
-            that, say so and mark confidence low.
-
-            For UID/GID/fsGroup changes with persistence, identify the PVC,
-            mount path, `fsGroupChangePolicy`, and whether the risk is a likely
-            blocker or a post-rollout watch item.
-
-            ## Verdicts
-
-            Use one of:
-
-            - Safe to merge
-            - Human review recommended
-            - Changes recommended before merge
-
-            Because this workflow is experimental, always submit a comment-style
-            review with `gh pr review --comment`. Do not use `--approve` or
-            `--request-changes`.
-
-            ## Review body
-
-            Submit exactly one PR review. Include the marker at the top:
-
-            `<!-- home-ops-renovate-research -->`
-            `<!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->`
-
-            Structure:
-
+            If releases/changelog/guide/metadata/history are unavailable, say
+            what you checked and what remains unverified. Do not invent notes or
+            infer safety from "patch release" for CRDs, webhooks, storage, RBAC,
+            routes, auth, or security context.
+            Submit exactly one `gh pr review --comment`, never approve or request
+            changes. Use one verdict: Safe to merge | Human review recommended |
+            Changes recommended before merge. Keep it concise, evidence-backed,
+            and unpadded. Rewrite GitHub links to `redirect.github.com`. Use this
+            exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
             <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->
             ### Renovate PR Review
-
             **Verdict:** Safe to merge | Human review recommended | Changes recommended before merge
-
             **What changed**
             - ...
-
             **Findings**
             - ...
-
             **Evidence**
             - GitHub: ...
             - Konflate: ...
             - Upstream: ...
             - Repository usage: ...
-
             **Unknowns**
             - ...
             ```
 
-            Keep it concise but evidence-backed. If there are no material
-            findings, do not pad the response.
-
-            When citing GitHub URLs in the review body, rewrite
-            `github.com` to `redirect.github.com` to avoid backlink spam.
-
-      - name: Verify Claude result
+      - name: Verify review
         if: ${{ always() && steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
         env:
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+          FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.review.outputs.head_sha }}
+          PR: ${{ env.PR_NUMBER }}
+          REVIEW_STARTED_AT: ${{ steps.review.outputs.started_at }}
         run: |
-          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "$EXECUTION_FILE" ]; then
+          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "${EXECUTION_FILE}" ]; then
             echo "::error::Claude execution output is missing"
             exit 1
           fi
 
-          subtype="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("subtype") then .subtype else "missing" end' "$EXECUTION_FILE")"
-          is_error="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("is_error") then .is_error else "missing" end' "$EXECUTION_FILE")"
-          turns="$(jq -r '([.[] | select(.type == "result")][-1] // {}) | if has("num_turns") then .num_turns else "missing" end' "$EXECUTION_FILE")"
+          result="$(jq -c '[.[] | select(.type == "result")][-1] // {}' "${EXECUTION_FILE}")"
+          is_error="$(jq -r 'if has("is_error") then .is_error else "missing" end' <<< "${result}")"
+          echo "Claude result: $(jq -rc '{subtype, is_error, num_turns}' <<< "${result}")"
 
-          echo "Claude result: subtype=${subtype} is_error=${is_error} turns=${turns}"
-
-          if [ "$subtype" = "missing" ]; then
-            echo "::error::Claude did not emit a result message"
+          if [ "${is_error}" = "missing" ]; then
+            echo "::error::Claude did not emit a usable result message"
             exit 1
           fi
 
-          if [ "$is_error" = "missing" ]; then
-            echo "::error::Claude result did not include is_error"
-            exit 1
-          fi
-
-          if [ "$is_error" = "true" ]; then
+          if [ "${is_error}" = "true" ]; then
             echo "::group::Claude error diagnostic"
-            echo "Captured message types:"
-            jq -r '[.[] | .type] | join(", ")' "$EXECUTION_FILE"
-            echo
+            jq -r '"Captured message types: " + ([.[] | .type] | join(", "))' "${EXECUTION_FILE}"
             echo "Last assistant/error excerpt:"
             jq -r '
-              def flatten_text:
+              def text:
                 if type == "string" then .
-                elif type == "array" then map(flatten_text) | join("\n")
+                elif type == "array" then map(text) | join("\n")
                 elif type == "object" then
-                  (.text // .content // .message // .error // .errors // empty | flatten_text)
+                  (.text // .content // .message // .error // .errors // empty | text)
                 else empty end;
-
-              (
-                [.[] | select(.type == "assistant" or .type == "error")] | last | flatten_text
-              ) // "No assistant or error message was captured."
-            ' "$EXECUTION_FILE" |
-              sed -E 's#https?://[^[:space:]<>")]+#[redacted-url]#g' |
-              sed -E 's#(sk-[A-Za-z0-9_-]{12,})#[redacted-token]#g' |
-              sed -E 's#(gh[pousr]_[A-Za-z0-9_]{20,})#[redacted-token]#g' |
+              ([.[] | select(.type == "assistant" or .type == "error")] | last | text)
+                // "No assistant or error message was captured."
+            ' "${EXECUTION_FILE}" |
+              sed -E '
+                s#https?://[^[:space:]<>")]+#[redacted-url]#g
+                s#sk-[A-Za-z0-9_-]{12,}#[redacted-token]#g
+                s#gh[pousr]_[A-Za-z0-9_]{20,}#[redacted-token]#g
+              ' |
               head -c 4000
             echo
             echo "::endgroup::"
@@ -435,18 +357,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify fresh review
-        if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
-        env:
-          FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
-          GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ steps.review.outputs.head_sha }}
-          PR: ${{ env.PR_NUMBER }}
-          REVIEW_STARTED_AT: ${{ steps.review.outputs.started_at }}
-        run: |
-          base_marker="<!-- home-ops-renovate-research -->"
-          fingerprint_marker="<!-- home-ops-renovate-research fingerprint:${FINGERPRINT} -->"
-          expected_author="claude[bot]"
+          marker="<!-- home-ops-renovate-research -->"
           reviews_json="${RUNNER_TEMP}/renovate-research-reviews.json"
           review=""
 
@@ -454,20 +365,16 @@ jobs:
             gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" > "${reviews_json}"
 
             review="$(
-              jq \
-                --arg author "${expected_author}" \
-                --arg head "${HEAD_SHA}" \
-                --arg marker "${base_marker}" \
-                --arg started "${REVIEW_STARTED_AT}" '
-                  [
-                    .[]
-                    | select(.user.login == $author)
-                    | select(.commit_id == $head)
-                    | select(.body != null and (.body | contains($marker)))
-                    | select(.submitted_at >= $started)
-                  ]
-                  | last // empty
-                ' "${reviews_json}"
+              jq -c --arg head "${HEAD_SHA}" --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
+                [
+                  .[]
+                  | select(.user.login == "claude[bot]")
+                  | select(.commit_id == $head)
+                  | select(.body != null and (.body | contains($marker)))
+                  | select(.submitted_at >= $started)
+                ]
+                | last // empty
+              ' "${reviews_json}"
             )"
 
             if [ -n "${review}" ]; then
@@ -475,45 +382,18 @@ jobs:
             fi
 
             if [ "${attempt}" -lt 6 ]; then
-              echo "::notice::Fresh Renovate PR review not visible yet; retrying (${attempt}/6)"
+              echo "::notice::Fresh review not visible yet; retrying (${attempt}/6)"
               sleep 5
             fi
           done
 
           if [ -z "${review}" ]; then
-            echo "::error::Claude did not submit a fresh Renovate PR review from ${expected_author} on ${HEAD_SHA} with marker ${base_marker}"
+            echo "::error::No fresh claude[bot] review on ${HEAD_SHA} with marker ${marker}"
             exit 1
           fi
 
-          review_author="$(jq -r '.user.login' <<< "${review}")"
-          review_commit="$(jq -r '.commit_id' <<< "${review}")"
-          review_submitted_at="$(jq -r '.submitted_at' <<< "${review}")"
-          review_body="$(jq -r '.body // ""' <<< "${review}")"
-
-          if [ "${review_author}" != "${expected_author}" ]; then
-            echo "::error::Fresh review was authored by ${review_author}; expected ${expected_author}"
-            exit 1
+          if [[ "$(jq -r '.body' <<< "${review}")" != *"fingerprint:${FINGERPRINT}"* ]]; then
+            echo "::notice::Fresh review lacks the exact fingerprint marker; accepting the base marker on the current head"
           fi
 
-          if [ "${review_commit}" != "${HEAD_SHA}" ]; then
-            echo "::error::Fresh review is attached to ${review_commit}; expected current PR head ${HEAD_SHA}"
-            exit 1
-          fi
-
-          if [[ "${review_body}" != *"${fingerprint_marker}"* ]]; then
-            echo "::notice::Fresh review did not contain the exact fingerprint marker ${fingerprint_marker}; accepting the stable marker on the current head"
-          fi
-
-          echo "Verified fresh Renovate PR review from ${review_author} at ${review_submitted_at} for ${review_commit}."
-
-      - name: Remove trigger label
-        if: ${{ always() && env.FORCE_REVIEW == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ env.PR_NUMBER }}
-        run: |
-          if ! gh api \
-            --method DELETE \
-            "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/renovate-review"; then
-            echo "::notice::Could not remove renovate-review label automatically"
-          fi
+          echo "Verified fresh claude[bot] review on ${HEAD_SHA} at $(jq -r '.submitted_at' <<< "${review}")."
