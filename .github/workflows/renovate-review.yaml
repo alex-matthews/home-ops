@@ -3,17 +3,6 @@
 name: Renovate PR Review
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-    branches:
-      - main
-    paths:
-      - kubernetes/**
-      - bootstrap/**
-      - talos/**
   workflow_dispatch:
     inputs:
       pr:
