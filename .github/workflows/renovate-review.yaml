@@ -291,28 +291,38 @@ jobs:
             infer safety from "patch release" for CRDs, webhooks, storage, RBAC,
             routes, auth, or security context.
             Submit exactly one `gh pr review --comment`, never approve or request
-            changes. Use one verdict: Safe to merge | Human review recommended |
-            Changes recommended before merge. Keep it concise, evidence-backed,
-            and unpadded. Rewrite GitHub links to `redirect.github.com`. Use this
-            exact structure:
+            changes. Use one recommendation: Safe to merge | Human review
+            recommended | Changes recommended before merge. Use High confidence
+            only when Konflate and upstream/local-impact evidence cover the
+            changed risk surfaces; use Low when material evidence is unavailable.
+            Keep the visible summary compact; put detail in `<details>`.
+            Rewrite GitHub links to `redirect.github.com`. Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
-            <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} -->
+            <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} recommendation:safe|human-review|changes-recommended confidence:high|medium|low konflate:ok|unavailable gate:false -->
             ### Renovate PR Review
 
-            **Verdict:** Safe to merge | Human review recommended | Changes recommended before merge
+            **Recommendation:** Safe to merge | Human review recommended | Changes recommended before merge
+            **Confidence:** High | Medium | Low
+            **Operator action:** ...
+            **Rendered impact:** ...
+            **Main reason:** ...
+            **Needs attention:** None. | ...
 
+            <details><summary>Review details</summary>
+            **Why**
+            - ...
             **What changed**
             - ...
-            **Findings**
-            - ...
-            **Evidence**
+            </details>
+
+            <details><summary>Evidence and unknowns</summary>
             - GitHub: ...
             - Konflate: ...
             - Upstream: ...
             - Repository usage: ...
-            **Unknowns**
-            - ...
+            - Unknowns: ...
+            </details>
             ```
 
       - name: Verify review
