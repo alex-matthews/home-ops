@@ -4,56 +4,20 @@ This is a compact map for this GitOps repo's layout, app patterns, and validatio
 commands. Agent behavior and change-control rules live in
 [`../../AGENTS.md`](../../AGENTS.md).
 
-## Reference Repos
-
-Use peer repositories by domain. They are starting points for comparison, not
-constraints or sources to copy blindly. Prefer this repo's existing layout and
-conventions when they differ. When a task is modeled on a reference repo,
-compare the relevant files or PRs before editing and call out material
-divergence before implementation.
-
-| Domain                             | References                                                                                  | Use for                                                                 | Avoid copying                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Lean GitOps posture                | [onedr0p/home-ops], [buroa/k8s-gitops]                                                      | Workflow pruning, Konflate/Downflate posture, app layout, lean CI       | Assuming every omission fits this cluster                                  |
-| App and chart conventions          | [onedr0p/home-ops], [buroa/k8s-gitops], [bjw-s-labs/home-ops]                               | HelmRelease value shape, app-template idioms, Home Operations charts    | Reordering or reshaping files against this repo's nearby pattern           |
-| AI workbench architecture          | [bjw-s-labs/home-ops], [eleboucher/homelab], [m00nwtchr/homelab-cluster]                    | ToolHive, Hermes, OpenClaw, Memini, LiteLLM, MCP layout                 | Postgres, vector, local inference, or public MCP complexity before needed  |
-| MCP and ToolHive patterns          | [eleboucher/homelab], [m00nwtchr/homelab-cluster], [bjw-s-labs/home-ops], [jfroy/flatops]   | vMCP grouping, internal/external routes, OIDC examples, infra MCPs      | Treating public authenticated MCP as the default shape                     |
-| ToolHive caveats                   | [rcdailey/home-ops]                                                                         | Session reliability cautions, direct or stdio MCP fallback ideas        | Treating ToolHive as failed here before local evidence shows that          |
-| Agent guidance                     | [bjw-s-labs/home-ops], [Tanguille/cluster]                                                  | Minimal AGENTS.md, on-demand `.agents/`, `mise exec --` discipline      | Large all-in-one agent manuals                                             |
-| Diagnostic tooling ideas           | [rcdailey/home-ops], [Tanguille/cluster], [eleboucher/homelab]                              | Compact outputs, tools-over-raw-dumps, investigation workflow ideas     | Bespoke helper CLIs until repeated local pain justifies them               |
-| Renovate AI review                 | [bo0tzz/clusterfuck], [joryirving/home-ops]                                                 | Research flow, changelog chasing, dead-end handling, re-review behavior | Rebuilding reviewer plumbing without clear quality or cost gain            |
-| Model gateway and routing          | [bjw-s-labs/home-ops], [eleboucher/homelab], [joryirving/home-ops]                          | LiteLLM aliases, metrics, provider routing, cost dashboards             | Deploying a gateway before multiple consumers or metrics needs exist       |
-| Agentgateway, kgateway, OpenRouter | [m00nwtchr/homelab-cluster], [carpenike/k8s-gitops]                                         | Future provider-routing experiments and simple OpenRouter endpoint use  | Treating them as near-term Envoy or LiteLLM replacements                   |
-| Memory, search, reranking          | [eleboucher/homelab], [bjw-s-labs/home-ops], [joryirving/home-ops]                          | Memini, embeddings, reranking, SearXNG/search patterns                  | Adding stateful search or memory substrates before concrete consumers      |
-| Mise/toolchain                     | [Tanguille/cluster], [bjw-s-labs/home-ops], [eleboucher/homelab], [bo0tzz/clusterfuck]      | Tool pins, `mise exec --`, human/agent/CI alignment                     | Moving live-cluster operator recipes from `just` to mise tasks             |
-| Docs surface                       | [Tanguille/cluster], [bjw-s-labs/home-ops], [waifulabs/infrastructure], [rcdailey/home-ops] | Minimal durable docs, compact agent guidance, selective runbooks        | rcdailey-scale documentation volume or docs-site sprawl                    |
-| Public repo guardrails             | [auricom/home-ops], [Tanguille/cluster]                                                     | `${SECRET_DOMAIN}`, public-repo assumptions, durable-doc obfuscation    | Blocking practical CI comments or status URLs solely due hostname exposure |
-| Storage and backups                | [onedr0p/home-ops], [buroa/k8s-gitops], [carpenike/k8s-gitops], [bo0tzz/clusterfuck]        | VolSync/Kopia/Kopiur posture, restore docs, PVC caution                 | Assuming peer Kopia choices answer this repo's Restic/webhook questions    |
-
-[auricom/home-ops]: https://github.com/auricom/home-ops
-[bjw-s-labs/home-ops]: https://github.com/bjw-s-labs/home-ops
-[bo0tzz/clusterfuck]: https://github.com/bo0tzz/clusterfuck
-[buroa/k8s-gitops]: https://github.com/buroa/k8s-gitops
-[carpenike/k8s-gitops]: https://github.com/carpenike/k8s-gitops
-[eleboucher/homelab]: https://github.com/eleboucher/homelab
-[jfroy/flatops]: https://github.com/jfroy/flatops
-[joryirving/home-ops]: https://github.com/joryirving/home-ops
-[m00nwtchr/homelab-cluster]: https://github.com/m00nwtchr/homelab-cluster
-[onedr0p/home-ops]: https://github.com/onedr0p/home-ops
-[rcdailey/home-ops]: https://github.com/rcdailey/home-ops
-[Tanguille/cluster]: https://github.com/Tanguille/cluster
-[waifulabs/infrastructure]: https://github.com/waifulabs/infrastructure
-
 ## Layout
 
-- `.github/workflows/`: CI, Renovate, Renovate PR Review, and label sync.
 - `.agents/instructions/`: narrow reusable agent instructions, currently YAML
   ordering.
+- `.github/actionlint.yaml`: actionlint configuration.
+- `.github/labels.yaml`: label definitions synced by CI.
+- `.github/workflows/`: CI, Renovate, Renovate PR Review, and label sync.
+- `.mise/config.toml`: repo-pinned tool versions and local environment.
+- `.renovaterc.json5`: Renovate configuration.
 - `bootstrap/`: one-time cluster bootstrap helpers.
 - `docs/`: durable documentation, including ADRs, guides, and operations docs.
 - `kubernetes/apps/`: Flux-managed application declarations.
-- `kubernetes/components/`: reusable Kustomize components, including SOPS,
-  VolSync, and zeroscaler.
+- `kubernetes/components/`: reusable Kustomize components, including alerts,
+  Dragonfly, SOPS, VolSync, and zeroscaler.
 - `kubernetes/flux/cluster`: top-level Flux cluster entrypoint used by render
   tooling.
 - `kubernetes/mod.just`: local/operator Kubernetes commands, not CI validation
@@ -74,6 +38,11 @@ kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
 
 Common additions are `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
 `servicemonitor.yaml`, dashboards, alerts, or app-specific config files.
+
+Some apps intentionally split related resources into sibling directories such as
+`config/`, `crds/`, `collector/`, `cluster/`, `dashboards/`, `instance/`,
+`runners/`, `silences/`, or `upgrades/`. Follow the parent `ks.yaml` and
+`kustomization.yaml` wiring before flattening a layout or introducing a new one.
 
 The namespace-level `kustomization.yaml` includes each app `ks.yaml`. The app
 `ks.yaml` points Flux at the `app/` directory, usually sets `targetNamespace`,
@@ -100,7 +69,8 @@ Treat these as high-risk:
 - `ExternalSecret` names, target secret names, and template keys.
 - PVC names, storage classes, access modes, and `dataSourceRef` fields.
 - VolSync `ReplicationSource` and `ReplicationDestination` objects.
-- Kopiur repository, policy, schedule, restore, and PVC populator wiring.
+- Planned Kopiur repository, policy, schedule, restore, and PVC populator
+  wiring.
 - Backup retention, schedule, copy method, repository secret, and restore wiring.
 - Rook-Ceph, Cilium, Flux, External Secrets, and cert-manager CRDs.
 - Namespace names and app names used by Flux, HelmRelease, alerts, dashboards, or
@@ -131,28 +101,28 @@ Use the smallest relevant set.
 Formatting and workflow checks:
 
 ```sh
-oxfmt --check .
-actionlint .github/workflows/*.yaml
-zizmor --offline .github/workflows/*.yaml
+mise exec --no-deps -- actionlint
+mise exec --no-deps -- zizmor --offline .github/workflows
+mise exec --no-deps -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
 ```
 
 Flux and Kubernetes rendering:
 
 ```sh
-flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
+mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 ```
 
 Image diff for Kubernetes app changes:
 
 ```sh
-flate diff images -p ./kubernetes/flux/cluster -o json
+mise exec -- flate diff images -p ./kubernetes/flux/cluster -o json
 ```
 
 For a quick Kustomize-only smoke test, render the touched namespace or app
 directory when possible:
 
 ```sh
-kubectl kustomize kubernetes/apps/<namespace>/<app>/app
+mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 ```
 
 ## Tooling Boundaries
@@ -189,8 +159,8 @@ Renovate execution model has been reviewed.
 
 ## Change Heuristics
 
-- For workflow/tooling changes, validate with `oxfmt`, `actionlint`, `zizmor`,
-  and the affected GitHub Actions logic.
+- For workflow/tooling changes, validate with the formatting/workflow checks
+  above and inspect the affected GitHub Actions logic.
 - For app changes, validate with app-level `kubectl kustomize`, cluster render
   with Flate, and image diff when image refs may change.
 - For storage or backup changes, identify affected PVCs and backup objects
@@ -199,3 +169,103 @@ Renovate execution model has been reviewed.
   component is needed.
 - For docs-only changes, do not run cluster validation unless the docs changed
   commands or operational instructions.
+
+## Reference Repos
+
+Use peer repositories to answer a narrow question: "how have others solved this
+specific problem?" They are comparison inputs, not constraints. Before adopting a
+pattern, inspect the relevant current files or PRs and call out material
+differences from this repo.
+
+Common non-goals:
+
+- Do not copy public routes, domains, OIDC setup, broad RBAC, storage classes,
+  UID/GID values, backup cadence, or branch protection rules from peers.
+- Do not add gateway/federation pieces, stateful memory/search substrates,
+  local inference, or helper CLIs before a local consumer needs them.
+- Do not treat peer CI status names as this repo's branch-protection truth.
+
+### Start Here
+
+- GitOps shape: [onedr0p/home-ops], [buroa/k8s-gitops],
+  [bjw-s-labs/home-ops].
+- AI workbench and MCP: [bjw-s-labs/home-ops], [eleboucher/homelab],
+  [m00nwtchr/homelab-cluster], [perryhuynh/homelab].
+- Compact agent guidance: [Tanguille/cluster], [bjw-s-labs/home-ops].
+- Renovate AI review: [joryirving/home-ops], [bo0tzz/clusterfuck],
+  [misospace/pr-reviewer-action], [koki-develop/claude-renovate-review].
+- Kopiur and backup migration: [home-operations/kopiur],
+  [buroa/k8s-gitops], [onedr0p/home-ops], [eleboucher/homelab].
+
+### Domain Catalog
+
+- Lean GitOps and app shape: use [onedr0p/home-ops], [buroa/k8s-gitops],
+  [bjw-s-labs/home-ops], and [perryhuynh/homelab] for app-template idioms,
+  Kustomize component shape, Image Pull/Flate posture, and namespace/app layout.
+- Render and CI posture: use [onedr0p/home-ops], [waifulabs/infrastructure],
+  [Tanguille/cluster], [jfroy/flatops], [auricom/home-ops], and
+  [rcdailey/home-ops] for workflow scoping, render checks, and report shape.
+- AI workbench architecture: use [bjw-s-labs/home-ops],
+  [eleboucher/homelab], and [m00nwtchr/homelab-cluster] for Hermes, ToolHive,
+  LiteLLM, Memini, OpenClaw, embeddings/reranking, and workbench composition.
+- MCP and ToolHive patterns: use [bjw-s-labs/home-ops],
+  [eleboucher/homelab], [perryhuynh/homelab], [rafaribe/home-ops], and
+  [jfroy/flatops] for MCPGroup/vMCP shape, internal routes, read-only infra
+  MCPs, and per-tool examples.
+- Agentgateway and provider routing: use [perryhuynh/homelab],
+  [m00nwtchr/homelab-cluster], and [joryirving/home-ops] for future
+  agentgateway, Gateway API, provider routing, and model-routing references.
+- Model gateway and routing: use [bjw-s-labs/home-ops], [eleboucher/homelab],
+  [joryirving/home-ops], and [Tanguille/cluster] for LiteLLM aliases, model
+  tiers, fallback/smart routing, metrics, and reviewer routing.
+- Memory, search, and reranking: use [eleboucher/homelab],
+  [bjw-s-labs/home-ops], [m00nwtchr/homelab-cluster], and [rafaribe/home-ops]
+  for Memini, memory MCPs, embeddings, TEI/reranker, and SearXNG/search
+  candidates.
+- Agent guidance and public safety: use [Tanguille/cluster],
+  [bjw-s-labs/home-ops], [jfroy/flatops], [auricom/home-ops], and
+  [rcdailey/home-ops] for compact AGENTS.md shape, on-demand `.agents/`
+  guidance, Flux/MCP safety, public-repo guardrails, and cautionary large
+  manuals.
+- Renovate AI review: use [bo0tzz/clusterfuck], [joryirving/home-ops],
+  [Tanguille/cluster], [billimek/k8s-gitops], [wrmilling/k3s-gitops],
+  [misospace/pr-reviewer-action], and [koki-develop/claude-renovate-review] for
+  upgrade research rubric, wrapper/upstream changelog tracing, rendered
+  evidence inputs, re-review/fingerprint behavior, model tiers, and cost/status
+  visibility.
+- Toolchain and local workflow: use [Tanguille/cluster],
+  [bjw-s-labs/home-ops], [auricom/home-ops], and [rcdailey/home-ops] for
+  `mise exec --`, task/just boundaries, pre-commit/formatting posture, and local
+  operator workflow shape.
+- Docs surface: use [Tanguille/cluster], [jfroy/flatops],
+  [waifulabs/infrastructure], and [rcdailey/home-ops] for minimal durable docs,
+  compact runbooks, and docs-site examples as contrast.
+- Kopiur adoption: use [home-operations/kopiur], [buroa/k8s-gitops],
+  [eleboucher/homelab], and [onedr0p/home-ops] for ClusterRepository, mover
+  defaults, credential projection, SnapshotPolicy/SnapshotSchedule, passive
+  Restore, and PVC populator shape.
+- VolSync and restore caution: use [bo0tzz/clusterfuck],
+  [carpenike/k8s-gitops], and [Pumba98/flux2-gitops] for VolSync restore docs,
+  one-shot restore gates, shared-PVC caution, and `dataSourceRef` immutability.
+
+[auricom/home-ops]: https://github.com/auricom/home-ops
+[billimek/k8s-gitops]: https://github.com/billimek/k8s-gitops
+[bjw-s-labs/home-ops]: https://github.com/bjw-s-labs/home-ops
+[bo0tzz/clusterfuck]: https://github.com/bo0tzz/clusterfuck
+[buroa/k8s-gitops]: https://github.com/buroa/k8s-gitops
+[carpenike/k8s-gitops]: https://github.com/carpenike/k8s-gitops
+[eleboucher/homelab]: https://github.com/eleboucher/homelab
+[home-operations/kopiur]: https://github.com/home-operations/kopiur
+[jfroy/flatops]: https://github.com/jfroy/flatops
+[joryirving/home-ops]: https://github.com/joryirving/home-ops
+[koki-develop/claude-renovate-review]: https://github.com/koki-develop/claude-renovate-review
+[m00nwtchr/homelab-cluster]: https://github.com/m00nwtchr/homelab-cluster
+[misospace/pr-reviewer-action]: https://github.com/misospace/pr-reviewer-action
+[onedr0p/home-ops]: https://github.com/onedr0p/home-ops
+[perryhuynh/homelab]: https://github.com/perryhuynh/homelab
+[Pumba98/flux2-gitops]: https://github.com/Pumba98/flux2-gitops
+[rafaribe/home-ops]: https://github.com/rafaribe/home-ops
+[rcdailey/home-ops]: https://github.com/rcdailey/home-ops
+[Tanguille/cluster]: https://github.com/Tanguille/cluster
+[waifulabs/infrastructure]: https://github.com/waifulabs/infrastructure
+[wrmilling/k3s-gitops]: https://github.com/wrmilling/k3s-gitops

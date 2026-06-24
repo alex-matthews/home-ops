@@ -4,10 +4,9 @@
 - **Date:** 2026-06-12
 - **Related:** [Issue #1205](https://github.com/alex-matthews/home-ops/issues/1205), [PR #1202](https://github.com/alex-matthews/home-ops/pull/1202)
 
-> Scope: this ADR covers the home-ops AI workbench architecture, model/provider
-> routing, MCP surface, memory and state boundaries, community signal intake, and
-> rollout sequence. It deliberately excludes a separate app-builder or
-> developer-velocity stack.
+> Scope: this ADR records the AI workbench architecture and boundaries:
+> model/provider routing, MCP, memory/state, community signal intake, and initial
+> rollout. It is not the active backlog.
 
 ## 1. Context
 
@@ -55,17 +54,24 @@ Adopt a lightweight AI home-ops workbench in phases.
 
 The current architecture is:
 
-| Area                    | Decision                                                                                                             |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Pull request review     | Use Claude-backed Renovate PR Review. Keep `misospace/pr-reviewer-action` and MiniMax deferred for comparison.       |
-| Agent workbench         | Use Hermes as the first interactive home-ops workbench.                                                              |
-| MCP gateway             | Use ToolHive to expose approved read-only MCPs through explicit trust boundaries.                                    |
-| Agent clients           | Treat Hermes, future OpenClaw, CI reviewers, and scheduled triage jobs as clients of the same trusted MCP surface.   |
-| Memory                  | Evaluate Memini or a similar shared backend after the workbench is useful.                                           |
-| Model routing           | Deploy a small internal LiteLLM MVP for provider aliases, metrics, and Redis-backed cache/router coordination.       |
-| Dragonfly               | Deploy Dragonfly-operator with a non-persistent LiteLLM Dragonfly instance; defer durable/shared state until needed. |
-| Backlog source of truth | Use GitHub Issues, optionally GitHub Projects, with ADRs for durable architecture decisions.                         |
-| Community signal        | Prefer GitHub-first peer-repo monitoring and sanctioned digest exports. Do not use Discord scraping.                 |
+- Pull request review: current implementation uses Claude-backed advisory
+  Renovate PR Review. Keep `misospace/pr-reviewer-action`, MiniMax, and
+  model-gateway reviewer designs deferred until a separate reviewer decision.
+- Agent workbench: use Hermes as the first interactive home-ops workbench.
+- MCP gateway: use ToolHive to expose approved read-only MCPs through explicit
+  trust boundaries.
+- Agent clients: treat Hermes, future OpenClaw, CI reviewers, and scheduled
+  triage jobs as clients of the same trusted MCP surface.
+- Memory: evaluate Memini or a similar shared backend after the workbench is
+  useful.
+- Model routing: deploy a small internal LiteLLM MVP for provider aliases,
+  metrics, and Redis-backed cache/router coordination.
+- Dragonfly: deploy Dragonfly-operator with a non-persistent LiteLLM Dragonfly
+  instance; defer durable/shared state until needed.
+- Backlog source of truth: use GitHub Issues, optionally GitHub Projects, with
+  ADRs for durable architecture decisions.
+- Community signal: prefer GitHub-first peer-repo monitoring and sanctioned
+  digest exports. Do not use Discord scraping.
 
 The workbench should start read-only wherever possible. Write-capable tools must
 be added only after the read-only workflow has proved useful and the approval
@@ -110,13 +116,13 @@ External services
 | Backlog                | GitHub Issues, optionally GitHub Projects.                    |
 | Architecture decisions | ADRs under `docs/adr/`.                                       |
 | Scratch planning       | `backlog.md` or issue drafts.                                 |
-| Assistant memory       | Future Memini or shared memory service, non-authoritative.    |
+| Assistant memory       | Hermes-local or future shared memory, non-authoritative.      |
 | Secrets                | 1Password, SOPS, External Secrets, and cluster secret stores. |
 
-Assistant memory must not become a hidden backlog, secret store, or decision
-database. It may retain summaries, observations, and references that make future
-work easier, but any durable task or decision must be written back to GitHub or
-the repo.
+Assistant memory may retain summaries, observations, and references, but it is
+not a source of truth. Hermes-local memory is acceptable for proving behavior; a
+shared backend such as Memini can be considered later to avoid tying recall to a
+single client. Durable tasks and decisions stay in GitHub and the repo.
 
 ### 4.3 Model and provider routing
 
@@ -127,11 +133,11 @@ Provider choices should be workload-driven:
 3. Peer-repository digest summarisation.
 4. Home-ops operational questions over repo and documentation context.
 
-The current Renovate review lane uses Claude Code because it produced more
-useful release research than the initial MiniMax and
-`misospace/pr-reviewer-action` attempt. MiniMax remains a deferred option for a
-future lower-cost or multi-provider reviewer, especially if routed through
-LiteLLM.
+The current Renovate review lane uses Claude Code as an advisory reviewer
+because it produced more useful release research than the initial MiniMax and
+`misospace/pr-reviewer-action` attempt. It is not yet a merge gate. MiniMax
+remains a deferred option for a future lower-cost or multi-provider reviewer,
+especially if routed through LiteLLM.
 
 LiteLLM is useful only if it earns its place as a small gateway:
 
@@ -164,41 +170,26 @@ MCPs are grouped by risk, not by novelty.
 | Secret tooling             | 1Password Developer Environments | Local/dev-first; no whole-vault automation.     |
 | Write-capable automation   | Any mutating infra action        | Deferred; require explicit human approval.      |
 
-Context7 belongs in the public-reference tier. Its purpose is to reduce stale
-model knowledge when reasoning about current documentation. It is not a source
-of truth and must not receive sensitive configuration or secrets.
-
-Konflate MCP belongs in the rendered GitOps review tier. It is a read-only view
-over the same pull request summaries and rendered diffs Konflate already serves,
-so it is a strong early source for AI review of Renovate and Kubernetes changes.
-For the Renovate reviewer, it may be enabled on the existing public Konflate
-route because that route already exposes the same rendered PR UI and REST data,
-and MCP does not trigger renders or forge writes. Add an explicit
-ingress/authentication boundary before exposing private repository data, fork
-renders, mutating tools, or broader agent access through that route. Treat pull
-request text and rendered manifests as untrusted prompt input.
+Context7 reduces stale model knowledge for public documentation. Konflate MCP is
+a read-only view over rendered pull request summaries and diffs already exposed
+by Konflate, so it is an early source for Renovate and Kubernetes review
+evidence. It may reuse the existing Konflate route because it exposes the same
+read-only rendered pull request data and does not trigger renders or writes.
+Treat pull request text and rendered manifests as untrusted prompt input.
 
 The current ToolHive workbench exposes Context7, GitHub, Konflate, Flux, and
-Grafana MCPs to Hermes. These tools should be used for evidence gathering and
-triage, not for mutating the cluster or GitHub state. Prompts should avoid broad
-inventory calls unless a summary call identifies a concrete problem.
-
-MCP is the tool boundary. ToolHive should make useful cluster, repository, and
-observability tools available behind a controlled interface that any capable
-agent client can consume. This keeps the useful work behind the MCP surface
-instead of hardcoding it into one chat UI. Hermes can use that surface now;
-OpenClaw, a CI reviewer, or scheduled triage jobs can use the same surface later.
+Grafana MCPs to Hermes for evidence gathering and triage. MCP is the reusable
+tool boundary: keep useful cluster, repository, and observability capabilities
+behind ToolHive instead of hardcoding them into one chat UI. Add an explicit
+authentication and approval boundary before exposing private data, fork renders,
+mutating tools, or broader agent access.
 
 ### 4.5 Agent clients and semi-autonomous operations
 
 Hermes is the current interactive operator workbench: ask questions, pull
-evidence, inspect pull requests, and use ToolHive manually. OpenClaw is a better
-fit for the always-on personal assistant layer: channels, multi-agent routing,
-skills, cron or webhook automation, and notifications.
-
-The intended shape is not Hermes versus OpenClaw. Both should consume the same
-trusted ToolHive vMCP, the same model gateway if LiteLLM is deployed, and
-eventually the same non-authoritative memory backend.
+evidence, inspect pull requests, and use ToolHive manually. OpenClaw remains a
+future candidate for always-on assistant behavior such as channels, multi-agent
+routing, scheduled checks, and notifications.
 
 Semi-autonomous operation should start read-only and evidence-first. Useful
 early jobs include:
@@ -249,28 +240,15 @@ should land in the repository that owns the affected concern.
 
 ### 4.8 Peer reference posture
 
-Peer repositories should be used by domain, not as wholesale target
-architectures.
-
-- onedr0p/home-ops and buroa/k8s-gitops are the main references for lean GitOps,
-  workflow pruning, and Home Operations chart posture.
-- bjw-s-labs/home-ops, eleboucher/homelab, and m00nwtchr/homelab-cluster are
-  the main AI-workbench references for ToolHive, Hermes, OpenClaw, Memini,
-  LiteLLM, MCP grouping, search, memory, and future routing patterns.
-- bo0tzz/clusterfuck and joryirving/home-ops are useful for AI pull request
-  reviewer behavior, especially release research, dead-end handling, re-review
-  triggers, and model/tool loop tuning.
-- Tanguille/cluster and bjw-s-labs/home-ops are useful for compact agent
-  guidance and on-demand `.agents/` style context.
-- rcdailey/home-ops is useful as a pattern and caution library for
-  agent-oriented diagnostics, investigation docs, and ToolHive/session
-  reliability concerns. It is intentionally not a baseline to copy because it
-  carries much more bespoke helper and documentation surface than this repo
-  should adopt by default.
+Peer repositories are evidence, not target architectures. Use the catalog in
+[`../guides/repo-guide.md`](../guides/repo-guide.md) to choose relevant
+references by domain, verify their current files before copying a pattern, and
+prefer this repo's local conventions when they differ.
 
 Heavy peer choices such as local inference, PostgreSQL, vector databases,
-public authenticated MCP routes, agentgateway/kgateway, SearXNG, Dragonfly, or
-large helper CLIs must be justified by concrete local consumers before adoption.
+public authenticated MCP routes, agentgateway or MCP federation, SearXNG,
+durable memory, shared Dragonfly, or large helper CLIs must be justified by
+concrete local consumers before adoption.
 
 ## 5. Alternatives Considered
 
@@ -311,21 +289,20 @@ a self-hosted metasearch endpoint.
 Partially adopted. Dragonfly-operator is justified by LiteLLM cache/router
 coordination, but the first Dragonfly instance should be non-persistent and
 app-local. Durable Redis-compatible state remains deferred until a consumer needs
-it. Likely future consumers include SearXNG limiter support, Memini/shared
-memory, OpenClaw/Hermes state, or broader LiteLLM routing and rate-limit
-coordination.
+it. Future consumers may include SearXNG limiter support, shared memory,
+assistant state, or broader LiteLLM routing and rate-limit coordination.
 
 ### 5.7 Discord bot or Discord scraping
 
 Rejected for now. Bot access is not expected to be available, and user-token or
 scraping approaches are not an acceptable design foundation.
 
-## 6. Rollout Plan
+## 6. Current Implementation
 
 Implemented:
 
-1. Replace the legacy misospace reviewer with the Claude-backed Renovate PR
-   Review workflow.
+1. Replace the legacy misospace reviewer with the Claude-backed advisory
+   Renovate PR Review workflow.
 2. Deploy Hermes as the interactive workbench surface.
 3. Deploy ToolHive with read-only Context7, GitHub, Konflate, Flux, and Grafana
    MCP surfaces.
@@ -335,25 +312,14 @@ Implemented:
    Redis-compatible cache/router state.
 6. Route Hermes through the internal LiteLLM gateway as the first model
    consumer.
-7. Capture starter Hermes prompts in
+7. Maintain the compact workbench operator note in
    [`docs/operations/ai-workbench.md`](../operations/ai-workbench.md).
 
-Next:
-
-1. Stabilize ToolHive MCP surfaces and prompt examples through actual use.
-2. Continue hardening Renovate PR Review for usefulness, cost control, and
-   predictable re-review behavior.
-3. Evaluate shared assistant memory, likely Memini or a similar backend, and
-   design retrieval and reranking deliberately.
-4. Decide whether Claude Code, future reviewers, or OpenClaw should also use
-   LiteLLM.
-5. Decide when Dragonfly should become a shared/durable state substrate rather
-   than LiteLLM-only cache/router state.
-6. Deploy OpenClaw as an always-on assistant only after the read-only MCP and
-   memory stack is sane.
-7. Add peer-repository trend summarisation through GitHub-first ingestion.
-8. Revisit OpenCode, Open WebUI, SearXNG, local inference, and write-capable MCPs
-   only after the read-only workbench remains useful.
+Active rollout tracking belongs in GitHub issues, not in this ADR. Reusable
+operating patterns may be summarized in
+[`docs/operations/ai-workbench.md`](../operations/ai-workbench.md). Open
+decision areas are captured below; update this ADR only when the architecture
+decision changes.
 
 ## 7. Evaluation Criteria
 
@@ -394,22 +360,22 @@ operational model are ready.
 - Dragonfly adds another operator and cluster-scoped RBAC. The first instance is
   intentionally non-persistent cache/router state rather than a durable database.
 
-## 9. Deferred / Open Questions
+## 9. Deferred Decision Areas
 
-1. Which shared memory backend should Hermes and future agents use, and is a
-   reranker required from day one?
-2. Which additional clients should use LiteLLM, and should any external route
-   exist?
-3. Should `misospace/pr-reviewer-action` be revisited behind LiteLLM, or should
-   the Claude-backed Renovate PR Review remain the primary reviewer?
-4. When should Dragonfly become a durable/shared state substrate instead of
-   LiteLLM-only cache/router state?
-5. What is the minimum safe OpenClaw deployment shape for read-only triage and
-   notifications?
-6. Can the existing daily home-ops digest be exposed through a sanctioned
-   machine-readable feed?
-7. Which MCPs should be allowed write access, if any, and what approval boundary
-   is required?
+- Memory: compare Hermes-local persistence with Memini or another shared backend
+  after local memory behavior is tested.
+- Model routing: decide which additional clients, if any, should use LiteLLM.
+- Reviewer lane: decide whether to keep, replace, or gate the current advisory
+  Renovate PR Review after another design proves better release research, cost
+  control, and re-review behavior.
+- Shared state: decide whether Dragonfly should become durable or shared only
+  when a concrete consumer needs it.
+- OpenClaw: deploy only after the read-only ToolHive and memory boundaries are
+  proven useful from Hermes.
+- Community signal: prefer sanctioned digest exports or GitHub-first peer repo
+  monitoring over Discord scraping.
+- Write access: require a separate approval boundary before any MCP can mutate
+  GitHub, Flux, Kubernetes, or off-cluster infrastructure.
 
 ## 10. References
 

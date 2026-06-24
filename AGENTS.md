@@ -15,30 +15,24 @@ small, reviewable, and independently reconcilable.
 
 ## Before Editing
 
-- For infra, workflow, GitOps, and automation changes, state the intended diff,
-  reference-repo comparison, validation plan, and acceptance criteria before
-  editing unless immediate implementation is explicitly requested.
+- For non-trivial infra, workflow, GitOps, and automation changes, briefly state
+  the intended diff, relevant reference or upstream pattern when useful,
+  validation plan, and done criteria before editing. Keep this short when
+  immediate implementation is requested.
 - Read the relevant manifests, workflows, docs, or scripts before proposing a
   fix.
 - Keep changes close to the requested scope. If a branch or PR is the active
   iteration surface, amend that branch rather than accumulating work on `main`.
 - If a Renovate PR has human companion commits, do not rebase it or let Renovate
   rewrite it unless the user accepts that risk.
-- Use peer repositories as domain-specific references, not constraints or
-  sources to copy blindly. onedr0p/home-ops and buroa/k8s-gitops are useful for
-  lean GitOps and workflow posture; bjw-s-labs/home-ops, eleboucher/homelab,
-  and m00nwtchr/homelab-cluster are useful for AI-workbench patterns;
-  Tanguille/cluster and bjw-s-labs/home-ops are useful for compact agent
-  guidance; bo0tzz/clusterfuck and joryirving/home-ops are useful for AI
-  reviewer behavior; rcdailey/home-ops is a useful pattern and caution library
-  for agent-oriented diagnostics, not a baseline to copy. Prefer this repo's
-  existing conventions; when modeling work on a peer repo, compare the relevant
-  files or PRs and call out material divergence before implementation.
+- For non-trivial changes, compare against relevant peer or upstream patterns
+  when useful. Use `docs/guides/repo-guide.md` for the reference repo catalog,
+  and avoid bespoke glue unless local constraints require it.
 
 ## Safety Boundaries
 
-- Do not add bespoke scripts, provider systems, permissions, webhooks, storage,
-  auth surfaces, or new public routes without explicit justification and
+- Do not add or expand bespoke scripts, provider systems, permissions, webhooks,
+  storage, auth surfaces, or public routes without explicit justification and
   approval.
 - If live verification shows unexpected behavior, stop and report before
   layering additional fixes.
@@ -50,12 +44,10 @@ small, reviewable, and independently reconcilable.
   or local auth/session state.
 - Do not reformat SOPS-encrypted files; their encrypted document shape is
   intentional.
-- Prefer manifest substitution such as `${SECRET_DOMAIN}`, or existing repo
-  secrets/vars such as `KONFLATE_URL`, instead of hardcoding hostnames in
-  manifests, durable docs, rules files, or workflow defaults. CI, workflow logs,
-  generated comments, and status-check links may expose configured public
-  hostnames when that is the practical integration shape; do not treat that
-  exposure as a blocker by itself.
+- Avoid hardcoding hostnames in manifests, durable docs, rules files, or
+  workflow defaults. Prefer `${SECRET_DOMAIN}` or existing repo secrets/vars
+  such as `KONFLATE_URL`; generated CI comments and status links may expose
+  configured public hostnames when needed.
 - Do not modify ExternalSecret names, target secret names, or secret key names
   unless explicitly requested.
 - Do not casually change PVC names, storage classes, VolSync or Kopiur objects,
@@ -65,9 +57,8 @@ small, reviewable, and independently reconcilable.
 
 ## Repo Conventions
 
-- Prefer the existing namespace/app layout under `kubernetes/apps/<namespace>/<app>`.
-- Prefer existing bjw-s app-template and Home Operations patterns already
-  present in the repo.
+- Follow nearby manifests and the app patterns in `docs/guides/repo-guide.md`
+  before introducing a new shape.
 - For YAML ordering, use `.agents/instructions/yaml-ordering.instructions.md`
   and the surrounding files' established pattern.
 - Keep `just` focused on local/operator workflows. CI should call purpose-built

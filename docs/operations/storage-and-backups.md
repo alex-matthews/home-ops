@@ -1,7 +1,7 @@
 # Storage and Backups
 
 This document captures the current storage and backup posture and the selected
-direction for a future Kopia migration. It is intentionally short-lived and
+direction for a future Kopiur migration. It is intentionally short-lived and
 practical: update it when backup topology changes, after restore drills, or when
 the migration criteria change.
 
@@ -135,8 +135,8 @@ observable from the cluster.
 VolSync Restic remains the working backup system. Do not migrate to
 VolSync-Kopia as an intermediate step.
 
-The selected Kopia migration path is Kopiur, after it has proved itself enough
-for this cluster:
+The selected Kopia-backed migration path is Kopiur, after it has proved itself
+enough for this cluster:
 
 1. Keep VolSync Restic as the production backup system.
 2. Test-deploy Kopiur without disturbing existing Restic backups.
