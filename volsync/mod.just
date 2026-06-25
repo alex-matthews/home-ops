@@ -1,3 +1,4 @@
+set default-script
 set quiet
 set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
@@ -7,7 +8,6 @@ default:
     just -l volsync
 
 [doc('List snapshots (and corresponding previous offset integers) in the restic repo for an app')]
-[script]
 list-previous ns app:
     kubectl -n "{{ ns }}" get secret "{{ app }}-volsync-secret" -o json \
         | jq -r '.data | to_entries[] | "export \(.key)=\(.value | @base64d | @sh)"' \
@@ -32,7 +32,6 @@ suspend:
     just kube volsync suspend
 
 [doc('Unlock all restic source repos')]
-[script]
 unlock:
     kubectl get replicationsources --all-namespaces \
         -o jsonpath='{range .items[*]}{.metadata.namespace},{.metadata.name}{"\n"}{end}' |
@@ -44,7 +43,6 @@ unlock:
     done
 
 [doc('Unlock a restic source repo for an app using a Job')]
-[script]
 unlock-local ns app:
     APP="{{ app }}" NS="{{ ns }}" just template "{{ source_directory() }}/unlock.yaml.j2" \
         | kubectl apply --server-side -f -
@@ -54,7 +52,6 @@ unlock-local ns app:
     kubectl -n "{{ ns }}" delete job volsync-unlock-{{ app }}
 
 [private]
-[script]
 detect-controller ns app:
     if kubectl -n "{{ ns }}" get deployment "{{ app }}" >/dev/null 2>&1; then
         echo deployment
@@ -66,17 +63,14 @@ detect-controller ns app:
     fi
 
 [private]
-[script]
 autoscaler-suspend ns app:
     kubectl -n "{{ ns }}" delete horizontalpodautoscaler "{{ app }}" --ignore-not-found=true
 
 [private]
-[script]
 autoscaler-resume ns app:
     flux -n "{{ ns }}" reconcile kustomization "{{ app }}" --with-source
 
 [private]
-[script]
 restore-run ns app previous:
     [[ "{{ previous }}" =~ ^[0-9]+$ ]] || {
         echo "previous must be an integer offset (0=latest, 1=one snapshot back)" >&2

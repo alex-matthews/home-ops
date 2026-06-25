@@ -1,3 +1,4 @@
+set default-script
 set quiet
 set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
@@ -12,7 +13,6 @@ apply-node node *args:
     just talos render-config "{{ node }}" | talosctl -n "{{ node }}" apply-config -f /dev/stdin {{ args }}
 
 [doc('Show Talos client certificate expiry')]
-[script]
 cert-check:
     days_left="$(just talos cert-days-left)"
     not_after="$(talosctl config info -o yaml | yq -r '.certNotAfter')"
@@ -21,7 +21,6 @@ cert-check:
 
 [confirm('Renew Talos client certificate [y|N] ?')]
 [doc('Renew Talos client certificate safely')]
-[script]
 cert-renew:
     days_left="$(just talos cert-days-left)"
     if (( days_left > 30 )); then
@@ -46,7 +45,6 @@ cert-renew:
     talosctl config info -o yaml | yq -r '"certNotAfter=" + .certNotAfter'
 
 [doc('Download Talos machine image')]
-[script]
 download-image version:
     export SCHEMATIC="$(just talos schematic-id)"
     curl -fL --remove-on-error --retry 5 --retry-delay 5 --retry-all-errors --progress-bar \
@@ -60,7 +58,6 @@ reboot-node node:
     talosctl -n {{ node }} reboot -m powercycle
 
 [doc('Render Talos config for a node')]
-[script]
 render-config node:
     export CONTROLPLANE="$(just talos machine-controller {{ node }})"
     export SCHEMATIC="$(just talos schematic-id)"
@@ -69,7 +66,6 @@ render-config node:
 
 [confirm('Reset all nodes (--force for full wipe) [y|N] ?')]
 [doc('Reset all nodes (--force for full wipe)')]
-[script]
 reset-cluster *args:
     mode="maintenance"; pass=()
     wipe=(--system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL)
@@ -87,7 +83,6 @@ reset-cluster *args:
 
 [confirm('Reset node ' + node + ' (--force for full wipe) [y|N] ?')]
 [doc('Reset a node (--force for full wipe)')]
-[script]
 reset-node node *args:
     mode="maintenance"; pass=()
     wipe=(--system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL)
@@ -117,20 +112,18 @@ upgrade-node node *args:
     talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" -m powercycle --timeout=10m {{ args }}
 
 [private]
-[script]
 cert-days-left:
     not_after="$(talosctl config info -o yaml | yq -r '.certNotAfter')"
     jq -nr --arg d "$not_after" '(($d + "T00:00:00Z" | fromdateiso8601) - now) / 86400 | floor'
 
 [private]
 machine-controller node:
-    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | (.machine.type == "controlplane") // ""'
+    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -r -e 'select(.machine) | (.machine.type == "controlplane") // ""'
 
 [private]
-[script]
 machine-image:
     export SCHEMATIC="$(just talos schematic-id)"
-    just template "{{ source_directory() }}/machineconfig.yaml.j2" | yq -e 'select(.machine) | .machine.install.image'
+    just template "{{ source_directory() }}/machineconfig.yaml.j2" | yq -r -e 'select(.machine) | .machine.install.image'
 
 [private]
 schematic-id:
@@ -138,4 +131,4 @@ schematic-id:
 
 [private]
 talos-endpoint:
-    talosctl config info -o yaml | yq -e '.endpoints[0]'
+    talosctl config info -o yaml | yq -r -e '.endpoints[0]'
