@@ -20,6 +20,7 @@ spec:
               repository: ghcr.io/maintainerr/maintainerr
               tag: 3.15.3@sha256:ab621826a54bf1a4388e7de9d7c3dadd365d9abf39f26e485503e8f10453ad2e
             env:
+              NODE_OPTIONS: --max-old-space-size=768
               TZ: Pacific/Auckland
               UI_HOSTNAME: 0.0.0.0
               UI_PORT: &port 80
@@ -57,7 +58,7 @@ spec:
               requests:
                 cpu: 10m
               limits:
-                memory: 512Mi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
