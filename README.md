@@ -1,4 +1,26 @@
-# Home Operations
+<p align="center">
+  <img src="./docs/assets/readme/home-ops-logo.png" width="240" alt="Home Operations logo">
+  <br>
+  <img src="./docs/assets/readme/home-ops-wordmark.svg" width="420" alt="Home Operations">
+</p>
+
+<p align="center">
+  <a href="https://www.talos.dev/"><img src="https://kromgo.alexmatthews.xyz/badges/talos_version" alt="Talos"></a>
+  <a href="https://kubernetes.io/"><img src="https://kromgo.alexmatthews.xyz/badges/kubernetes_version" alt="Kubernetes"></a>
+  <a href="https://fluxcd.io/"><img src="https://kromgo.alexmatthews.xyz/badges/flux_version" alt="Flux"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_birth_age" alt="Cluster age"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_uptime_age" alt="Cluster uptime"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_node_count" alt="Cluster nodes"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_pod_count" alt="Cluster pods"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_cpu_usage" alt="Cluster CPU"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_memory_usage" alt="Cluster memory"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_alert_count" alt="Cluster alerts"></a>
+</p>
+
+## Overview
 
 This repository is the source of truth for my home Kubernetes cluster. The
 cluster runs [Talos Linux](https://www.talos.dev/), reconciles from Git with
@@ -7,8 +29,7 @@ cluster runs [Talos Linux](https://www.talos.dev/), reconciles from Git with
 [GitHub Actions](https://github.com/features/actions).
 
 Changes are made in Git, validated in pull requests, merged to `main`, and then
-applied by Flux. Local commands are kept in `just` for operator workflows, while
-CI runs purpose-built validation tools directly.
+applied by Flux.
 
 ## Platform
 
@@ -36,10 +57,9 @@ CI runs purpose-built validation tools directly.
 
 ### Hardware
 
-The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM
-and a 500 GB Samsung SSD 870 system/scratch disk. Ceph uses one 1 TB NVMe disk
-per node: `m1` has a Sabrent Rocket 4.0 Plus, while `m2` and `m3` have Samsung
-SSD 980 PRO 1TB disks.
+The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
+a 500 GB SATA SSD for system and scratch storage, and a dedicated 1 TB NVMe disk
+for the replicated Ceph pool.
 
 ## Key Paths
 
@@ -69,22 +89,19 @@ kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
 Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
 `servicemonitor.yaml`, dashboards, alerts, and app-specific configuration.
 
-## Automation
+## Automation / CI
 
 Renovate opens dependency update pull requests for charts, containers, GitHub
 Actions, and other versioned references.
 
-Pull request gates and reviewers are:
+Pull request checks and reviewers are:
 
-- `Lint` checks workflow, YAML, JSON, Markdown, and TOML changes.
-- `Image Pull` uses Flate to calculate new images and pre-pull them on cluster nodes.
-- `Konflate` runs in-cluster and posts native pull request comments and checks
-  from rendered Flate diffs.
-- `Renovate PR Review` can post advisory Claude-backed reviews on eligible
-  same-repository Renovate pull requests.
-
-Konflate is the required render gate, while Image Pull is the current required
-image-pull gate. Lint is also required. Renovate PR Review is advisory.
+| Check                | Status   | Purpose                                                |
+| -------------------- | -------- | ------------------------------------------------------ |
+| `Lint`               | Required | Lints workflows and structured files.                  |
+| `Image Pull`         | Required | Calculates changed images and pre-pulls them.          |
+| `Konflate`           | Required | Posts rendered Flate diffs and checks.                 |
+| `Renovate PR Review` | Advisory | Posts Claude-backed reviews for eligible Renovate PRs. |
 
 `Label Sync` keeps repository labels consistent.
 
@@ -104,16 +121,15 @@ mise install
 just -l
 ```
 
-`just` is for local/operator workflows such as bootstrap, Kubernetes diagnostics,
-Talos operations, and VolSync restore helpers. CI does not route through `just`
-unless a workflow has a specific reason to do so.
+`just` is for local/operator workflows such as cluster bootstrap, Kubernetes
+diagnostics, Talos operations, and VolSync restore helpers.
 
 ## Operations Docs
 
 - [AI Workbench Prompts](docs/operations/ai-workbench.md) collects starter
   Hermes and ToolHive MCP prompts.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
-  current backup posture and Kopia migration criteria.
+  current backup posture and backup migration criteria.
 
 ## Thanks
 
