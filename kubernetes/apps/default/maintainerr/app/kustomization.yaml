@@ -2,6 +2,16 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+components:
+  - ../../../../components/volsync
+patches:
+  # Fresh install: there are no restic snapshots yet, so avoid bootstrapping
+  # the first PVC from an empty VolSync restore image.
+  - patch: |-
+      - op: remove
+        path: /spec/dataSourceRef
+    target:
+      kind: PersistentVolumeClaim
 resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
