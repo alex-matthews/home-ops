@@ -5,19 +5,19 @@
 </p>
 
 <p align="center">
-  <a href="https://www.talos.dev/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Ftalos_version%3Fformat%3Dshields&logo=talos" alt="Talos"></a>
-  <a href="https://kubernetes.io/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fkubernetes_version%3Fformat%3Dshields&logo=kubernetes" alt="Kubernetes"></a>
-  <a href="https://fluxcd.io/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fflux_version%3Fformat%3Dshields&logo=flux" alt="Flux"></a>
+  <a href="https://www.talos.dev/"><img src="https://kromgo.alexmatthews.xyz/badges/talos_version" alt="Talos"></a>
+  <a href="https://kubernetes.io/"><img src="https://kromgo.alexmatthews.xyz/badges/kubernetes_version" alt="Kubernetes"></a>
+  <a href="https://fluxcd.io/"><img src="https://kromgo.alexmatthews.xyz/badges/flux_version" alt="Flux"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_birth_age%3Fformat%3Dshields" alt="Cluster age"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_uptime_age%3Fformat%3Dshields" alt="Cluster uptime"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_node_count%3Fformat%3Dshields" alt="Cluster nodes"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_pod_count%3Fformat%3Dshields" alt="Cluster pods"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_cpu_usage%3Fformat%3Dshields" alt="Cluster CPU"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_memory_usage%3Fformat%3Dshields" alt="Cluster memory"></a>
-  <a href="https://github.com/home-operations/kromgo"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fkromgo.alexmatthews.xyz%2Fbadges%2Fcluster_alert_count%3Fformat%3Dshields" alt="Cluster alerts"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_birth_age" alt="Cluster age"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_uptime_age" alt="Cluster uptime"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_node_count" alt="Cluster nodes"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_pod_count" alt="Cluster pods"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_cpu_usage" alt="Cluster CPU"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_memory_usage" alt="Cluster memory"></a>
+  <a href="https://github.com/home-operations/kromgo"><img src="https://kromgo.alexmatthews.xyz/badges/cluster_alert_count" alt="Cluster alerts"></a>
 </p>
 
 ## Overview
