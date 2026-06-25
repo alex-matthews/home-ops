@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="96" viewBox="0 0 560 96" role="img" aria-label="Home Operations">
+  <text
+    x="280"
+    y="45"
+    fill="#6b7280"
+    font-family="Avenir Next, Inter, Helvetica Neue, Arial, sans-serif"
+    font-size="42"
+    font-weight="500"
+    letter-spacing="1.4"
+    text-anchor="middle"
+    dominant-baseline="middle">Home Operations</text>
+  <line
+    x1="239"
+    y1="73"
+    x2="321"
+    y2="73"
+    stroke="#47c266"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    opacity="0.9"/>
+</svg>
