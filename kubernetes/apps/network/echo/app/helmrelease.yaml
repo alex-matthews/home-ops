@@ -12,6 +12,7 @@ spec:
   values:
     replicaCount: 2
     config:
+      commandsEnabled: false
       kubernetes: true
     httpRoute:
       enabled: true
