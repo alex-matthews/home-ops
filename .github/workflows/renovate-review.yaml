@@ -226,7 +226,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "bot-ler[bot]"
           claude_args: |
-            --model ${{ vars.CLAUDE_RENOVATE_REVIEW_MODEL || 'claude-sonnet-4-6' }}
+            --model ${{ vars.CLAUDE_RENOVATE_REVIEW_MODEL || 'claude-sonnet-5' }}
             --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr review:*),Bash(gh api:*),Bash(gh release view:*),Bash(gh release list:*),Bash(git log:*),Bash(git diff:*),WebFetch,WebSearch"
           prompt: |
             You research same-repository Renovate pull requests in this Flux
