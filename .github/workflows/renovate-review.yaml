@@ -9,6 +9,16 @@ on:
         description: Renovate PR number to review
         required: true
         type: number
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+      - synchronize
+    paths:
+      - kubernetes/**
 
 env:
   FORCE_REVIEW: ${{ github.event_name == 'workflow_dispatch' }}
@@ -88,7 +98,7 @@ jobs:
 
           jq -R . < "${pr_file_paths}" | jq -s . > "${pr_file_paths_json}"
 
-          if ! grep -Eq '^(kubernetes|bootstrap|talos)/' "${pr_file_paths}"; then
+          if ! grep -Eq '^kubernetes/' "${pr_file_paths}"; then
             skip "Skipping; PR #${PR} does not touch reviewed paths."
           fi
 

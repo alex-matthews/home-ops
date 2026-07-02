@@ -91,17 +91,22 @@ Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
 
 ## Automation / CI
 
-Renovate opens dependency update pull requests for charts, containers, GitHub
-Actions, and other versioned references.
+Renovate manages dependency updates for charts, containers, GitHub Actions, and
+other versioned references. Most updates use pull requests; selected low-risk
+classes may branch-automerge.
 
 Pull request checks and reviewers are:
 
-| Check                | Status   | Purpose                                                |
-| -------------------- | -------- | ------------------------------------------------------ |
-| `Lint`               | Required | Lints workflows and structured files.                  |
-| `Image Pull`         | Required | Calculates changed images and pre-pulls them.          |
-| `Konflate`           | Required | Posts rendered Flate diffs and checks.                 |
-| `Renovate PR Review` | Advisory | Posts Claude-backed reviews for eligible Renovate PRs. |
+| Check                | Status   | Purpose                                              |
+| -------------------- | -------- | ---------------------------------------------------- |
+| `Lint`               | Required | Checks workflow syntax, security, and file format.   |
+| `Image Pull`         | Required | Finds image changes and pre-pulls them on the nodes. |
+| `Konflate`           | Required | Renders manifests, posts diffs, and verifies images. |
+| `Renovate PR Review` | Advisory | Reviews eligible Renovate PRs with Claude.           |
+
+`Render` is a GitHub-hosted post-merge alarm that runs Flate against `main`
+after changes under `kubernetes/`. It does not replace Konflate as the pull
+request render and diff gate.
 
 `Label Sync` keeps repository labels consistent.
 

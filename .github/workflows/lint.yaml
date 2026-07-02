@@ -4,6 +4,15 @@ name: Lint
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/actionlint.yaml
+      - .github/workflows/**/*.yaml
+      - .github/workflows/**/*.yml
+      - .renovate/**.json5
+      - .renovaterc.json5
   pull_request:
     branches:
       - main
