@@ -23,7 +23,6 @@ spec:
               HERMES_HOME: /opt/data
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_HOST: 0.0.0.0
-              HERMES_DASHBOARD_INSECURE: "1"
               HERMES_DASHBOARD_PORT: "9119"
               HOME: /opt/data
               NO_COLOR: "1"
@@ -34,6 +33,16 @@ spec:
               - gateway
               - run
               - --no-supervise
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &dashboardPort 9119
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 100m
@@ -55,7 +64,7 @@ spec:
         controller: hermes
         ports:
           http:
-            port: 9119
+            port: *dashboardPort
     route:
       app:
         hostnames:
