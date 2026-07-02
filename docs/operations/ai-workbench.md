@@ -14,6 +14,12 @@ notes should stay out of this file.
 Hermes is the interactive client. It uses the internal LiteLLM gateway by
 default and reaches tools through the ToolHive vMCP surface.
 
+The Hermes dashboard is exposed through the internal Envoy Gateway route. For
+non-loopback binds, Hermes requires a dashboard auth provider; this deployment
+uses the bundled username/password provider from `hermes-secret` through the
+existing ExternalSecret. Do not restore the obsolete `HERMES_DASHBOARD_INSECURE`
+setting for this bind mode.
+
 Current ToolHive tools:
 
 - Context7 for public documentation lookup.

@@ -5,14 +5,16 @@ metadata:
   name: hermes-config
 data:
   config.yaml: |
-    custom_providers:
-      - name: litellm
+    _config_version: 32
+    providers:
+      litellm:
+        name: LiteLLM
         base_url: http://litellm.ai.svc.cluster.local:4000/v1
         key_env: LITELLM_MASTER_KEY
-        api_mode: chat_completions
-        model: minimax/MiniMax-M3
+        transport: chat_completions
+        default_model: minimax/MiniMax-M3
     model:
-      provider: custom:litellm
+      provider: litellm
       default: minimax/MiniMax-M3
     toolsets:
       - hermes-cli
@@ -41,6 +43,11 @@ data:
       reasoning_effort: medium
     streaming:
       enabled: false
+    skills:
+      write_approval: true
+      guard_agent_created: false
+    curator:
+      consolidate: false
     security:
       redact_secrets: true
     privacy:
