@@ -71,6 +71,7 @@ This inventory is derived from the currently included resources in
 | `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `bazarr`      | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
+| `maintainerr` | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `plex`        | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
 | `prowlarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `qbittorrent` | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
@@ -93,6 +94,43 @@ A more conservative future policy is possible: apply zeroscaler to every
 VolSync/Kopiur-backed Deployment, even if the app does not currently mount NAS
 storage at runtime. If that policy is adopted, document it as a deliberate
 availability posture and handle non-Deployment workloads separately.
+
+## Intentional Non-Coverage
+
+The inventory above is scoped to the `default` namespace application PVCs.
+Observability PVCs such as Prometheus, Alertmanager, Grafana, Gatus sidecar, and
+Victoria Logs are intentionally not VolSync-backed. Losing them loses telemetry
+history or non-declarative UI changes, not the Git source of truth.
+
+Hermes and the AI workbench are intentionally lightweight and stateless. The
+Hermes home directory currently lives on `emptyDir`; do not add persistence or
+backup coverage for it unless the workbench design changes and the state is
+explicitly worth preserving.
+
+## PVC Lifecycle Policy
+
+VolSync-backed app PVCs are managed by the same Flux Kustomization as their app.
+They are therefore prunable when an app is deliberately removed, and that is the
+current cleanup policy. Do not add blanket PVC prune-disable annotations without
+a specific migration reason.
+
+Treat app renames, PVC renames, component rewiring, and `APP` substitution
+changes as storage migrations rather than ordinary refactors. Before merging
+one, verify a recent local and remote backup, decide whether a temporary
+prune-disable guard is warranted, and make any destructive PVC deletion an
+explicit operator action.
+
+## VolSync Restore Object Drift
+
+Local `ReplicationDestination` objects use Flux `ssa: IfNotPresent` so Flux does
+not continuously update the restore trigger. The cost is that later
+`VOLSYNC_*` substitutions, cache-size changes, repository changes, or mover
+identity changes do not automatically reach the live restore object.
+
+Before relying on a VolSync restore or starting a Kopiur cutover, compare the
+live `ReplicationDestination` with the desired app settings. If it drifted,
+refresh the `*-dst` object deliberately in a controlled window before the
+restore, then verify the recreated object before touching the production PVC.
 
 ## Migration Requirements
 
@@ -235,6 +273,7 @@ kubectl get replicationsource,replicationdestination -A
 kubectl get persistentvolumeclaim -A
 kubectl -n default get hpa
 kubectl -n observability get probe nfs -o yaml
+kubectl -n default get replicationdestination -o jsonpath='{range .items[*]}{.metadata.name}{" cap="}{.spec.restic.capacity}{" cache="}{.spec.restic.cacheCapacity}{" repo="}{.spec.restic.repository}{" ssa="}{.metadata.labels.kustomize\.toolkit\.fluxcd\.io/ssa}{"\n"}{end}'
 ```
 
 Current Restic snapshot and restore helpers:
