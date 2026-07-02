@@ -132,21 +132,19 @@ CI runs tools directly. Do not route everything through `just`.
 
 `just` is for local/operator workflows: diagnostics, rendering helpers, live
 cluster actions, bootstrap, Talos, and restore operations. Changes to Justfiles
-are formatted by Lefthook. Image Pull currently filters on `kubernetes/**/*`, so
-changes under `kubernetes/` can trigger it even when the touched file is
-local/operator tooling rather than rendered cluster state.
+are formatted by Lefthook.
 
 The `Render` workflow is a GitHub-hosted post-merge alarm, not a required pull
 request check. It runs Flate on `main` after changes under `kubernetes/` so
 merge trains can stay lightweight while the applied branch still gets rendered.
-Konflate remains the pull request render and diff gate.
+Konflate remains the required pull request check for renders and rendered diffs.
+Its current image verification reports non-blocking cautions.
 
 ### Bypass Merges
 
 Use a bypass merge only when a cluster outage or cluster-hosted automation
-failure prevents `Konflate` or `Image Pull` from reporting. Do not use it to
-skip a check that reported a real repository, render, image, or workflow
-failure.
+failure prevents `Konflate` from reporting. Do not use it to skip a check that
+reported a real repository, render, image, or workflow failure.
 
 Before bypassing, validate the smallest relevant set locally:
 
@@ -226,7 +224,7 @@ Common non-goals:
 
 - Lean GitOps and app shape: use [onedr0p/home-ops], [buroa/k8s-gitops],
   [bjw-s-labs/home-ops], and [perryhuynh/homelab] for app-template idioms,
-  Kustomize component shape, Image Pull/Flate posture, and namespace/app layout.
+  Kustomize component shape, render posture, and namespace/app layout.
 - Render and CI posture: use [onedr0p/home-ops], [waifulabs/infrastructure],
   [Tanguille/cluster], [jfroy/flatops], [auricom/home-ops], and
   [rcdailey/home-ops] for workflow scoping, render checks, and report shape.
