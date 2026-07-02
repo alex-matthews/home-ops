@@ -1,11 +1,8 @@
+set default-list
 set default-script
 set quiet
 set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
-
-[private]
-default:
-    just -l volsync
 
 [doc('List snapshots (and corresponding previous offset integers) in the restic repo for an app')]
 list-previous ns app:
