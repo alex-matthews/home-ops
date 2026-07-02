@@ -97,12 +97,14 @@ classes may branch-automerge.
 
 Pull request checks and reviewers are:
 
-| Check                | Status   | Purpose                                              |
-| -------------------- | -------- | ---------------------------------------------------- |
-| `Lint`               | Required | Checks workflow syntax, security, and file format.   |
-| `Image Pull`         | Required | Finds image changes and pre-pulls them on the nodes. |
-| `Konflate`           | Required | Renders manifests, posts diffs, and verifies images. |
-| `Renovate PR Review` | Advisory | Reviews eligible Renovate PRs with Claude.           |
+| Check                | Status   | Purpose                                                     |
+| -------------------- | -------- | ----------------------------------------------------------- |
+| `Lint`               | Required | Checks workflow syntax, security, and file format.          |
+| `Konflate`           | Required | Renders manifests, posts diffs, and reports image cautions. |
+| `Renovate PR Review` | Advisory | Reviews eligible Renovate PRs with Claude.                  |
+
+Image availability is advisory: the repository has no blocking image-existence
+or node pre-pull check before deployment.
 
 `Render` is a GitHub-hosted post-merge alarm that runs Flate against `main`
 after changes under `kubernetes/`. It does not replace Konflate as the pull
