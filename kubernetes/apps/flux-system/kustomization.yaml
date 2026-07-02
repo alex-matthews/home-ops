@@ -8,6 +8,7 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
+  - ./downflate/ks.yaml
   - ./flux-instance/ks.yaml
   - ./flux-operator/ks.yaml
   - ./konflate/ks.yaml
