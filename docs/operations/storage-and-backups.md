@@ -188,6 +188,26 @@ media-adjacent workloads. Do not add Kopiur resources for it until the Atuin app
 and VolSync-protected PVC are healthy and the client dotfiles integration is
 understood.
 
+As of 2026-06-25, the latest upstream Kopiur release is `0.4.13`. Re-check the
+chart, CRDs, and examples before the install PR because the project is still
+moving quickly.
+
+The first Atuin PR should stay backup-only:
+
+- Install Kopiur in a dedicated operator namespace with cluster scope only if
+  `ClusterRepository` is used.
+- Decide the repository backend and ExternalSecret shape before adding any
+  repository CR.
+- Keep VolSync Restic enabled and do not change the existing `atuin` PVC,
+  `dataSourceRef`, storage class, app UID/GID, or restore wiring.
+- Add only a `SnapshotPolicy` and `SnapshotSchedule` for the existing `atuin`
+  PVC after the repository is ready.
+- If using a shared `ClusterRepository`, enable credential projection only with
+  all three gates present: chart RBAC, repository owner allow, and Atuin consumer
+  opt-in.
+- Prove a non-empty snapshot and a restore into a temporary PVC before any app
+  cutover work.
+
 Pilot success means:
 
 - The existing Restic backup remains untouched.
