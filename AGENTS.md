@@ -48,6 +48,12 @@ small, reviewable, and independently reconcilable.
   workflow defaults. Prefer `${SECRET_DOMAIN}` or existing repo secrets/vars
   such as `KONFLATE_URL`; generated CI comments and status links may expose
   configured public hostnames when needed.
+- Never publish sensitive operational metadata to GitHub issues, PR bodies, PR
+  comments, or other public prose unless the user explicitly asks for that exact
+  detail to be public. This includes GitHub App/client/installation/ruleset
+  identifiers, webhook identifiers, 1Password vault/item names, secret key names,
+  private-key or credential storage topology, and detailed permission
+  inventories.
 - Do not modify ExternalSecret names, target secret names, or secret key names
   unless explicitly requested.
 - Do not casually change PVC names, storage classes, VolSync or Kopiur objects,
@@ -69,6 +75,14 @@ small, reviewable, and independently reconcilable.
 ## Communication
 
 - Prefer comments and PR bodies that read as operator notes, not AI transcripts.
+- Treat GitHub issues, PRs, release notes, and durable repo prose as public by
+  default. Keep them summary-level and use redacted categories when evidence
+  would otherwise expose exact identifiers, credential topology, public route
+  maps, or control mechanisms.
+- Before posting or updating GitHub text, review it for unnecessary identifiers,
+  credential relationships, permission details, public endpoint inventories, and
+  state-changing automation details. Keep exact values in terminal output,
+  private notes, or local validation context instead of public prose.
 
 ## Validation
 
