@@ -1,0 +1,142 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: resolute
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: resolute
+  interval: 1h
+  values:
+    controllers:
+      resolute:
+        # SQLite single-writer: keep exactly 1 replica. Do not scale this.
+        replicas: 1
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image: &image
+              repository: ghcr.io/alex-matthews/resolute
+              # Digest-pinned :main until release-please cuts the first
+              # semver release; switch to the vX.Y.Z tag then (Renovate
+              # takes over from there).
+              tag: main@sha256:135effa8e3e843d48d7279f5327d60d27270564d77661b138523ac74ac0d3b0d
+            env:
+              TZ: Pacific/Auckland
+              RESOLUTE_MODE: shadow # rollout: shadow -> recommend -> approve
+              RESOLUTE_ALLOW_WRITES: "false" # master write switch; keep false until resolute docs/rollout.md phase 3
+              RESOLUTE_AUTO_APPROVE_ENABLED: "false"
+              RESOLUTE_DB_PATH: /data/resolute.db
+              RESOLUTE_POLICY_PATH: /config/policy.yaml
+              RESOLUTE_LISTEN_PORT: &port 80
+              RESOLUTE_SEERR__URL: http://seerr.default.svc.cluster.local
+              RESOLUTE_SONARR__URL: http://sonarr.default.svc.cluster.local
+              RESOLUTE_SEERR__PROFILE_NAME_1080P: WEB-1080p # must match Sonarr profile names exactly
+              RESOLUTE_SEERR__PROFILE_NAME_2160P: WEB-2160p
+              RESOLUTE_JUDGE__ENABLED: "false"
+              RESOLUTE_JUDGE__BASE_URL: http://litellm.ai.svc.cluster.local/v1
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-secret"
+            probes:
+              liveness:
+                enabled: true
+                spec:
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 256Mi
+      # Nightly sweep of pending Seerr TV requests, via the API so the
+      # SQLite writer and its RWO PVC stay with the API pod. The endpoint
+      # only decides and records; it never executes writes.
+      review:
+        type: cronjob
+        cronjob:
+          schedule: "0 4 * * *"
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        containers:
+          app:
+            image: *image
+            command:
+              - resolute
+              - review-pending
+              - --remote
+              - http://resolute.default.svc.cluster.local
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-secret"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1032
+        runAsGroup: 100
+        fsGroup: 100
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: resolute
+        ports:
+          http:
+            port: *port
+    # /metrics is served on the http port (unauthenticated; the bearer gate
+    # only covers /api/*), so scrape the http port with an explicit path.
+    serviceMonitor:
+      app:
+        endpoints:
+          - port: http
+            path: /metrics
+            interval: 1m
+            scrapeTimeout: 30s
+    # Internal-only: Seerr reaches resolute in-cluster; no route needed.
+    persistence:
+      data:
+        existingClaim: "{{ .Release.Name }}"
+        advancedMounts:
+          resolute:
+            app:
+              - path: /data
+      policy:
+        type: configMap
+        name: resolute-policy
+        advancedMounts:
+          resolute:
+            app:
+              - path: /config/policy.yaml
+                subPath: policy.yaml
+                readOnly: true
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

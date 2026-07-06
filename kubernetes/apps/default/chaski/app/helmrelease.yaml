@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: chaski
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: chaski
+  interval: 1h
+  values:
+    replicaCount: 2
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    env:
+      TZ: Pacific/Auckland
+    envFrom:
+      - secretRef:
+          name: "{{ .Release.Name }}-secret"
+    service:
+      port: 80
+    config:
+      targets:
+        resolute:
+          http:
+            url: http://resolute.default.svc.cluster.local/api/webhooks/seerr
+            headers:
+              X-Resolute-Token: '{{ env "RESOLUTE_WEBHOOK_SECRET" }}'
+      routes:
+        # Seerr -> chaski -> resolute. No title/message on the route, so the
+        # inbound Seerr JSON is forwarded verbatim (resolute's normalizer
+        # requires the Seerr-native payload; see its ADR-0001). Adding
+        # costanza later = add a target + list it here; zero Seerr changes.
+        seerr:
+          target: resolute
+          verify:
+            token:
+              header: Authorization
+              secret: '{{ env "RESOLUTE_WEBHOOK_SECRET" }}'
+    monitoring:
+      serviceMonitor:
+        enabled: true
+    resources:
+      requests:
+        cpu: 10m
+      limits:
+        memory: 128Mi
