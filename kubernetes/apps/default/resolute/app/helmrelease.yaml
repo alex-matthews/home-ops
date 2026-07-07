@@ -24,7 +24,7 @@ spec:
               # Digest-pinned :main until release-please cuts the first
               # semver release; switch to the vX.Y.Z tag then (Renovate
               # takes over from there).
-              tag: main@sha256:135effa8e3e843d48d7279f5327d60d27270564d77661b138523ac74ac0d3b0d
+              tag: main@sha256:db250ba36c9e8f2a79917983cd693dacb8e09d991d7922f618b1c39ebd820d12
             env:
               TZ: Pacific/Auckland
               RESOLUTE_MODE: shadow # rollout: shadow -> recommend -> approve
@@ -32,7 +32,7 @@ spec:
               RESOLUTE_AUTO_APPROVE_ENABLED: "false"
               RESOLUTE_DB_PATH: /data/resolute.db
               RESOLUTE_POLICY_PATH: /config/policy.yaml
-              RESOLUTE_LISTEN_PORT: &port 80
+              RESOLUTE_LISTEN_PORT: &port 8080
               RESOLUTE_SEERR__URL: http://seerr.default.svc.cluster.local
               RESOLUTE_SONARR__URL: http://sonarr.default.svc.cluster.local
               RESOLUTE_SEERR__PROFILE_NAME_1080P: WEB-1080p # must match Sonarr profile names exactly
@@ -108,14 +108,20 @@ spec:
       app:
         controller: resolute
         ports:
+          # Service stays on :80 (unchanged for in-cluster callers); it now
+          # forwards to the container's 8080 listener.
           http:
-            port: *port
-    # /metrics is served on the http port (unauthenticated; the bearer gate
-    # only covers /api/*), so scrape the http port with an explicit path.
+            port: 80
+            targetPort: *port
+          metrics:
+            port: 8081
+            targetPort: 8081
+    # /metrics is on the dedicated 8081 listener, kept off the main port so a
+    # future route never exposes it. Scrape it via the metrics service port.
     serviceMonitor:
       app:
         endpoints:
-          - port: http
+          - port: metrics
             path: /metrics
             interval: 1m
             scrapeTimeout: 30s
