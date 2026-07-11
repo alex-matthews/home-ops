@@ -24,7 +24,7 @@ spec:
               # Digest-pinned :main until release-please cuts the first
               # semver release; switch to the vX.Y.Z tag then (Renovate
               # takes over from there).
-              tag: main@sha256:538e9b3f917519ef0ff141b6262515dfadccf00daa267af0e135178fb425b977
+              tag: main@sha256:155cc2aaf98e7c53976a370f5b3337fe2b2659ac8c46692c9fcbbb3dea20a3f3
             env:
               TZ: Pacific/Auckland
               RESOLUTE_MODE: shadow # rollout: shadow -> recommend -> approve
