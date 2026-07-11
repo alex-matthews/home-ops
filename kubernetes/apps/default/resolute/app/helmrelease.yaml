@@ -32,7 +32,8 @@ spec:
               RESOLUTE_AUTO_APPROVE_ENABLED: "false"
               RESOLUTE_DB_PATH: /data/resolute.db
               RESOLUTE_POLICY_PATH: /config/policy.yaml
-              RESOLUTE_LISTEN_PORT: &port 8080
+              # Ports follow the image/config defaults (app 8080, metrics
+              # 8081) — the config default is the single source, no override.
               RESOLUTE_SEERR__URL: http://seerr.default.svc.cluster.local
               RESOLUTE_SONARR__URL: http://sonarr.default.svc.cluster.local
               RESOLUTE_SEERR__PROFILE_NAME_1080P: WEB-1080p # must match Sonarr profile names exactly
@@ -55,7 +56,7 @@ spec:
                 spec:
                   httpGet:
                     path: /readyz
-                    port: *port
+                    port: &port 8080
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
@@ -91,8 +92,10 @@ spec:
               - --remote
               - http://resolute.default.svc.cluster.local
             envFrom:
+              # Least privilege: the review job only talks to the API, so it
+              # gets only the api token — not the Seerr/Sonarr/judge keys.
               - secretRef:
-                  name: "{{ .Release.Name }}-secret"
+                  name: "{{ .Release.Name }}-review-secret"
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
