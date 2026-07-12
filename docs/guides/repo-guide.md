@@ -26,6 +26,53 @@ commands. Agent behavior and change-control rules live in
 - `talos/`: Talos machine config templates and local helpers.
 - `volsync/`: local/operator restore templates and workflows.
 
+## How the Cluster Works
+
+How a merged change reaches the cluster:
+
+1. Flux follows `main` through the `flux-system` `GitRepository` managed by
+   Flux Operator.
+2. `kubernetes/flux/cluster/ks.yaml` defines the `cluster-apps` Kustomization.
+   It reconciles `./kubernetes/apps`, enables SOPS decryption, and patches
+   every child Kustomization with the same decryption and HelmRelease
+   remediation defaults.
+3. Each namespace directory's `kustomization.yaml` creates the Namespace, adds
+   shared components such as alerts and SOPS, and lists every app `ks.yaml`.
+4. Each app `ks.yaml` is a Flux Kustomization that renders the app's `app/`
+   directory into the target namespace.
+
+Nothing reaches the cluster except through this path. Imperative changes are
+diagnostics-only; Flux overwrites drift on the next reconcile.
+
+Secrets reach workloads through two mechanisms:
+
+- Runtime secrets: 1Password → onepassword-connect → the `onepassword-connect`
+  `ClusterSecretStore` → a per-app `ExternalSecret` → a Kubernetes Secret the
+  workload consumes via `envFrom` or `env`. Secret material never appears in
+  Git.
+- Build-time substitution: the SOPS component ships an age-encrypted
+  `cluster-secrets` Secret into each namespace. App `ks.yaml` files opt in with
+  `postBuild.substituteFrom: cluster-secrets`, which fills
+  `${SECRET_DOMAIN}`-style placeholders when Flux builds the app.
+
+Stateful apps normally get their PVC from the VolSync component
+(`kubernetes/components/volsync`): a `${APP}` claim on `ceph-block` with a
+restore-capable `dataSourceRef`, an hourly local Restic `ReplicationSource`,
+and a daily remote one. Details and restore drills live in
+[`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
+
+Workload identity defaults to `runAsUser: 1032` / `runAsGroup: 100` /
+`fsGroup: 100` for app pods and their VolSync movers, matching the NAS-side
+convention. Do not change an app's identity without migrating PVC ownership in
+the same window.
+
+Stateful apps run a single replica (the chart default; most set no explicit
+`replicas` or `strategy`), and their `ReadWriteOnce` PVCs would not tolerate
+scaling anyway. resolute is additionally single-writer by its own design
+(SQLite allows one writer): it pins `replicas: 1` with `strategy: Recreate`,
+routes writes through the one API pod, and must never be scaled. That
+constraint comes from the app, not from a cluster-wide rule.
+
 ## App Pattern
 
 Most applications follow:
