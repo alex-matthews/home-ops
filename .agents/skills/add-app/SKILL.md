@@ -22,10 +22,12 @@ structure:
 If the app has a maintained upstream chart or a home-operations chart, use
 that chart instead of app-template: mirror an existing upstream-chart app such
 as `kubernetes/apps/default/chaski` or
-`kubernetes/apps/observability/gatus-sidecar`, follow the chart's own values
-order, and skip the app-template specifics below.
+`kubernetes/apps/observability/gatus-sidecar` for the OCIRepository and
+HelmRelease, and follow the chart's own values order. Everything else in this
+skill still applies — layout, `ks.yaml`, registration, and validation; only
+the app-template specifics in the helmrelease section do not.
 
-The rest of this skill covers the common case for self-hosted apps: a
+The helmrelease guidance below covers the common case for self-hosted apps: a
 container image with no maintained chart, deployed via bjw-s app-template.
 
 ## Step 1: Gather details
@@ -71,7 +73,11 @@ Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
 - `postBuild.substitute.APP` is required by the VolSync component; add
   `VOLSYNC_CAPACITY` when the component default (5Gi) is wrong.
 - `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
-  and other substituted values.
+  and other substituted values, and it only works in namespaces whose
+  `kustomization.yaml` includes the SOPS component (`../../components/sops`) —
+  check before copying, because without the component the referenced Secret
+  does not exist there and reconciliation fails. Drop the block if the app
+  substitutes nothing.
 - `targetNamespace` matches the namespace directory.
 
 ### app/kustomization.yaml
