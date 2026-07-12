@@ -131,8 +131,9 @@ diagnostics, Talos operations, and VolSync restore helpers.
 
 ## Operations Docs
 
-- [AI Workbench Prompts](docs/operations/ai-workbench.md) collects starter
-  Hermes and ToolHive MCP prompts.
+- [AI Workbench](docs/operations/ai-workbench.md) is a compact operator note
+  for the Hermes and ToolHive workbench: current surface, boundaries, and the
+  cluster-health triage loop.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
   current backup posture and backup migration criteria.
 
