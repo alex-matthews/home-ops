@@ -104,7 +104,9 @@ Copy atuin's and adapt. Invariants to keep:
   `emptyDir` at `/tmp` if the app needs scratch space (see resolute).
 - Liveness, readiness, and startup probes like atuin; use a custom `httpGet`
   readiness probe when the app has a health endpoint.
-- `resources`: `requests.cpu: 10m` and a memory limit sized to the app.
+- `resources`: start at `requests.cpu: 10m` with a memory limit sized to the
+  app; heavier apps in this repo run `100m`, so match a comparable app rather
+  than the minimum.
 - Route hostnames use `"{{ .Release.Name }}.${SECRET_DOMAIN}"`; never hardcode
   the domain. Public routes get a Gatus endpoint annotation (see plex).
 - VolSync persistence mounts `existingClaim: "{{ .Release.Name }}"`.

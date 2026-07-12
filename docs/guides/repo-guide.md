@@ -8,6 +8,7 @@ commands. Agent behavior and change-control rules live in
 
 - `.agents/instructions/`: narrow reusable agent instructions, currently YAML
   ordering.
+- `.agents/skills/`: task recipes, currently `add-app`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
 - `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
@@ -37,7 +38,8 @@ How a merged change reaches the cluster:
    every child Kustomization with the same decryption and HelmRelease
    remediation defaults.
 3. Each namespace directory's `kustomization.yaml` creates the Namespace, adds
-   shared components such as alerts and SOPS, and lists every app `ks.yaml`.
+   the shared alerts component (all namespaces) and the SOPS component (only
+   namespaces that need `cluster-secrets`), and lists every app `ks.yaml`.
 4. Each app `ks.yaml` is a Flux Kustomization that renders the app's `app/`
    directory into the target namespace.
 
@@ -51,15 +53,17 @@ Secrets reach workloads through two mechanisms:
   workload consumes via `envFrom` or `env`. Secret material never appears in
   Git.
 - Build-time substitution: the SOPS component ships an age-encrypted
-  `cluster-secrets` Secret into each namespace. App `ks.yaml` files opt in with
+  `cluster-secrets` Secret into the namespaces that include the component —
+  not all do. App `ks.yaml` files opt in with
   `postBuild.substituteFrom: cluster-secrets`, which fills
   `${SECRET_DOMAIN}`-style placeholders when Flux builds the app.
 
 Stateful apps normally get their PVC from the VolSync component
 (`kubernetes/components/volsync`): a `${APP}` claim on `ceph-block` with a
 restore-capable `dataSourceRef`, an hourly local Restic `ReplicationSource`,
-and a daily remote one. Details and restore drills live in
-[`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
+and a daily remote one. Backup topology and restore criteria live in
+[`../operations/storage-and-backups.md`](../operations/storage-and-backups.md);
+restore templates live under `volsync/`.
 
 VolSync-backed apps run as `runAsUser: 1032` / `runAsGroup: 100` /
 `fsGroup: 100`, matching their Restic movers and the NAS-side convention;
