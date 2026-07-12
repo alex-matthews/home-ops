@@ -1,19 +1,21 @@
 ---
 name: add-app
-description: Scaffold a new Flux-managed application under kubernetes/apps/ following this repo's app-template conventions. Use when deploying a new app or service to the cluster.
+description: Scaffold a new Flux-managed application under kubernetes/apps/ — chart selection, manifests, registration, validation. Use when deploying a new app or service to the cluster.
 ---
 
 # Add a New Application
 
 Scaffolds `kubernetes/apps/<namespace>/<app>/` with a Flux Kustomization and a
-bjw-s app-template HelmRelease. Every value below comes from current repo
-conventions. When in doubt, mirror a real app instead of inventing structure:
+HelmRelease (chart chosen in Step 0). Every value below comes from current
+repo conventions. When in doubt, mirror a real app instead of inventing
+structure:
 
-| Reference app                      | Shows                                                                                               |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `kubernetes/apps/default/atuin`    | Small app: internal route, VolSync-backed PVC, no secrets                                           |
-| `kubernetes/apps/default/resolute` | ExternalSecret, config file via `configMapGenerator`, ServiceMonitor, CronJob, single-writer SQLite |
-| `kubernetes/apps/default/plex`     | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service                   |
+| Reference app                       | Shows                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `kubernetes/apps/default/atuin`     | Small app: internal route, VolSync-backed PVC, no secrets                                   |
+| `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                                        |
+| `kubernetes/apps/default/resolute`  | ExternalSecret, SOPS-encrypted config Secret, ServiceMonitor, CronJob, single-writer SQLite |
+| `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service           |
 
 ## Step 0: Pick the chart
 
@@ -43,7 +45,9 @@ Confirm with the user anything not already given:
 5. **Secrets**: an ExternalSecret sourced from 1Password. Get the exact item
    and field names; never guess them.
 6. **Config files**: mounted config uses `configMapGenerator` plus a
-   `resources/` directory (see resolute).
+   `resources/` directory (see recyclarr). Config carrying household identity
+   or other sensitive values goes into a SOPS-encrypted Secret instead (see
+   resolute's `secret.sops.yaml`).
 7. **Dependencies**: other Flux Kustomizations this app needs (`dependsOn`).
 
 ## Step 2: Create the files
@@ -72,17 +76,9 @@ Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
 
 ### app/kustomization.yaml
 
-Copy atuin's. Resources are listed alphabetically. With config files, add the
-generator (see resolute):
-
-```yaml
-configMapGenerator:
-    - name: <app>-config
-      files:
-          - ./resources/<file>
-generatorOptions:
-    disableNameSuffixHash: true
-```
+Copy atuin's. Resources are listed alphabetically. With config files, copy
+recyclarr's `configMapGenerator` block (name `<app>-configmap`, one entry per
+`resources/` file, `disableNameSuffixHash: true`).
 
 ### app/ocirepository.yaml
 
@@ -112,6 +108,9 @@ Copy atuin's and adapt. Invariants to keep:
 - Route hostnames use `"{{ .Release.Name }}.${SECRET_DOMAIN}"`; never hardcode
   the domain. Public routes get a Gatus endpoint annotation (see plex).
 - VolSync persistence mounts `existingClaim: "{{ .Release.Name }}"`.
+- Config files mount as `type: configMap` with
+  `name: "{{ .Release.Name }}-configmap"` (see recyclarr); SOPS-encrypted
+  config mounts as `type: secret` (see resolute).
 - Secrets arrive via `envFrom` from `"{{ .Release.Name }}-secret"`, with
   `reloader.stakater.com/auto: "true"` on the controller.
 - SQLite or other single-writer apps: `replicas: 1` with
@@ -119,9 +118,11 @@ Copy atuin's and adapt. Invariants to keep:
 
 ### app/externalsecret.yaml
 
-Copy resolute's shape: `ClusterSecretStore` `onepassword-connect`, a
-`target.template.data` map from 1Password fields to the env names the app
-expects, and `dataFrom.extract` per 1Password item.
+Copy the first document in resolute's `externalsecret.yaml` (the file holds a
+second, scoped ExternalSecret for its CronJob — most apps need only one):
+`ClusterSecretStore` `onepassword-connect`, a `target.template.data` map from
+1Password fields to the env names the app expects, and `dataFrom.extract` per
+1Password item.
 
 ## Step 3: Register the app
 
