@@ -11,6 +11,8 @@ small, reviewable, and independently reconcilable.
   edits.
 - `.agents/instructions/` is reserved for narrow reusable instructions such as
   YAML ordering. Load only the files relevant to the task.
+- `.agents/skills/` holds task recipes such as `add-app`. Load a skill only
+  when performing that task.
 - `backlog.md`, if present, is scratch state.
 
 ## Before Editing
