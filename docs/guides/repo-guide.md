@@ -66,12 +66,12 @@ Workload identity defaults to `runAsUser: 1032` / `runAsGroup: 100` /
 convention. Do not change an app's identity without migrating PVC ownership in
 the same window.
 
-Most stateful apps run one replica simply because their PVC is
-`ReadWriteOnce`. A few apps are additionally single-writer by their own design
-(currently resolute, whose SQLite database allows one writer): those pin
-`replicas: 1` with `strategy: Recreate`, route writes through the one API pod,
-and must never be scaled. That constraint comes from the app, not from a
-cluster-wide rule.
+Stateful apps run a single replica (the chart default; most set no explicit
+`replicas` or `strategy`), and their `ReadWriteOnce` PVCs would not tolerate
+scaling anyway. resolute is additionally single-writer by its own design
+(SQLite allows one writer): it pins `replicas: 1` with `strategy: Recreate`,
+routes writes through the one API pod, and must never be scaled. That
+constraint comes from the app, not from a cluster-wide rule.
 
 ## App Pattern
 
