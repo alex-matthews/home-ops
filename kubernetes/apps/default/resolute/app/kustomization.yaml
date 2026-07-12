@@ -6,9 +6,4 @@ resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
-configMapGenerator:
-  - name: resolute-policy
-    files:
-      - ./resources/policy.yaml
-generatorOptions:
-  disableNameSuffixHash: true
+  - ./secret.sops.yaml

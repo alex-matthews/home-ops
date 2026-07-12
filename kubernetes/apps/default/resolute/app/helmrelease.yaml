@@ -137,7 +137,7 @@ spec:
             app:
               - path: /data
       policy:
-        type: configMap
+        type: secret
         name: resolute-policy
         advancedMounts:
           resolute:
