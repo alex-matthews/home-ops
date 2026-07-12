@@ -10,8 +10,8 @@ commands. Agent behavior and change-control rules live in
   ordering.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
-- `.github/workflows/`: CI, post-merge render alarm, Renovate, Renovate PR
-  Review, and label sync.
+- `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
+  Renovate, Renovate PR Review, and Label Sync.
 - `.mise/config.toml`: repo-pinned tool versions and local environment.
 - `.renovaterc.json5`: Renovate configuration.
 - `bootstrap/`: one-time cluster bootstrap helpers.
