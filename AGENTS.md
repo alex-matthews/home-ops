@@ -40,6 +40,16 @@ small, reviewable, and independently reconcilable.
   direct-to-main edits.
 - Do not make imperative cluster fixes except for diagnostics explicitly
   requested by the user.
+- Read-only cluster inspection counts as diagnostics: `kubectl get`,
+  `describe`, `logs`, `events`, `top`, `auth can-i`, `diff`, and
+  `apply --dry-run=server`, plus the equivalent `flux`, `helm`, and `talosctl`
+  read commands.
+- Treat every mutating cluster command as an imperative fix that needs explicit
+  user approval of the exact action first: `kubectl apply`, `create`, `delete`,
+  `edit`, `patch`, `replace`, `scale`, `rollout`, `annotate`, `label`,
+  `cordon`, `drain`; `flux reconcile`, `suspend`, `resume`; `helm` install,
+  upgrade, or rollback; `talosctl` apply or upgrade; and anything else that
+  changes live state.
 - Do not edit generated outputs, rendered manifests, caches, logs, credentials,
   or local auth/session state.
 - Do not reformat SOPS-encrypted files; their encrypted document shape is
