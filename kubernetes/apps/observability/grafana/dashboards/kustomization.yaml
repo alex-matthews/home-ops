@@ -5,10 +5,14 @@ kind: Kustomization
 resources:
   - ./folders/home-ops.yaml
   - ./home-ops/home-ops-cockpit.yaml
+  - ./home-ops/resolute.yaml
 configMapGenerator:
   - name: home-ops-cockpit-dashboard
     files:
       - home-ops-cockpit.json=./home-ops/resources/home-ops-cockpit.json
+  - name: resolute-dashboard
+    files:
+      - resolute.json=./home-ops/resources/resolute.json
 generatorOptions:
   disableNameSuffixHash: true
   labels:
