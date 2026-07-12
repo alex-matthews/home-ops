@@ -15,6 +15,17 @@ conventions. When in doubt, mirror a real app instead of inventing structure:
 | `kubernetes/apps/default/resolute` | ExternalSecret, config file via `configMapGenerator`, ServiceMonitor, CronJob, single-writer SQLite |
 | `kubernetes/apps/default/plex`     | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service                   |
 
+## Step 0: Pick the chart
+
+If the app has a maintained upstream chart or a home-operations chart, use
+that chart instead of app-template: mirror an existing upstream-chart app such
+as `kubernetes/apps/default/chaski` or
+`kubernetes/apps/observability/gatus-sidecar`, follow the chart's own values
+order, and skip the app-template specifics below.
+
+The rest of this skill covers the common case for self-hosted apps: a
+container image with no maintained chart, deployed via bjw-s app-template.
+
 ## Step 1: Gather details
 
 Confirm with the user anything not already given:
@@ -86,10 +97,12 @@ Copy atuin's and adapt. Invariants to keep:
 - `spec.values` order: `controllers`, `defaultPodOptions`, `service`, `route`,
   `configMaps`, `persistence` (see
   `.agents/instructions/yaml-ordering.instructions.md`).
-- `defaultPodOptions.securityContext` for stateful apps: `runAsNonRoot: true`,
-  `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
-  `fsGroupChangePolicy: OnRootMismatch`. Do not invent new identities; see
-  `docs/operations/storage-and-backups.md` before deviating.
+- `defaultPodOptions.securityContext` for VolSync-backed apps only:
+  `runAsNonRoot: true`, `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
+  `fsGroupChangePolicy: OnRootMismatch` — the identity the Restic movers and
+  the NAS convention expect (`docs/operations/storage-and-backups.md`). Apps
+  without VolSync persistence run whatever identity their image expects; keep
+  `runAsNonRoot: true` where the image allows it.
 - Container `securityContext`: `allowPrivilegeEscalation: false`,
   `readOnlyRootFilesystem: true`, `capabilities: { drop: ["ALL"] }`. Add an
   `emptyDir` at `/tmp` if the app needs scratch space (see resolute).

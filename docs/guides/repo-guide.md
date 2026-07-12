@@ -61,10 +61,10 @@ restore-capable `dataSourceRef`, an hourly local Restic `ReplicationSource`,
 and a daily remote one. Details and restore drills live in
 [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
 
-Workload identity defaults to `runAsUser: 1032` / `runAsGroup: 100` /
-`fsGroup: 100` for app pods and their VolSync movers, matching the NAS-side
-convention. Do not change an app's identity without migrating PVC ownership in
-the same window.
+VolSync-backed apps run as `runAsUser: 1032` / `runAsGroup: 100` /
+`fsGroup: 100`, matching their Restic movers and the NAS-side convention;
+other apps run whatever identity their image expects. Do not change a
+backed-up app's identity without migrating PVC ownership in the same window.
 
 Stateful apps run a single replica (the chart default; most set no explicit
 `replicas` or `strategy`), and their `ReadWriteOnce` PVCs would not tolerate
