@@ -30,7 +30,7 @@
   "panels": [
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Must stay 0 while resolute runs in shadow mode. Any non-zero value means a write executed and needs immediate investigation. Counters reset on pod restart.",
+      "description": "Executions within the dashboard time range. Must stay 0 while resolute runs in shadow mode; any non-zero value means a write executed and needs immediate investigation. increase() absorbs counter resets from pod restarts inside the range; events before the range are not shown, so widen the range when auditing history.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -61,7 +61,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(resolute_executions_total) or vector(0)",
+          "expr": "sum(increase(resolute_executions_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
           "legendFormat": "executions",
           "refId": "A"
         }
@@ -71,7 +71,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "description": "Execution failures. Should also be 0 in shadow mode.",
+      "description": "Execution failures within the dashboard time range. Should also be 0 in shadow mode.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -102,7 +102,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(resolute_execution_failures_total) or vector(0)",
+          "expr": "sum(increase(resolute_execution_failures_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
           "legendFormat": "failures",
           "refId": "A"
         }
@@ -135,7 +135,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (resolution) (increase(resolute_decisions_total[$__range]))",
+          "expr": "sum by (resolution) (increase(resolute_decisions_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
           "legendFormat": "{{ resolution }}",
           "refId": "A"
         }
@@ -172,7 +172,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (resolution) (rate(resolute_decisions_total[$__rate_interval])) * 3600",
+          "expr": "sum by (resolution) (rate(resolute_decisions_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "{{ resolution }}",
           "refId": "A"
         }
@@ -209,25 +209,25 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(resolute_webhook_decided_total[$__rate_interval])) * 3600",
+          "expr": "sum(rate(resolute_webhook_decided_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "decided",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(resolute_webhook_unauthorized_total[$__rate_interval])) * 3600",
+          "expr": "sum(rate(resolute_webhook_unauthorized_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "unauthorized",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(resolute_webhook_skipped_total[$__rate_interval])) * 3600",
+          "expr": "sum(rate(resolute_webhook_skipped_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "skipped",
           "refId": "C"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(resolute_webhook_invalid_total[$__rate_interval])) * 3600",
+          "expr": "sum(rate(resolute_webhook_invalid_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "invalid",
           "refId": "D"
         }
