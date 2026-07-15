@@ -79,6 +79,7 @@ This inventory is derived from the currently included resources in
 | `radarr`      | yes           | yes            | yes         | yes        | Separate `radarr-cache` PVC.                                  |
 | `radarr-se`   | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
 | `recyclarr`   | yes           | yes            | no          | no         | CronJob workload; default VolSync capacity.                   |
+| `resolute`    | yes           | yes            | no          | no         | Default VolSync capacity; single-writer SQLite API.           |
 | `sabnzbd`     | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
 | `seerr`       | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
 | `sonarr`      | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
@@ -218,17 +219,18 @@ positive signal, but this cluster still needs its own restore evidence.
 
 ## Suggested Pilot
 
-Use Atuin as the first Kopiur pilot. Track the deployment in
-[Deploy atuin](https://github.com/alex-matthews/home-ops/issues/1266).
+Use Atuin as the first Kopiur pilot. Track the adoption in
+[Adopt Kopiur (#1487)](https://github.com/alex-matthews/home-ops/issues/1487).
+The Atuin app rollout and its client/workstation setup are tracked separately
+in [Deploy atuin (#1266)](https://github.com/alex-matthews/home-ops/issues/1266);
+the server-side backup pilot needs the app and its VolSync-protected PVC
+healthy, but does not wait on workstation dotfiles integration.
 
 Atuin is a good pilot because it is useful, small, and lower-risk than the
-media-adjacent workloads. Do not add Kopiur resources for it until the Atuin app
-and VolSync-protected PVC are healthy and the client dotfiles integration is
-understood.
+media-adjacent workloads.
 
-As of 2026-06-25, the latest upstream Kopiur release is `0.4.13`. Re-check the
-chart, CRDs, and examples before the install PR because the project is still
-moving quickly.
+Re-check the current Kopiur chart, CRDs, and examples before the install PR;
+the project is still moving quickly.
 
 The first Atuin PR should stay backup-only:
 

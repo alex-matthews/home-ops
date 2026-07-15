@@ -42,14 +42,22 @@ Confirm with the user anything not already given:
 3. **Port**, and the route posture: none, internal (`envoy-internal`, the
    default), or public (`envoy-external` — public routes need explicit
    justification per `AGENTS.md`).
-4. **Persistence**: stateful apps get their PVC from the VolSync component,
-   which also wires backups and requires the Rook-Ceph dependency.
+4. **Persistence**: choose backup posture from the app's value and recovery
+   requirements, not from the presence of a PVC. Protected application state
+   (the norm in the `default` namespace) uses the VolSync component, which
+   wires backups and requires the Rook-Ceph dependency. Some persistent
+   workloads — observability data especially — intentionally use plain PVCs
+   with no VolSync; do not add VolSync coverage just because the app is
+   stateful.
 5. **Secrets**: an ExternalSecret sourced from 1Password. Get the exact item
    and field names; never guess them.
 6. **Config files**: mounted config uses `configMapGenerator` plus a
-   `resources/` directory (see recyclarr). Config carrying household identity
-   or other sensitive values goes into a SOPS-encrypted Secret instead (see
-   resolute's `secret.sops.yaml`).
+   `resources/` directory (see recyclarr). A structured config file that
+   mixes sensitive and non-sensitive content and cannot cleanly split into
+   ExternalSecret fields may be committed as a directly SOPS-encrypted Secret
+   instead (see resolute's `secret.sops.yaml`) — that is an exception, not
+   the default. Ordinary credentials always go through
+   1Password/ExternalSecret; never encrypt them directly into Git.
 7. **Dependencies**: other Flux Kustomizations this app needs (`dependsOn`).
 
 ## Step 2: Create the files

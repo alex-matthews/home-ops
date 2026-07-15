@@ -52,6 +52,14 @@ small, reviewable, and independently reconcilable.
   `cordon`, `drain`; `flux reconcile`, `suspend`, `resume`; `helm` install,
   upgrade, or rollback; `talosctl` apply or upgrade; and anything else that
   changes live state.
+- Classify `kubectl exec`, `port-forward`, `cp`, and `debug` by behavior, not
+  name. Acceptable diagnostics: exec'ing a strictly read-only command in an
+  existing pod, or a short-lived local port-forward to inspect an internal
+  endpoint. Ask first for anything that changes state: exec'ing commands that
+  write files or run repairs, `kubectl cp` into a pod, and `kubectl debug`,
+  which creates debug workloads. Copying out of a pod is state-preserving but
+  can extract data — state the reason before copying anything out, and never
+  use exec, cp, or port-forward to read or move secret material.
 - Do not edit generated outputs, rendered manifests, caches, logs, credentials,
   or local auth/session state.
 - Do not reformat SOPS-encrypted files; their encrypted document shape is
