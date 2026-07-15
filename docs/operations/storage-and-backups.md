@@ -67,9 +67,9 @@ This inventory is derived from the currently included resources in
 | App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
 | ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
 | `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `atuin`       | yes           | yes            | no          | no         | First Kopiur pilot candidate; 1Gi VolSync capacity.           |
+| `atuin`       | yes           | yes            | no          | no         | 1Gi VolSync capacity; optional Kopiur smoke test.             |
 | `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `bazarr`      | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
+| `bazarr`      | yes           | yes            | yes         | yes        | First real Kopiur pilot; NAS availability controls app scale. |
 | `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `maintainerr` | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `plex`        | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
@@ -219,42 +219,70 @@ positive signal, but this cluster still needs its own restore evidence.
 
 ## Suggested Pilot
 
-Use Atuin as the first Kopiur pilot. Track the adoption in
+Use Bazarr as the first real Kopiur pilot. Track the adoption in
 [Adopt Kopiur (#1487)](https://github.com/alex-matthews/home-ops/issues/1487).
-The Atuin app rollout and its client/workstation setup are tracked separately
-in [Deploy atuin (#1266)](https://github.com/alex-matthews/home-ops/issues/1266);
-the server-side backup pilot needs the app and its VolSync-protected PVC
-healthy, but does not wait on workstation dotfiles integration.
+Bazarr has meaningful configuration and database state while remaining
+low-consequence and reconstructable. Atuin is still suitable for an optional
+control-plane smoke test, but its PVC is not yet representative while the app
+has little workstation use. Resolute is also low-risk, but shadow-mode traffic
+currently gives it too little state and churn to prove much beyond plumbing.
 
-Atuin is a good pilot because it is useful, small, and lower-risk than the
-media-adjacent workloads.
+The install gate is a tagged Kopiur release containing the merged correctness
+fixes in [#252](https://github.com/home-operations/kopiur/pull/252) and the
+adjacent controller work in
+[#251](https://github.com/home-operations/kopiur/pull/251) and
+[#253](https://github.com/home-operations/kopiur/pull/253). Do not deploy an
+untagged `main` build. Re-check the current chart, CRDs, and examples at install
+time because the project is still moving quickly.
 
-Re-check the current Kopiur chart, CRDs, and examples before the install PR;
-the project is still moving quickly.
-
-The first Atuin PR should stay backup-only:
+The first pilot PR should stay backup-only:
 
 - Install Kopiur in a dedicated operator namespace with cluster scope only if
   `ClusterRepository` is used.
-- Decide the repository backend and ExternalSecret shape before adding any
-  repository CR.
-- Keep VolSync Restic enabled and do not change the existing `atuin` PVC,
+- Use a new dedicated Synology NFS path as the first local repository. This is
+  an experiment that isolates Kopiur evaluation from deploying another storage
+  service; it does not select inline NFS as the production backend.
+- Keep VolSync Restic enabled and do not change the existing `bazarr` PVC,
   `dataSourceRef`, storage class, app UID/GID, or restore wiring.
-- Add only a `SnapshotPolicy` and `SnapshotSchedule` for the existing `atuin`
+- Add only a `SnapshotPolicy` and `SnapshotSchedule` for the existing `bazarr`
   PVC after the repository is ready.
 - If using a shared `ClusterRepository`, enable credential projection only with
-  all three gates present: chart RBAC, repository owner allow, and Atuin consumer
+  all three gates present: chart RBAC, repository owner allow, and Bazarr consumer
   opt-in.
-- Prove a non-empty snapshot and a restore into a temporary PVC before any app
-  cutover work.
+- Prove two snapshots, including one after a verified application-generated
+  change, then restore into a temporary PVC before any app cutover work.
+
+Inline NFS is intentionally provisional. [Kopia warns](https://kopia.io/docs/advanced/consistency/)
+that network filesystems may not provide the required crash and partition
+consistency, while introducing Garage would add a separate service and metadata
+lifecycle to the first test.
+After the local proof, compare inline NFS with Garage S3 using the measured
+maintenance and restore evidence before selecting the wider local-backup shape.
+
+After the local gate passes, add Cloudflare R2 as an independently initialized
+repository with its own snapshot and maintenance path. Do not make the first
+pilot depend on `RepositoryReplication`; reconsider replication later after its
+recent correctness work has had more use and the independent local/remote model
+has restore evidence.
+
+Bazarr is large enough to validate a real application restore but too small to
+stress the spinning-disk NAS. If backend performance is still uncertain, use a
+separate throwaway PVC with a mixed synthetic dataset for that test. Keep it
+outside the Bazarr application resources so synthetic load cannot be mistaken
+for protected app state.
 
 Pilot success means:
 
 - The existing Restic backup remains untouched.
-- A Kopiur-managed Kopia backup completes to the selected local target.
-- Kopiur maintenance completes and reports useful status.
-- A restore into a temporary PVC completes.
-- The same pattern works against the remote object-storage target.
+- Initial and changed-data Kopiur snapshots complete to the local target, and a
+  second low-change snapshot demonstrates expected deduplication behavior.
+- Quick and full maintenance complete with observable status, recorded runtime,
+  and no unacceptable interference with media workloads.
+- A restore into a temporary PVC preserves expected ownership and files, and
+  the restored Bazarr database passes an integrity check.
+- An independent R2 snapshot, maintenance run, and temporary restore complete.
+- If used, the synthetic test records snapshot and maintenance duration, data
+  shape, repository growth, and NAS impact separately from the app test.
 - Rollback is simply deleting the pilot Kopia resources.
 
 App cutover should not proceed until a Kopiur snapshot for that app has
