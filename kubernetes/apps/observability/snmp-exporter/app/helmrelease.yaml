@@ -11,6 +11,22 @@ spec:
   interval: 1h
   values:
     fullnameOverride: *app
+    config: |-
+      auths:
+        synology_v3:
+          version: 3
+          security_level: authPriv
+          username: ${SNMP_USERNAME}
+          password: ${SNMP_AUTH_PASSWORD}
+          auth_protocol: SHA
+          priv_protocol: AES
+          priv_password: ${SNMP_PRIV_PASSWORD}
+    extraArgs:
+      - --config.file=/etc/snmp_exporter/snmp.yml
+      - --config.expand-environment-variables
+    envFrom:
+      - secretRef:
+          name: snmp-exporter-secret
     serviceMonitor:
       enabled: true
       params:
@@ -19,7 +35,7 @@ spec:
             - synology
           target: nas.internal
           auth:
-            - public_v2
+            - synology_v3
       scrapeTimeout: 10s
       relabelings:
         - sourceLabels:
