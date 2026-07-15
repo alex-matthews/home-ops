@@ -29,7 +29,7 @@
   "links": [],
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
       "description": "Executions within the dashboard time range. Must stay 0 while resolute runs in shadow mode; any non-zero value means a write executed and needs immediate investigation. increase() absorbs counter resets from pod restarts inside the range; events before the range are not shown, so widen the range when auditing history.",
       "fieldConfig": {
         "defaults": {
@@ -60,9 +60,11 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(increase(resolute_executions_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
+          "expr": "sum(increase(resolute_executions_total{job=\"resolute\", namespace=\"default\"}[$__range])) or vector(0)",
+          "instant": true,
           "legendFormat": "executions",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -70,7 +72,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
       "description": "Execution failures within the dashboard time range. Should also be 0 in shadow mode.",
       "fieldConfig": {
         "defaults": {
@@ -101,9 +103,11 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(increase(resolute_execution_failures_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
+          "expr": "sum(increase(resolute_execution_failures_total{job=\"resolute\", namespace=\"default\"}[$__range])) or vector(0)",
+          "instant": true,
           "legendFormat": "failures",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -111,7 +115,7 @@
       "type": "stat"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
       "description": "Decision mix over the dashboard time range. The core shadow-mode signal: how often the engine picks 2160p, 1080p, or lands in the ambiguous band.",
       "fieldConfig": {
         "defaults": {
@@ -134,9 +138,11 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum by (resolution) (increase(resolute_decisions_total{job=\"resolute\", namespace=\"default\"}[$__range]))",
+          "instant": true,
           "legendFormat": "{{ resolution }}",
+          "range": false,
           "refId": "A"
         }
       ],
@@ -144,7 +150,7 @@
       "type": "piechart"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
       "description": "Decisions per hour by resolution. Counters are in-memory and reset on pod restart; rate() handles the resets.",
       "fieldConfig": {
         "defaults": {
@@ -171,7 +177,7 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum by (resolution) (rate(resolute_decisions_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "{{ resolution }}",
           "refId": "A"
@@ -181,7 +187,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
       "description": "Webhook outcomes per hour. Unauthorized, invalid, and skipped should stay near 0; sustained non-zero values point at Seerr webhook config or auth drift.",
       "fieldConfig": {
         "defaults": {
@@ -208,25 +214,25 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum(rate(resolute_webhook_decided_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "decided",
           "refId": "A"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum(rate(resolute_webhook_unauthorized_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "unauthorized",
           "refId": "B"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum(rate(resolute_webhook_skipped_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "skipped",
           "refId": "C"
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "$${DS_PROMETHEUS}" },
           "expr": "sum(rate(resolute_webhook_invalid_total{job=\"resolute\", namespace=\"default\"}[$__rate_interval])) * 3600",
           "legendFormat": "invalid",
           "refId": "D"
