@@ -109,7 +109,8 @@ cluster:
     {% endif %}
   clusterName: main
   controlPlane:
-    endpoint: https://192.168.1.200:6443
+    # k8s.internal is manually maintained on the router.
+    endpoint: https://k8s.internal:6443
   discovery:
     enabled: true
     registries:
