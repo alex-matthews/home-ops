@@ -74,6 +74,8 @@ metadata:
   name: kube-api
   annotations:
     lbipam.cilium.io/ips: 192.168.1.200
+  labels:
+    load-balancer-ip-pool: legacy
 spec:
   type: LoadBalancer
   selector:
