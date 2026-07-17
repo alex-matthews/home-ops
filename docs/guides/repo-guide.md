@@ -192,6 +192,13 @@ directory when possible:
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 ```
 
+## Issue and PR Writing
+
+When referencing an issue or PR in another repository, use backlink-safe link
+forms so this public repository does not emit cross-reference events into
+upstream timelines. See
+[`../../.agents/instructions/github-linking.instructions.md`](../../.agents/instructions/github-linking.instructions.md).
+
 ## Tooling Boundaries
 
 CI runs tools directly. Do not route everything through `just`.
