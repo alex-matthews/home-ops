@@ -23,8 +23,6 @@ spec:
               memory: 2Gi
       envoyService:
         externalTrafficPolicy: Cluster
-        labels:
-          load-balancer-ip-pool: services
   shutdown:
     drainTimeout: 180s
   telemetry:

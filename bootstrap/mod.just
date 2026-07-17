@@ -33,6 +33,8 @@ k8s:
         sleep 5
     done
 
+# The final kubeconfig targets the stable DNS endpoint, whose LoadBalancer VIP
+# only exists after Flux reconciles the Cilium networking app on a rebuild.
 [private]
 kubeconfig lb="cilium":
     just log info "Running stage..." "stage" "{{ recipe_name() }}"
