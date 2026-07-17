@@ -6,9 +6,6 @@ machine:
     {% if ENV.CONTROLPLANE %}
     key: op://kubernetes/talos/MACHINE_CA_KEY
     {% endif %}
-  certSANs:
-    - 127.0.0.1
-    - 192.168.1.200
   features:
     apidCheckExtKeyUsage: true
     diskQuotaSupport: true
@@ -140,9 +137,9 @@ cluster:
       kind: Policy
       rules:
         - level: Metadata
+    # Only the stable DNS identity is configured; Talos adds node/localhost
+    # SANs by default. Direct VIP-by-IP TLS is intentionally unsupported.
     certSANs:
-      - 127.0.0.1
-      - 192.168.1.200
       - k8s.internal
     disablePodSecurityPolicy: true
     extraArgs:
