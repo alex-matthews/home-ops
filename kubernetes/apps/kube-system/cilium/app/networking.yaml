@@ -2,18 +2,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumLoadBalancerIPPool
 metadata:
-  name: pool
-spec:
-  allowFirstLastIPs: "No"
-  blocks:
-    - cidr: 192.168.1.0/24
-  serviceSelector:
-    matchLabels:
-      load-balancer-ip-pool: legacy
----
-apiVersion: cilium.io/v2
-kind: CiliumLoadBalancerIPPool
-metadata:
   name: services
 spec:
   blocks:
@@ -22,23 +10,6 @@ spec:
   serviceSelector:
     matchLabels:
       load-balancer-ip-pool: services
----
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: l2-policy
-spec:
-  loadBalancerIPs: true
-  # NOTE: interfaces might need to be set if you have more than one active NIC on your hosts
-  # interfaces:
-  #   - ^eno[0-9]+
-  #   - ^eth[0-9]+
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/os: linux
-  serviceSelector:
-    matchLabels:
-      load-balancer-ip-pool: legacy
 ---
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
