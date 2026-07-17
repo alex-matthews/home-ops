@@ -7,9 +7,6 @@ spec:
   blocks:
     - start: 192.168.96.200
       stop: 192.168.96.254
-  serviceSelector:
-    matchLabels:
-      load-balancer-ip-pool: services
 ---
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
@@ -60,11 +57,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kube-api-services
+  name: kube-api
   annotations:
     lbipam.cilium.io/ips: 192.168.96.200
-  labels:
-    load-balancer-ip-pool: services
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
