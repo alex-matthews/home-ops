@@ -24,7 +24,7 @@ spec:
       envoyService:
         externalTrafficPolicy: Cluster
         labels:
-          load-balancer-ip-pool: legacy
+          load-balancer-ip-pool: services
   shutdown:
     drainTimeout: 180s
   telemetry:
@@ -62,7 +62,7 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: *hostname
-      lbipam.cilium.io/ips: 192.168.1.202
+      lbipam.cilium.io/ips: 192.168.96.202
   listeners:
     - name: http
       protocol: HTTP
@@ -99,7 +99,7 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: *hostname
-      lbipam.cilium.io/ips: 192.168.1.201
+      lbipam.cilium.io/ips: 192.168.96.201
   listeners:
     - name: http
       protocol: HTTP
