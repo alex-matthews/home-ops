@@ -71,8 +71,6 @@ spec:
         type: LoadBalancer
         annotations:
           lbipam.cilium.io/ips: 192.168.96.203
-        labels:
-          load-balancer-ip-pool: services
         ports:
           http:
             port: *port
