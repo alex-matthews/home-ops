@@ -6,8 +6,8 @@ commands. Agent behavior and change-control rules live in
 
 ## Layout
 
-- `.agents/instructions/`: narrow reusable agent instructions, currently YAML
-  ordering.
+- `.agents/instructions/`: narrow reusable agent instructions such as YAML
+  ordering and GitHub linking.
 - `.agents/skills/`: task recipes, currently `add-app`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
@@ -191,6 +191,13 @@ directory when possible:
 ```sh
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 ```
+
+## Issue and PR Writing
+
+When referencing an issue or PR in another repository, use backlink-safe link
+forms so this public repository does not emit cross-reference events into
+upstream timelines. See
+[`../../.agents/instructions/github-linking.instructions.md`](../../.agents/instructions/github-linking.instructions.md).
 
 ## Tooling Boundaries
 
