@@ -6,8 +6,8 @@ commands. Agent behavior and change-control rules live in
 
 ## Layout
 
-- `.agents/instructions/`: narrow reusable agent instructions, currently YAML
-  ordering.
+- `.agents/instructions/`: narrow reusable agent instructions such as YAML
+  ordering and GitHub linking.
 - `.agents/skills/`: task recipes, currently `add-app`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
