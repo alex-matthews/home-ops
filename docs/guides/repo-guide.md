@@ -8,7 +8,7 @@ commands. Agent behavior and change-control rules live in
 
 - `.agents/instructions/`: narrow reusable agent instructions such as YAML
   ordering and GitHub linking.
-- `.agents/skills/`: task recipes, currently `add-app`.
+- `.agents/skills/`: task recipes such as `add-app` and `audit-findings`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
 - `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
@@ -136,8 +136,9 @@ Treat these as high-risk:
 - `ExternalSecret` names, target secret names, and template keys.
 - PVC names, storage classes, access modes, and `dataSourceRef` fields.
 - VolSync `ReplicationSource` and `ReplicationDestination` objects.
-- Planned Kopiur repository, policy, schedule, restore, and PVC populator
-  wiring.
+- Kopiur repository, policy, schedule, restore, and PVC populator wiring
+  (pilot live under `kubernetes/apps/default/bazarr/backup/` and
+  `kubernetes/apps/kopiur-system/`).
 - Backup retention, schedule, copy method, repository secret, and restore wiring.
 - Rook-Ceph, Cilium, Flux, External Secrets, and cert-manager CRDs.
 - Namespace names and app names used by Flux, HelmRelease, alerts, dashboards, or
@@ -212,7 +213,10 @@ local/operator tooling rather than rendered cluster state.
 The `Render` workflow is a GitHub-hosted post-merge alarm, not a required pull
 request check. It runs Flate on `main` after changes under `kubernetes/` so
 merge trains can stay lightweight while the applied branch still gets rendered.
-Konflate remains the pull request render and diff gate.
+Konflate remains the pull request render and diff gate. Render's failures are
+silent unless watched, and post-merge breakage also surfaces through Flux
+alerts to Alertmanager; whether Render stays is tracked in
+[#1560](https://github.com/alex-matthews/home-ops/issues/1560).
 
 ### Bypass Merges
 
@@ -232,6 +236,11 @@ For workflow or Renovate configuration changes, also run the formatting and
 workflow checks from the validation section. In the PR or merge note, record why
 the bypass was needed and which local commands passed. After merging, watch the
 GitHub-hosted `Render` alarm and Flux reconciliation for the merged revision.
+
+Docs-only direct-to-main commits (allowed for low-risk changes with explicit
+approval, per AGENTS.md) also bypass the required checks. They need only
+`oxfmt --check` locally and no cluster validation, matching the docs-only
+change heuristic; note the bypass in the commit or the session record.
 
 `mise` owns the repo-local environment and toolchain contract. Use it for
 environment variables, project-specific tool installation, and reproducible
