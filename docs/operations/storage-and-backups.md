@@ -336,6 +336,22 @@ succeeded with non-zero file content. The expected cutover shape is:
 4. Confirm the restored PVC contents.
 5. Scale the app back up.
 
+## Kopiur Known Quirks
+
+Observed on 0.7.5 during the pilot rollout (2026-07-18); re-test on upgrades
+and file upstream if still present when it next bites:
+
+- A `Repository` whose bootstrap Job has exhausted `backoffLimit` goes
+  `Stalled` and is not retried when the spec changes, even though the operator
+  observes the new generation — the exhausted Job object (deterministic name
+  `<repo>-bootstrap`) blocks it. Recovery: fix the cause, then
+  `kubectl delete job <repo>-bootstrap` in the repository's namespace; the
+  next reconcile recreates the Job with the current spec.
+- Related root cause to know: repository-level movers (bootstrap, maintenance)
+  take their identity from `Repository.spec.moverDefaults.securityContext`,
+  not from any `SnapshotPolicy` — leave it unset and they run as UID 65532,
+  which a UID-owned NFS export will refuse.
+
 ## Validation Commands
 
 Useful read-only checks:
