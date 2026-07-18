@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kopiur
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kopiur
+  interval: 1h
+  values:
+    # Pilot install (#1487): defaults only, least privilege. installScope stays
+    # "cluster" (chart default) so CRs in workload namespaces reconcile, but the
+    # secrets-write feature flags (credentialProjection, kopiaUi) remain off —
+    # the pilot uses a namespaced Repository, so no projection is needed.
+    monitoring:
+      serviceMonitor:
+        enabled: true
+      prometheusRule:
+        enabled: true

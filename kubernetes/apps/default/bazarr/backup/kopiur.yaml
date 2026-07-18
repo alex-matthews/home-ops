@@ -1,0 +1,56 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/repository_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Repository
+metadata:
+  name: kopiur-pilot
+spec:
+  # Dedicated Synology NFS export for the pilot only (#1487). This does not
+  # select inline NFS as the production backend; see
+  # docs/operations/storage-and-backups.md.
+  backend:
+    filesystem:
+      path: /repo
+      volume:
+        nfs:
+          server: nas.internal
+          path: /volume1/kopiur-pilot
+  encryption:
+    passwordSecretRef:
+      name: kopiur-pilot-secret
+      key: KOPIA_PASSWORD
+  create:
+    enabled: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: bazarr
+spec:
+  repository:
+    name: kopiur-pilot
+  sources:
+    - pvc:
+        name: bazarr
+  retention:
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    # Match bazarr's defaultPodOptions so the mover can read the app's files.
+    securityContext:
+      runAsUser: 1032
+      runAsGroup: 100
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: bazarr
+spec:
+  policyRef:
+    name: bazarr
+  schedule:
+    cron: "H 2 * * *"
+    jitter: 30m
+    runOnCreate: false
