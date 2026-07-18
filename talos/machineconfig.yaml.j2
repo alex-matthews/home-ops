@@ -192,23 +192,6 @@ cluster:
   serviceAccount:
     key: op://kubernetes/talos/CLUSTER_SERVICEACCOUNT_KEY
   {% endif %}
-# ---
-# apiVersion: v1alpha1
-# kind: VolumeConfig
-# name: EPHEMERAL
-# provisioning:
-#   diskSelector:
-#     match: system_disk
-#   maxSize: 200GiB
-# ---
-# apiVersion: v1alpha1
-# kind: UserVolumeConfig
-# name: local-hostpath
-# provisioning:
-#   diskSelector:
-#     match: system_disk
-#   minSize: 200GiB
-#   grow: true
 ---
 apiVersion: v1alpha1
 kind: WatchdogTimerConfig
