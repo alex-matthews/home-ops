@@ -36,6 +36,12 @@ metadata:
 spec:
   repository:
     name: kopiur-pilot
+  # Pilot-term guard: 0.7.5 predates upstream's mass-deletion protection
+  # (home-operations/kopiur#265), so CR deletion — including a Flux prune —
+  # would cascade-delete repo snapshots. Retain breaks repo-side GFS pruning
+  # (CRs are pruned, kopia snapshots accumulate), acceptable at pilot scale.
+  # Revisit on the first release containing #265.
+  defaultDeletionPolicy: Retain
   sources:
     - pvc:
         name: bazarr
