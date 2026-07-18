@@ -21,6 +21,12 @@ spec:
       key: KOPIA_PASSWORD
   create:
     enabled: true
+  moverDefaults:
+    # Bootstrap and maintenance movers run against the NFS export, which is
+    # owned 1032:100 with mode 770 — the mover default UID (65532) is denied.
+    securityContext:
+      runAsUser: 1032
+      runAsGroup: 100
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
