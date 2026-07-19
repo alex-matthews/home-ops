@@ -20,7 +20,8 @@ spec:
             env:
               ATUIN_HOST: 0.0.0.0
               ATUIN_PORT: &port 80
-              ATUIN_OPEN_REGISTRATION: "true"
+              # New users require deliberately re-enabling registration through GitOps.
+              ATUIN_OPEN_REGISTRATION: "false"
               ATUIN_DB_URI: sqlite:///config/atuin.db
               TZ: Pacific/Auckland
             args:
@@ -65,6 +66,13 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
+        annotations:
+          gatus.home-operations.com/enabled: "true"
+          gatus.home-operations.com/endpoint: |-
+            name: atuin-health
+            group: services
+            url: http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc/healthz
+            conditions: ["[STATUS] == 200"]
         ports:
           http:
             port: *port
