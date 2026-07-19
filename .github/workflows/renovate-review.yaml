@@ -142,7 +142,7 @@ jobs:
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
           review_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.json"
-          prior_review_meta="${RUNNER_TEMP}/renovate-review-prior-reviews.json"
+          prior_comment_meta="${RUNNER_TEMP}/renovate-review-prior-comments.json"
 
           head_sha="$(jq -r '.head.sha' "${review_meta}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
@@ -178,30 +178,24 @@ jobs:
           echo "started_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
           echo "::notice::Prepared Renovate review key policy=${policy_version} head=${head_sha} pr_patch=${pr_patch_id} fingerprint=${fingerprint}"
 
-          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" --paginate > "${prior_review_meta}"
+          gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+            --jq 'add' > "${prior_comment_meta}"
 
-          latest_review="$(
+          latest_comment="$(
             jq -c '
               [
                 .[]
                 | select(.user.login == "claude[bot]")
                 | select(.body != null and (.body | contains("home-ops-renovate-research")))
               ]
-              | sort_by(.submitted_at)
+              | sort_by(.created_at)
               | last // {}
-            ' "${prior_review_meta}"
+            ' "${prior_comment_meta}"
           )"
 
-          previous_review_commit="$(jq -r '.commit_id // ""' <<< "${latest_review}")"
-
-          if [ "${FORCE_REVIEW}" != "true" ] && [ "${previous_review_commit}" = "${head_sha}" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate PR review; current head ${head_sha} already has a Claude review marker"
-            exit 0
-          fi
-
           previous_fingerprint="$(
-            jq -r '.body // ""' <<< "${latest_review}" |
+            jq -r '.body // ""' <<< "${latest_comment}" |
               grep -Eo 'home-ops-renovate-research fingerprint:[0-9a-f]+' |
               tail -n 1 |
               sed 's/.*fingerprint://'
@@ -209,7 +203,7 @@ jobs:
 
           if [ "${FORCE_REVIEW}" != "true" ] && [ -n "${previous_fingerprint}" ] && [ "${previous_fingerprint}" = "${fingerprint}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Renovate PR review; review key ${fingerprint} was already reviewed"
+            echo "::notice::Skipping Renovate PR review; review key ${fingerprint} was already commented"
             exit 0
           fi
 
@@ -237,12 +231,12 @@ jobs:
           allowed_bots: "bot-ler[bot]"
           claude_args: |
             --model ${{ vars.CLAUDE_RENOVATE_REVIEW_MODEL || 'claude-sonnet-5' }}
-            --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr review:*),Bash(gh api:*),Bash(gh release view:*),Bash(gh release list:*),Bash(git log:*),Bash(git diff:*),WebFetch,WebSearch"
+            --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh pr comment:*),Bash(gh api:*),Bash(gh release view:*),Bash(gh release list:*),Bash(git log:*),Bash(git diff:*),WebFetch,WebSearch"
           prompt: |
             You research same-repository Renovate pull requests in this Flux
-            GitOps repository and submit exactly one advisory GitHub PR review
-            comment. Do not modify files, push commits, approve, or request
-            changes. The review is advisory, not a merge gate.
+            GitOps repository and submit exactly one advisory top-level GitHub
+            PR comment. Do not modify files, push commits, approve, or request
+            changes. The comment is advisory, not a merge gate.
 
             REPO: ${{ github.repository }}
             PR: #${{ env.PR_NUMBER }}
@@ -250,7 +244,7 @@ jobs:
             Force re-review requested: ${{ env.FORCE_REVIEW }}
             Follow this prompt, then `AGENTS.md`, `docs/guides/repo-guide.md`,
             and only relevant `.agents/instructions/`. Preflight already chose
-            this PR; do not duplicate-skip or stop because an older review exists.
+            this PR; do not duplicate-skip or stop because an older comment exists.
             Review contract:
             - Read `gh pr view` and `gh pr diff`. For each upgraded artifact,
               note old/new version, update type, touched file, wrapper type
@@ -269,7 +263,7 @@ jobs:
               Do not fetch, link, name, or quote the interactive Konflate UI,
               configured hostnames, or raw non-GitHub URLs.
               Do not repeat Konflate resource/app/CRD counts anywhere in the
-              review body; summarize only cautions or repo impact.
+              comment body; summarize only cautions or repo impact.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -298,8 +292,8 @@ jobs:
             what you checked and what remains unverified. Do not invent notes or
             infer safety from "patch release" for CRDs, webhooks, storage, RBAC,
             routes, auth, or security context.
-            Submit exactly one `gh pr review --comment`, never approve or request
-            changes. Use one recommendation: Safe to merge | Human review
+            Submit exactly one `gh pr comment`, never approve or request changes.
+            Use one recommendation: Safe to merge | Human review
             recommended | Changes recommended before merge. Use High confidence
             only when Konflate and upstream/local-impact evidence cover the
             changed risk surfaces; use Low when material evidence is unavailable.
@@ -392,42 +386,40 @@ jobs:
           fi
 
           marker="<!-- home-ops-renovate-research -->"
-          reviews_json="${RUNNER_TEMP}/renovate-research-reviews.json"
-          review=""
+          comments_json="${RUNNER_TEMP}/renovate-research-comments.json"
+          comment=""
 
           for attempt in 1 2 3 4 5 6; do
-            gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/reviews" > "${reviews_json}"
+            gh api --paginate --slurp \
+              "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+              --jq 'add' > "${comments_json}"
 
-            review="$(
-              jq -c --arg head "${HEAD_SHA}" --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
+            comment="$(
+              jq -c --arg fingerprint "fingerprint:${FINGERPRINT}" --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
                 [
                   .[]
                   | select(.user.login == "claude[bot]")
-                  | select(.commit_id == $head)
                   | select(.body != null and (.body | contains($marker)))
-                  | select(.submitted_at >= $started)
+                  | select(.body | contains($fingerprint))
+                  | select(.created_at >= $started)
                 ]
                 | last // empty
-              ' "${reviews_json}"
+              ' "${comments_json}"
             )"
 
-            if [ -n "${review}" ]; then
+            if [ -n "${comment}" ]; then
               break
             fi
 
             if [ "${attempt}" -lt 6 ]; then
-              echo "::notice::Fresh review not visible yet; retrying (${attempt}/6)"
+              echo "::notice::Fresh comment not visible yet; retrying (${attempt}/6)"
               sleep 5
             fi
           done
 
-          if [ -z "${review}" ]; then
-            echo "::error::No fresh claude[bot] review on ${HEAD_SHA} with marker ${marker}"
+          if [ -z "${comment}" ]; then
+            echo "::error::No fresh claude[bot] comment for review key ${FINGERPRINT} with marker ${marker}"
             exit 1
           fi
 
-          if [[ "$(jq -r '.body' <<< "${review}")" != *"fingerprint:${FINGERPRINT}"* ]]; then
-            echo "::notice::Fresh review lacks the exact fingerprint marker; accepting the base marker on the current head"
-          fi
-
-          echo "Verified fresh claude[bot] review on ${HEAD_SHA} at $(jq -r '.submitted_at' <<< "${review}")."
+          echo "Verified fresh claude[bot] comment for ${HEAD_SHA} at $(jq -r '.created_at' <<< "${comment}")."
