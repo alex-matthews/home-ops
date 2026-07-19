@@ -66,13 +66,6 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
     service:
       app:
-        annotations:
-          gatus.home-operations.com/enabled: "true"
-          gatus.home-operations.com/endpoint: |-
-            name: atuin-health
-            group: services
-            url: http://{{ .Release.Name }}.{{ .Release.Namespace }}.svc/healthz
-            conditions: ["[STATUS] == 200"]
         ports:
           http:
             port: *port
