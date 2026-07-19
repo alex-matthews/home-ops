@@ -21,6 +21,11 @@ spec:
       key: KOPIA_PASSWORD
   create:
     enabled: true
+  # Inherited by every schedule consumer (backup cron, maintenance,
+  # verification); without it crons compute in UTC, putting the "02:00 backup"
+  # and daily full maintenance in the mid-afternoon busy window.
+  scheduleDefaults:
+    timezone: Pacific/Auckland
   moverDefaults:
     # Bootstrap and maintenance movers run against the NFS export, which is
     # owned 1032:100 with mode 770 — the mover default UID (65532) is denied.
