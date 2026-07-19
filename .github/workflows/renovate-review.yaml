@@ -179,8 +179,8 @@ jobs:
           echo "::notice::Prepared Renovate review key policy=${policy_version} head=${head_sha} pr_patch=${pr_patch_id} fingerprint=${fingerprint}"
 
           gh api --paginate --slurp \
-            "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
-            --jq 'add' > "${prior_comment_meta}"
+            "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" |
+            jq 'add' > "${prior_comment_meta}"
 
           latest_comment="$(
             jq -c '
@@ -391,8 +391,8 @@ jobs:
 
           for attempt in 1 2 3 4 5 6; do
             gh api --paginate --slurp \
-              "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
-              --jq 'add' > "${comments_json}"
+              "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" |
+              jq 'add' > "${comments_json}"
 
             comment="$(
               jq -c --arg fingerprint "fingerprint:${FINGERPRINT}" --arg marker "${marker}" --arg started "${REVIEW_STARTED_AT}" '
