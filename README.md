@@ -137,10 +137,6 @@ diagnostics, Talos operations, and VolSync restore helpers.
   cluster-health triage loop.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
   current backup posture and backup migration criteria.
-- [Appliance TLS](docs/operations/appliance-tls.md) covers certificate renewal
-  and replacement for the LAN-only management UIs.
-- [Talos Access and Break-Glass](docs/operations/talos-access-and-break-glass.md)
-  records supported API identities and recovery access paths.
 
 ## Thanks
 
