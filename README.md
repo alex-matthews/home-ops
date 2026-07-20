@@ -46,7 +46,8 @@ applied by Flux.
   [1Password Connect](https://1password.com/)
 - Storage: [Rook-Ceph](https://github.com/rook/rook),
   [OpenEBS](https://github.com/openebs/openebs), and Synology NFS
-- Backups: [VolSync](https://github.com/backube/volsync)
+- Backups: [VolSync](https://github.com/backube/volsync), with
+  [Kopiur](https://github.com/home-operations/kopiur) adoption in progress
 - Observability:
   [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
   [Grafana](https://github.com/grafana/grafana), and
