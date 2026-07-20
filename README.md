@@ -46,7 +46,8 @@ applied by Flux.
   [1Password Connect](https://1password.com/)
 - Storage: [Rook-Ceph](https://github.com/rook/rook),
   [OpenEBS](https://github.com/openebs/openebs), and Synology NFS
-- Backups: [VolSync](https://github.com/backube/volsync)
+- Backups: [VolSync](https://github.com/backube/volsync), with
+  [Kopiur](https://github.com/home-operations/kopiur) adoption in progress
 - Observability:
   [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
   [Grafana](https://github.com/grafana/grafana), and
@@ -136,6 +137,10 @@ diagnostics, Talos operations, and VolSync restore helpers.
   cluster-health triage loop.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
   current backup posture and backup migration criteria.
+- [Appliance TLS](docs/operations/appliance-tls.md) covers certificate renewal
+  and replacement for the LAN-only management UIs.
+- [Talos Access and Break-Glass](docs/operations/talos-access-and-break-glass.md)
+  records supported API identities and recovery access paths.
 
 ## Thanks
 
