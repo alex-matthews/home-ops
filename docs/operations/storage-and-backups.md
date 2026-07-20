@@ -260,8 +260,11 @@ Inline NFS is intentionally provisional. [Kopia warns](https://kopia.io/docs/adv
 that network filesystems may not provide the required crash and partition
 consistency, while introducing Garage would add a separate service and metadata
 lifecycle to the first test.
-After the local proof, compare inline NFS with Garage S3 using the measured
-maintenance and restore evidence before selecting the wider local-backup shape.
+The local-backend comparison is decided:
+[ADR-0002](../adr/0002-kopiur-backup-storage-shape.md) selects S3 served by
+Garage on the NAS over inline NFS, based on the pilot and synthetic-load
+evidence (restore-scale NFS reads made the NFS daemon unresponsive and
+triggered the zeroscaler guardrail).
 
 ### Remote R2 Posture
 
@@ -278,31 +281,14 @@ Kopiur supports two valid off-site shapes:
   cost of a second backup pipeline, duplicate source work, and another
   maintenance lifecycle.
 
-The recommended initial remote posture, after the local snapshot, maintenance,
-and restore gates pass, is `RepositoryReplication` to R2 with
-`deleteExtra: false`. This is the safer initial deletion posture:
-destination-only blobs are retained rather than pruned when they disappear from
-the source. Tune parallelism only after measuring the initial seed, and prove
-the destination by attaching it as a recovery repository and restoring into a
-temporary PVC. A successful replication status alone is not restore evidence.
-See the
-[Kopiur replication](https://github.com/home-operations/kopiur/blob/main/docs/replication.md)
-and [Kopia synchronization](https://kopia.io/docs/advanced/synchronization/)
-semantics.
-
-After repeated snapshots, maintenance runs, replications, and direct R2 restores,
-choose the long-term posture:
-
-- Keep additive replication when its growth and restore performance are
-  acceptable. This remains the default recommendation.
-- Consider `deleteExtra: true` only if an exact, compact mirror is worth allowing
-  source-side deletions to prune R2 on the next sync.
-- Use an independent R2 repository instead when isolation from local repository
-  corruption or maintenance errors is more important than the extra jobs,
-  PVC reads, repository state, and maintenance.
-
-This remote choice is separate from the later inline-NFS-versus-Garage decision
-for the local repository.
+The remote shape is decided:
+[ADR-0002](../adr/0002-kopiur-backup-storage-shape.md) selects an independent
+R2 repository with its own schedule and retention; `RepositoryReplication` is
+not used (it cannot filter snapshots, shares the local corruption domain, and
+its sync reads the local repository). The restore-from-R2 proof — attaching
+the R2 repository and restoring into a temporary PVC — is part of the first
+production app's acceptance criteria. A successful backup status alone is not
+restore evidence.
 
 Bazarr is large enough to validate a real application restore but too small to
 stress the spinning-disk NAS. If backend performance is still uncertain, use a
@@ -319,10 +305,9 @@ Pilot success means:
   and no unacceptable interference with media workloads.
 - A restore into a temporary PVC preserves expected ownership and files, and
   the restored Bazarr database passes an integrity check.
-- `RepositoryReplication` completes to R2 with `deleteExtra: false`, reports
-  useful status, and has measured initial-seed and incremental runtimes.
-- The R2 destination is attached as a recovery repository and completes a
-  temporary-PVC restore; replication status alone does not satisfy this gate.
+- The R2 gates originally defined here (replication seed and recovery restore)
+  are superseded by [ADR-0002](../adr/0002-kopiur-backup-storage-shape.md);
+  the restore-from-R2 proof moves to the first production app's acceptance.
 - If used, the synthetic test records snapshot and maintenance duration, data
   shape, repository growth, and NAS impact separately from the app test.
 - Rollback is simply deleting the pilot Kopia resources.
