@@ -21,8 +21,6 @@ spec:
               kind: CustomResourceDefinition
               version: v1
   values:
-    controller:
+    monitoring:
       serviceMonitor:
-        create: true
-    webhook:
-      enabled: false
+        enabled: true
