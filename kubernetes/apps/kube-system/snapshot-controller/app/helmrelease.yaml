@@ -9,9 +9,20 @@ spec:
     kind: OCIRepository
     name: snapshot-controller
   interval: 1h
+  postRenderers:
+    - kustomize:
+        patches:
+          - patch: |-
+              - op: add
+                path: /metadata/annotations/helm.sh~1resource-policy
+                value: keep
+            target:
+              group: apiextensions.k8s.io
+              kind: CustomResourceDefinition
+              version: v1
   values:
     controller:
       serviceMonitor:
         create: true
     webhook:
-      enabled: true
+      enabled: false
