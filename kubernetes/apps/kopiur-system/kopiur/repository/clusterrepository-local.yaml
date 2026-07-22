@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/clusterrepository_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: ClusterRepository
+metadata:
+  name: local
+spec:
+  # Production local backend per ADR-0002: Garage S3 on the NAS, so backup IO
+  # never traverses nfsd (the nfs_probe/zeroscaler guardrail path).
+  allowedNamespaces:
+    list:
+      - default
+  backend:
+    s3:
+      auth:
+        secretRef:
+          name: kopiur-local-secret
+          namespace: kopiur-system
+      bucket: kopiur
+      endpoint: garage.internal:3900
+      region: garage
+      tls:
+        disableTls: true
+  create:
+    enabled: true
+  deletionProtection:
+    threshold: 10
+  encryption:
+    passwordSecretRef:
+      name: kopiur-local-secret
+      namespace: kopiur-system
+      key: KOPIA_PASSWORD
+  maintenance:
+    schedule:
+      # Full maintenance out of the H 3 remote-snapshot window; quick keeps
+      # the 6-hourly default.
+      full:
+        cron: "H 4 * * *"
+  scheduleDefaults:
+    timezone: Pacific/Auckland
