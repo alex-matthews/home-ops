@@ -5,7 +5,7 @@ metadata:
   name: hermes-config
 data:
   config.yaml: |
-    _config_version: 32
+    _config_version: 33
     providers:
       litellm:
         name: LiteLLM
@@ -41,6 +41,8 @@ data:
       restart_drain_timeout: 60
       api_max_retries: 2
       reasoning_effort: medium
+    approvals:
+      mode: manual
     streaming:
       enabled: false
     skills:
