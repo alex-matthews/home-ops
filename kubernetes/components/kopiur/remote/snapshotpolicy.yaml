@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: "${APP}-remote"
+spec:
+  repository:
+    kind: ClusterRepository
+    name: remote
+  sources:
+    - pvc:
+        name: "${APP}"
+  # Explicit rather than defaulted: the upstream default shifted once already
+  # (Direct -> Snapshot) and this field decides whether the app PVC is read
+  # live or from a CSI snapshot.
+  copyMethod: Snapshot
+  volumeSnapshotClassName: "${KOPIUR_SNAPSHOTCLASS:=csi-ceph-blockpool}"
+  compression:
+    compressor: zstd
+  # Leaner GFS than local: the independent cadence and retention is the point
+  # of ADR-0002's remote shape.
+  retention:
+    keepDaily: 7
+    keepWeekly: 4
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: ${KOPIUR_PUID:=1032}
+      runAsGroup: ${KOPIUR_PGID:=100}
+    cache:
+      capacity: "${KOPIUR_REMOTE_CACHE_CAPACITY:=2Gi}"
+      mode: Persistent
+      storageClassName: ceph-block
