@@ -337,13 +337,16 @@ and file upstream if still present when it next bites:
   not from any `SnapshotPolicy` — leave it unset and they run as UID 65532,
   which a UID-owned NFS export will refuse.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule` (including via Flux prune)
-  under the default `deletionPolicy: Delete` cascades into one delete Job per
-  retained snapshot and purges the repository (community report: 600–700 pods
-  from one accidental deletion). Upstream mass-deletion protection merged in
-  home-operations/kopiur#265 the day after 0.7.5 tagged; until a release
-  contains it, the pilot policy sets `defaultDeletionPolicy: Retain` and
-  accepts that repo-side GFS pruning is disabled (CRs prune; kopia snapshots
-  accumulate). Flip back to `Delete` when upgrading past #265.
+  no longer purges the repository as of kopiur 0.8.0: policy/schedule deletion
+  cascades only to the `Snapshot` CRs (`spec.deletion.onPolicyDelete` /
+  `onScheduleDelete`, default `Retain` — kopia data preserved), and repo-side
+  deletions route through the mass-deletion circuit breaker
+  (`Repository.spec.deletionProtection.threshold`, default 10). The pilot's
+  interim `defaultDeletionPolicy: Retain` guard from the 0.7.5 era is retired;
+  produced snapshots default to `Delete`, so GFS retention prunes repo-side
+  again. Kopia snapshots orphaned during the Retain era are re-adopted as
+  managed CRs (`origin: adopted`) via the 0.8.0 catalog scan and then age out
+  under normal retention.
 
 ## Validation Commands
 
