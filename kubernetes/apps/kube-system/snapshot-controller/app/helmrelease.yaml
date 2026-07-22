@@ -21,7 +21,9 @@ spec:
               kind: CustomResourceDefinition
               version: v1
   values:
-    replicaCount: 2
-    monitoring:
+    controller:
+      replicaCount: 2
       serviceMonitor:
-        enabled: true
+        create: true
+    webhook:
+      enabled: false
