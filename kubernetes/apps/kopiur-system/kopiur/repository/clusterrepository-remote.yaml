@@ -31,7 +31,11 @@ spec:
       key: KOPIA_PASSWORD
   maintenance:
     schedule:
-      # Staggered after the local repository's full run (H 4).
+      # Both blocks are required once schedule is set; quick reproduces the
+      # operator default, full staggers after the local repository's (H 4).
+      quick:
+        cron: "0 */6 * * *"
+        jitter: 30m
       full:
         cron: "H 5 * * *"
   scheduleDefaults:

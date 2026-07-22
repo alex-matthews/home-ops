@@ -32,8 +32,11 @@ spec:
       key: KOPIA_PASSWORD
   maintenance:
     schedule:
-      # Full maintenance out of the H 3 remote-snapshot window; quick keeps
-      # the 6-hourly default.
+      # Both blocks are required once schedule is set; quick reproduces the
+      # operator default, full moves out of the H 3 remote-snapshot window.
+      quick:
+        cron: "0 */6 * * *"
+        jitter: 30m
       full:
         cron: "H 4 * * *"
   scheduleDefaults:
