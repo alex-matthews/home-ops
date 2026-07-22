@@ -7,9 +7,12 @@ metadata:
 spec:
   # Production local backend per ADR-0002: Garage S3 on the NAS, so backup IO
   # never traverses nfsd (the nfs_probe/zeroscaler guardrail path).
+  # kopiur-system must be allowed: the managed Maintenance CR lands in the
+  # operator namespace, and the allowlist gates it too.
   allowedNamespaces:
     list:
       - default
+      - kopiur-system
   backend:
     s3:
       auth:
