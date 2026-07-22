@@ -8,9 +8,12 @@ spec:
   # Independent R2 repository per ADR-0002: own credentials, encryption
   # password, cadence, retention, and maintenance — no RepositoryReplication,
   # no shared corruption domain with the local repository.
+  # kopiur-system must be allowed: the managed Maintenance CR lands in the
+  # operator namespace, and the allowlist gates it too.
   allowedNamespaces:
     list:
       - default
+      - kopiur-system
   backend:
     s3:
       auth:
