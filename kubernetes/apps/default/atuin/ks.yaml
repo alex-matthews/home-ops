@@ -6,6 +6,8 @@ metadata:
   name: atuin
 spec:
   components:
+    - ../../../../components/kopiur/local
+    - ../../../../components/kopiur/remote
     - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster

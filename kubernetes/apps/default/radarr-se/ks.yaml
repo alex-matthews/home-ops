@@ -6,6 +6,8 @@ metadata:
   name: radarr-se
 spec:
   components:
+    - ../../../../components/kopiur/local
+    - ../../../../components/kopiur/remote
     - ../../../../components/volsync
     - ../../../../components/zeroscaler
   dependsOn:
