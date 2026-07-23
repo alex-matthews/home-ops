@@ -6,6 +6,8 @@ metadata:
   name: qui
 spec:
   components:
+    - ../../../../components/kopiur/local
+    - ../../../../components/kopiur/remote
     - ../../../../components/volsync
     - ../../../../components/zeroscaler
   dependsOn:
