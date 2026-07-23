@@ -6,3 +6,4 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./restore-drill.yaml
+  - ./restore-drill-remote.yaml
