@@ -67,6 +67,13 @@
       minimumGroupSize: 2,
     },
     {
+      description: "Normalise Flux Operator Group version titles",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/flux-operator/", "/flux-instance/"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
+    },
+    {
       description: "Kubernetes Group",
       groupName: "kubernetes",
       matchDatasources: ["docker"],
