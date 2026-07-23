@@ -336,6 +336,15 @@ and file upstream if still present when it next bites:
   take their identity from `Repository.spec.moverDefaults.securityContext`,
   not from any `SnapshotPolicy` — leave it unset and they run as UID 65532,
   which a UID-owned NFS export will refuse.
+- On 0.8.0, `Maintenance` CR status is unreliable even though maintenance
+  itself runs correctly: `nextScheduledAt` is documented but never written,
+  `lastHandledAt` is skipped for successful runs (`lastRunAt` advances first
+  and the next reconcile returns before stamping the completed Job), and
+  `consecutiveFailures` has no maintenance-controller writer. Verify
+  maintenance outcomes from the mover Job history and metrics, not from the
+  `Maintenance` CR status. Still present on upstream `main` as of
+  2026-07-23; report upstream rather than working around it in manifests —
+  controller-owned status is not GitOps-writable.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule` (including via Flux prune)
   no longer purges the repository as of kopiur 0.8.0: policy/schedule deletion
   cascades only to the `Snapshot` CRs (`spec.deletion.onPolicyDelete` /
