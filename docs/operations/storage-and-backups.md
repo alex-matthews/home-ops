@@ -1,15 +1,19 @@
 # Storage and Backups
 
-This document captures the current storage and backup posture and the selected
-direction for a future Kopiur migration. It is intentionally short-lived and
-practical: update it when backup topology changes, after restore drills, or when
-the migration criteria change.
+This document captures the current storage and backup posture and the phased
+Kopiur rollout. It is intentionally practical: update it when backup topology
+changes, after restore drills, or when the migration criteria change.
 
 ## Current Posture
 
 Persistent application data primarily lives on Rook-Ceph `ceph-block` PVCs.
 Selected media-adjacent workloads also mount Synology NAS storage over NFS at
 runtime. VolSync currently protects app PVCs with Restic.
+
+Bazarr is the first production-acceptance app for Kopiur. It additionally has
+hourly snapshots to a local Garage S3 repository and daily snapshots to an
+independent R2 repository. VolSync remains enabled and retains the existing PVC
+and restore wiring while Kopiur completes fleet acceptance.
 
 The shared VolSync component creates three things for each participating app:
 
@@ -18,7 +22,7 @@ The shared VolSync component creates three things for each participating app:
 - A remote Restic `ReplicationSource` scheduled daily against the R2 secret
   template.
 
-The remote target is intentional. Any future Kopia design must preserve both a
+The independent remote target is intentional. The rollout preserves both a
 local target for fast restores and a remote object-storage target for disaster
 recovery.
 
@@ -67,9 +71,9 @@ This inventory is derived from the currently included resources in
 | App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
 | ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
 | `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `atuin`       | yes           | yes            | no          | no         | 1Gi VolSync capacity; optional Kopiur smoke test.             |
+| `atuin`       | yes           | yes            | no          | no         | 1Gi VolSync capacity.                                         |
 | `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `bazarr`      | yes           | yes            | yes         | yes        | First real Kopiur pilot; NAS availability controls app scale. |
+| `bazarr`      | yes           | yes            | yes         | yes        | Kopiur local + remote acceptance; VolSync remains enabled.    |
 | `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `maintainerr` | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `plex`        | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
@@ -87,9 +91,9 @@ This inventory is derived from the currently included resources in
 | `thelounge`   | yes           | yes            | no          | no         | Check SQLite message history before Kopiur.                   |
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
-backup mover job by itself. If a future local Kopia target uses NFS only inside
-backup jobs, protect that path with backup scheduling, alerts, restore tests, and
-maintenance monitoring rather than by scaling unrelated app workloads.
+backup mover job by itself. Kopiur's production local path deliberately uses
+Garage S3 rather than inline NFS so backup and restore IO does not pass through
+the NFS daemon. Do not route that traffic back through NFS.
 
 A more conservative future policy is possible: apply zeroscaler to every
 VolSync/Kopiur-backed Deployment, even if the app does not currently mount NAS
@@ -175,27 +179,30 @@ observable from the cluster.
 
 ## Migration Decision
 
-VolSync Restic remains the working backup system. Do not migrate to
-VolSync-Kopia as an intermediate step.
+VolSync Restic remains the working backup and restore system. Kopiur is deployed
+for Bazarr production acceptance alongside it; do not migrate to VolSync-Kopia
+as an intermediate step.
 
-The selected Kopia-backed migration path is Kopiur, after it has proved itself
-enough for this cluster:
+The selected rollout is:
 
-1. Keep VolSync Restic as the production backup system.
-2. Test-deploy Kopiur without disturbing existing Restic backups.
-3. Prove a local backup and restore on one low-risk PVC.
-4. Prove a remote object-storage target for the same pilot.
-5. Verify Kopiur maintenance behavior, status, alerts, and failure modes.
-6. Wait for the project to mature enough, with peer testing considered useful
-   evidence but not a substitute for local restore tests.
-7. Expand only after local and remote maintenance and restore behavior are
-   acceptable.
+1. Keep VolSync and its PVC/populator wiring unchanged throughout Kopiur
+   enablement and soak.
+2. Use Garage S3 as the local Kopiur repository and an independent R2
+   repository, with separate credentials, encryption, schedules, retention,
+   and maintenance.
+3. Require Bazarr to prove scheduled snapshots, quick and full maintenance on
+   both repositories, and successful restores from both backends without
+   disturbing NFS-dependent workloads.
+4. After Bazarr acceptance, enable snapshot-only Kopiur components for the
+   remaining apps in one additive fleet PR. Hashed schedules stagger the load;
+   VolSync remains the rollback path.
+5. Require a seven-day fleet soak and two non-Bazarr restore drills before
+   opening a separate VolSync retirement decision.
 
-Kopiur adoption should follow the deploy-or-restore model used by current peer
-testing: install the operator and repository first, add a reusable app component
-for SnapshotPolicy, SnapshotSchedule, PVC, and Restore resources, then migrate
-apps one at a time. A bound PVC's `dataSourceRef` is immutable, so app migration
-is a deliberate cutover rather than an in-place mutation.
+Kopiur enablement adds `SnapshotPolicy` and `SnapshotSchedule` resources only;
+it does not replace existing PVCs or restore wiring. A bound PVC's
+`dataSourceRef` is immutable, so any later VolSync retirement remains a
+deliberate per-app cutover rather than an in-place mutation.
 
 ### Why Not VolSync-Kopia
 
@@ -210,107 +217,59 @@ matures, rather than adopting a transitional backup implementation.
 
 ### Why Kopiur
 
-Kopiur is the selected candidate because it is Kopia-native rather than a
+Kopiur is the selected implementation because it is Kopia-native rather than a
 retrofit into VolSync's Restic-shaped model. Its design direction better matches
 the desired end state: repository resources, separate backup configs and
 schedules, restore resources, multiple backends including S3-compatible object
 storage, and first-class maintenance.
 
-It is still not the primary backup system. Do not make it production until the
-cluster has local and remote pilot backups, maintenance runs, restore tests, and
-acceptable operational behavior. Peer testing in other home-ops clusters is a
-positive signal, but this cluster still needs its own restore evidence.
+Kopiur is not yet the sole backup system. Local evidence now includes both
+production backends, maintenance, and restore tests; peer testing remains
+useful supporting evidence rather than a substitute for those local results.
 
-## Suggested Pilot
+## Bazarr Production Acceptance
 
-Use Bazarr as the first real Kopiur pilot. Track the adoption in
+Track the rollout in
 [Adopt Kopiur (#1487)](https://github.com/alex-matthews/home-ops/issues/1487).
-Bazarr has meaningful configuration and database state while remaining
-low-consequence and reconstructable. Atuin is still suitable for an optional
-control-plane smoke test, but its PVC is not yet representative while the app
-has little workstation use. Resolute is also low-risk, but shadow-mode traffic
-currently gives it too little state and churn to prove much beyond plumbing.
+Bazarr is the first production-acceptance app because it has meaningful
+configuration and database state while remaining reconstructable.
 
-The install gate is a tagged Kopiur release containing the merged correctness
-fixes in [#252](https://github.com/home-operations/kopiur/pull/252) and the
-adjacent controller work in
-[#251](https://github.com/home-operations/kopiur/pull/251) and
-[#253](https://github.com/home-operations/kopiur/pull/253). Do not deploy an
-untagged `main` build. Re-check the current chart, CRDs, and examples at install
-time because the project is still moving quickly.
+The production shape follows
+[ADR-0002](../adr/0002-kopiur-backup-storage-shape.md):
 
-The first pilot PR should stay backup-only:
+- The local repository is S3 served by Garage on the NAS. Kopiur traffic does
+  not pass through the NFS daemon.
+- The remote repository is independent R2 with its own encryption password,
+  schedule, retention, and maintenance. `RepositoryReplication` is not used.
+- VolSync remains enabled and continues to own the existing PVC and restore
+  wiring.
 
-- Install Kopiur in a dedicated operator namespace with cluster scope only if
-  `ClusterRepository` is used.
-- Use a new dedicated Synology NFS path as the first local repository. This is
-  an experiment that isolates Kopiur evaluation from deploying another storage
-  service; it does not select inline NFS as the production backend.
-- Keep VolSync Restic enabled and do not change the existing `bazarr` PVC,
-  `dataSourceRef`, storage class, app UID/GID, or restore wiring.
-- Add only a `SnapshotPolicy` and `SnapshotSchedule` for the existing `bazarr`
-  PVC after the repository is ready.
-- If using a shared `ClusterRepository`, enable credential projection only with
-  all three gates present: chart RBAC, repository owner allow, and Bazarr consumer
-  opt-in.
-- Prove two snapshots, including one after a verified application-generated
-  change, then restore into a temporary PVC before any app cutover work.
+Both production restore paths have been proven through temporary GitOps
+resources. Garage and R2 each restored the latest Bazarr snapshot into an
+isolated `ceph-block` PVC; each result contained the expected 21 files with
+ownership `1032:100`, and the restored SQLite database passed
+`PRAGMA integrity_check`. The restore drills ran during Plex playback:
+`nfs_probe` stayed healthy and no zeroscaler event occurred. The R2 drill's full
+HPA window showed all eight NAS-dependent apps at one replica. The temporary
+Restore, PVC, and validation Job resources were pruned after the evidence was
+collected.
 
-Inline NFS is intentionally provisional. [Kopia warns](https://kopia.io/docs/advanced/consistency/)
-that network filesystems may not provide the required crash and partition
-consistency, while introducing Garage would add a separate service and metadata
-lifecycle to the first test.
-The local-backend comparison is decided:
-[ADR-0002](../adr/0002-kopiur-backup-storage-shape.md) selects S3 served by
-Garage on the NAS over inline NFS, based on the pilot and synthetic-load
-evidence (restore-scale NFS reads made the NFS daemon unresponsive and
-triggered the zeroscaler guardrail).
+Quick and full maintenance have also completed successfully on both
+repositories. Because Kopiur 0.8.0 does not reliably populate the Maintenance
+status fields, use retained mover Job history and metrics as the evidence.
 
-### Remote R2 Posture
+Phase 2 is accepted. No additional Bazarr R2 run is required: the scheduled R2
+write, direct R2 restore, maintenance evidence, and service-isolation test cover
+the distinct failure modes. Repetition moves into Phase 3 while VolSync remains
+available.
 
-Kopiur supports two valid off-site shapes:
-
-- `RepositoryReplication` copies the local repository's encrypted blobs to R2.
-  It avoids a second PVC snapshot and chunking pass, shares the source repository
-  format and encryption password, and produces a restore-ready mirror. Its main
-  cost is shared fate: corruption or a destructive source operation may be
-  propagated depending on sync settings.
-- An independent R2 repository snapshots the PVC separately and has its own
-  repository format, password, retention, and maintenance. It provides stronger
-  isolation from local-repository corruption or maintenance mistakes, at the
-  cost of a second backup pipeline, duplicate source work, and another
-  maintenance lifecycle.
-
-The remote shape is decided:
-[ADR-0002](../adr/0002-kopiur-backup-storage-shape.md) selects an independent
-R2 repository with its own schedule and retention; `RepositoryReplication` is
-not used (it cannot filter snapshots, shares the local corruption domain, and
-its sync reads the local repository). The restore-from-R2 proof — attaching
-the R2 repository and restoring into a temporary PVC — is part of the first
-production app's acceptance criteria. A successful backup status alone is not
-restore evidence.
-
-Bazarr is large enough to validate a real application restore but too small to
-stress the spinning-disk NAS. If backend performance is still uncertain, use a
-separate throwaway PVC with a mixed synthetic dataset for that test. Keep it
-outside the Bazarr application resources so synthetic load cannot be mistaken
-for protected app state.
-
-Pilot success means:
-
-- The existing Restic backup remains untouched.
-- Initial and changed-data Kopiur snapshots complete to the local target, and a
-  second low-change snapshot demonstrates expected deduplication behavior.
-- Quick and full maintenance complete with observable status, recorded runtime,
-  and no unacceptable interference with media workloads.
-- A restore into a temporary PVC preserves expected ownership and files, and
-  the restored Bazarr database passes an integrity check.
-- The R2 gates originally defined here (replication seed and recovery restore)
-  are superseded by [ADR-0002](../adr/0002-kopiur-backup-storage-shape.md);
-  the restore-from-R2 proof moves to the first production app's acceptance.
-- If used, the synthetic test records snapshot and maintenance duration, data
-  shape, repository growth, and NAS impact separately from the app test.
-- Rollback is simply deleting the pilot Kopia resources.
+Phase 3 adds snapshot-only Kopiur components across the remaining apps while
+leaving VolSync untouched. Fleet acceptance requires seven consecutive green
+days, including initial seeds and later incrementals, successful quick and full
+maintenance, no NFS-probe or zeroscaler events, and two non-Bazarr restore
+drills—one Garage and one R2. Review remote-storage usage and cluster
+snapshot/Job load at the end. Seven green days permit a separate VolSync
+retirement decision; they do not automatically remove VolSync.
 
 App cutover should not proceed until a Kopiur snapshot for that app has
 succeeded with non-zero file content. The expected cutover shape is:
@@ -323,8 +282,8 @@ succeeded with non-zero file content. The expected cutover shape is:
 
 ## Kopiur Known Quirks
 
-Observed on 0.7.5 during the pilot rollout (2026-07-18); re-test on upgrades
-and file upstream if still present when it next bites:
+Observed during the 0.7.5 pilot and 0.8.0 production acceptance; re-test on
+upgrades and file upstream if still present when it next bites:
 
 - A `Repository` whose bootstrap Job has exhausted `backoffLimit` goes
   `Stalled` and is not retried when the spec changes, even though the operator
@@ -363,6 +322,8 @@ Useful read-only checks:
 
 ```sh
 kubectl get replicationsource,replicationdestination -A
+kubectl get clusterrepository,snapshotpolicy,snapshotschedule,snapshot -A
+kubectl -n kopiur-system get maintenance,job
 kubectl get persistentvolumeclaim -A
 kubectl -n default get hpa
 kubectl -n observability get probe nfs -o yaml
@@ -380,7 +341,7 @@ Render checks for future manifest changes:
 
 ```sh
 kubectl kustomize kubernetes/apps/default
-flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
+mise exec -- flate test all
 ```
 
 ## References
