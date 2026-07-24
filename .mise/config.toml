@@ -21,7 +21,7 @@ kustomize = "5.8.1"
 lefthook = "2.1.10"
 oxfmt = "0.60.0"
 sops = "3.13.3"
-talosctl = "1.13.6"
+talosctl = "1.13.7"
 zizmor = "1.28.0"
 
 [hooks]
