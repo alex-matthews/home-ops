@@ -412,6 +412,11 @@ succeeded with non-zero file content. The expected cutover shape is:
 8. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
 
+Tuppr deliberately blocks Talos and Kubernetes upgrades while any Kopiur
+Restore is `Resolving` or `Restoring`. Expect that guardrail to hold throughout
+PVC population; do not override it or interpret the blocked upgrade as a
+cutover failure.
+
 After the fleet cutover, update the custom `home-ops-cockpit` Grafana
 dashboard. Its Backups stat, dashboard link, and backup branch in Attention
 detail currently use only VolSync metrics. During the rollback overlap, add
