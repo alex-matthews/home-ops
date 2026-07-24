@@ -20,6 +20,7 @@ spec:
           pluginConfig:
             - name: DefaultEvictor
               args:
+                nodeFit: true
                 podProtections:
                   defaultDisabled:
                     - FailedBarePods
@@ -27,16 +28,18 @@ spec:
                     - SystemCriticalPods
             - name: LowNodeUtilization
               args:
+                evictionLimits:
+                  node: 5
                 metricsUtilization:
                   source: KubernetesMetrics
                 thresholds:
                   cpu: 20
                   memory: 20
-                  pods: 20
+                  pods: 35
                 targetThresholds:
                   cpu: 50
                   memory: 50
-                  pods: 50
+                  pods: 45
             - name: RemoveFailedPods
               args:
                 reasons:
