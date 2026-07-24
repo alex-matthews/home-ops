@@ -8,19 +8,25 @@ changes, after restore drills, or when the migration criteria change.
 
 Persistent application data primarily lives on Rook-Ceph `ceph-block` PVCs.
 Selected media-adjacent workloads also mount Synology NAS storage over NFS at
-runtime. VolSync currently protects app PVCs with Restic.
+runtime. Kopiur supplies the passive Restore population path for protected
+application PVCs. VolSync continues to protect them with Restic backups during
+the rollback window.
 
-All 19 protected application PVCs additionally have hourly Kopiur snapshots to
-the local Garage S3 repository and daily snapshots to the independent R2
-repository. VolSync remains enabled and retains the existing PVC and restore
-wiring until the separately approved fleet cutover.
+All 19 protected application PVCs have hourly Kopiur snapshots to the local
+Garage S3 repository and daily snapshots to the independent R2 repository.
+VolSync remains enabled for local and remote backups until the clean-cluster
+rebuild and application verification pass.
 
-The shared VolSync component creates three things for each participating app:
+During the rollback window, `volsync/backup` keeps two Restic backup paths and
+their credential templates for each protected app:
 
 - A local Restic `ReplicationSource` scheduled hourly.
-- A local Restic `ReplicationDestination` used by restore workflows.
 - A remote Restic `ReplicationSource` scheduled daily against the R2 secret
   template.
+
+The VolSync local restore component and remote override remain in Git for
+rollback and disaster recovery, but they are not composed into the live
+cutover state.
 
 The independent remote target is intentional. The rollout preserves both a
 local target for fast restores and a remote object-storage target for disaster
@@ -37,10 +43,10 @@ restores, keep three identities separate:
 - the NAS/export identity: the UID/GID or server-side mapping used by NFS paths
   when the app or backup repository touches Synology storage.
 
-The current default for VolSync-backed apps is `1032:100` for both the app pod
-and the VolSync Restic movers. This matches the NAS-side `docker` convention and
-keeps most single-app PVC backup and restore paths unprivileged in principle.
-It is this cluster's convention, not a Kopiur requirement.
+The current default for protected apps is `1032:100` for the app pod, Kopiur
+movers, and VolSync Restic movers. This matches the NAS-side `docker` convention
+and keeps most single-app PVC backup and restore paths unprivileged in
+principle. It is this cluster's convention, not a Kopiur requirement.
 
 The `default` namespace currently allows VolSync privileged movers. Treat that
 as a compatibility escape hatch, not the normal permission model. For a
@@ -54,10 +60,11 @@ the NAS expects, or use a deliberate shared group/server-side remap. If a future
 Kopia repository uses NFS, repository write permissions are a separate problem
 from source PVC read permissions.
 
-Before migrating any app to Kopiur, verify the actual numeric ownership and file
-modes on the PVC. Kopiur movers are separate pods too; every app needs an
-explicit mover identity decision before trusting a snapshot. For apps already
-aligned to `1032:100`, that can be inheritance or an explicit matching context.
+Before adding an app to this protected set or changing its mover identity,
+verify the actual numeric ownership and file modes on the PVC. Kopiur movers
+are separate pods too; every app needs an explicit mover identity decision
+before trusting a snapshot. For apps already aligned to `1032:100`, that can be
+inheritance or an explicit matching context.
 
 Historical `1000:1000` app exceptions should not be reintroduced as manifest-only
 changes. If an app's runtime identity changes, migrate the PVC ownership in the
@@ -66,35 +73,38 @@ same maintenance window and prove the app can read and write its data afterward.
 Plex retains historical `1000:100` entries alongside newer `1032:100` entries.
 The legacy entries are group-writable, Plex runs as `1032:100`, and the remote
 restore drill normalised the restored application PVC to `1032:100`. Do not
-churn the source PVC with a pre-cutover ownership rewrite; the Kopiur restore
-produces the desired ownership naturally.
+churn the source PVC solely to normalise those historical entries; a Kopiur
+restore produces the desired ownership naturally.
 
-## Backup Inventory
+## Protected Application Inventory
 
 This inventory is derived from the currently included resources in
-`kubernetes/apps/default/kustomization.yaml`.
+`kubernetes/apps/default/kustomization.yaml`. Every row has local and remote
+Kopiur protection plus local and remote VolSync protection during the rollback
+window, so the table records only the properties that vary by app. Separately
+declared cache PVCs are runtime-only and are not backup sources.
 
-| App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
-| ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
-| `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `atuin`       | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `bazarr`      | yes           | yes            | yes         | yes        | Kopiur local + remote acceptance; VolSync remains enabled.    |
-| `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `maintainerr` | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `plex`        | yes           | yes            | yes         | yes        | Custom VolSync capacity and cache; separate `plex-cache` PVC. |
-| `prowlarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `qbittorrent` | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `qui`         | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `radarr`      | yes           | yes            | yes         | yes        | Separate `radarr-cache` PVC.                                  |
-| `radarr-se`   | yes           | yes            | yes         | yes        | Separate `radarr-se-cache` PVC.                               |
-| `recyclarr`   | yes           | yes            | no          | no         | CronJob workload; default VolSync capacity.                   |
-| `resolute`    | yes           | yes            | no          | no         | Default VolSync capacity; single-writer SQLite API.           |
-| `sabnzbd`     | yes           | yes            | yes         | yes        | NAS availability controls app scale.                          |
-| `seerr`       | yes           | yes            | no          | no         | Separate `seerr-cache` PVC.                                   |
-| `sonarr`      | yes           | yes            | yes         | yes        | Separate `sonarr-cache` PVC.                                  |
-| `tautulli`    | yes           | yes            | no          | no         | Separate `tautulli-cache` PVC.                                |
-| `thelounge`   | yes           | yes            | no          | no         | Check SQLite message history before Kopiur.                   |
+| App           | App PVC | Runtime NAS | Zeroscaler | Other state or constraint          |
+| ------------- | ------- | ----------- | ---------- | ---------------------------------- |
+| `agregarr`    | 5Gi     | no          | no         | —                                  |
+| `atuin`       | 5Gi     | no          | no         | —                                  |
+| `autobrr`     | 5Gi     | no          | no         | —                                  |
+| `bazarr`      | 5Gi     | yes         | yes        | —                                  |
+| `brrpolice`   | 5Gi     | no          | no         | —                                  |
+| `maintainerr` | 5Gi     | no          | no         | —                                  |
+| `plex`        | 50Gi    | yes         | yes        | `plex-cache` 75Gi runtime PVC      |
+| `prowlarr`    | 5Gi     | no          | no         | —                                  |
+| `qbittorrent` | 5Gi     | yes         | yes        | —                                  |
+| `qui`         | 5Gi     | yes         | yes        | —                                  |
+| `radarr`      | 5Gi     | yes         | yes        | `radarr-cache` 10Gi runtime PVC    |
+| `radarr-se`   | 5Gi     | yes         | yes        | `radarr-se-cache` 10Gi runtime PVC |
+| `recyclarr`   | 5Gi     | no          | no         | CronJob                            |
+| `resolute`    | 5Gi     | no          | no         | Single-writer SQLite API           |
+| `sabnzbd`     | 5Gi     | yes         | yes        | —                                  |
+| `seerr`       | 5Gi     | no          | no         | `seerr-cache` 15Gi runtime PVC     |
+| `sonarr`      | 5Gi     | yes         | yes        | `sonarr-cache` 10Gi runtime PVC    |
+| `tautulli`    | 5Gi     | no          | no         | `tautulli-cache` 15Gi runtime PVC  |
+| `thelounge`   | 5Gi     | no          | no         | —                                  |
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover job by itself. Kopiur's production local path deliberately uses
@@ -108,10 +118,11 @@ availability posture and handle non-Deployment workloads separately.
 
 ## Intentional Non-Coverage
 
-The inventory above is scoped to the `default` namespace application PVCs.
-Observability PVCs such as Prometheus, Alertmanager, Grafana, Gatus sidecar, and
-Victoria Logs are intentionally not VolSync-backed. Losing them loses telemetry
-history or non-declarative UI changes, not the Git source of truth.
+The inventory above is scoped to the protected `default` namespace application
+PVCs. Observability PVCs such as Prometheus, Alertmanager, Grafana, Gatus
+sidecar, and Victoria Logs are intentionally outside that backup set. Losing
+them loses telemetry history or non-declarative UI changes, not the Git source
+of truth.
 
 Hermes and the AI workbench are intentionally lightweight and stateless. The
 Hermes home directory currently lives on `emptyDir`; do not add persistence or
@@ -120,8 +131,8 @@ explicitly worth preserving.
 
 ## PVC Lifecycle Policy
 
-VolSync-backed app PVCs are managed by the same Flux Kustomization as their app.
-They are therefore prunable when an app is deliberately removed, and that is the
+Protected app PVCs are managed by the same Flux Kustomization as their app. They
+are therefore prunable when an app is deliberately removed, and that is the
 current cleanup policy. Do not add blanket PVC prune-disable annotations without
 a specific migration reason.
 
@@ -156,15 +167,16 @@ independently selectable concerns:
   `volsync/restore` to point that same restore wiring at the existing remote
   Restic repository.
 
-The root `kopiur` component currently composes the local and remote snapshot
-concerns. The prepared `kopiur/restore` concern instead declares a passive
+The root `kopiur` component composes the local and remote snapshot concerns
+with `kopiur/restore`. The restore concern declares a passive
 `Restore` using `source.fromPolicy`, `target.populator: {}`, and
 `onMissingSnapshot: Fail`, plus the application PVC whose `dataSourceRef`
-consumes that Restore. The Restore selects offset 0, pins that snapshot for the
-life of the Restore object, and is recreated without status during a clean
-cluster bootstrap so it selects the repository's latest matching snapshot
-again. Fail-closed population is deliberate: a missing or mismatched snapshot
-must block the protected app rather than silently create blank state.
+consumes that Restore. When population starts, the mover resolves offset 0
+against the repository and does not re-resolve during that Restore. Recreating
+the Restore without status during a clean cluster bootstrap selects the
+repository's latest matching snapshot again. Fail-closed population is
+deliberate: a missing or mismatched snapshot must block the protected app
+rather than silently create blank state.
 
 The app files remain stable during cutover and rollback: every protected app
 includes one root `kopiur` line and one root `volsync` line. Only the two root
@@ -172,12 +184,12 @@ components change:
 
 | State                  | Kopiur root                    | VolSync root                            |
 | ---------------------- | ------------------------------ | --------------------------------------- |
-| Current                | `local` + `remote`             | `backup` + `restore`                    |
-| Kopiur cutover         | `local` + `remote` + `restore` | `backup`                                |
+| Pre-cutover            | `local` + `remote`             | `backup` + `restore`                    |
+| Current Kopiur cutover | `local` + `remote` + `restore` | `backup`                                |
 | VolSync local rollback | `local` + `remote`             | `backup` + `restore`                    |
 | VolSync remote DR      | `local` + `remote`             | `backup` + `restore` + `restore/remote` |
 
-The VolSync restore helper and remote override remain in Git, and both
+The VolSync local restore component and remote override remain in Git, and both
 repository credentials remain supplied by `volsync/backup` throughout the
 cutover. The remote override gives the destination a distinct
 `${APP}-r2-dst` name as well as changing its repository, so an existing
@@ -246,9 +258,10 @@ observable from the cluster.
 
 ## Migration Decision
 
-VolSync Restic remains the working backup and restore system. Kopiur is deployed
-for Bazarr production acceptance alongside it; do not migrate to VolSync-Kopia
-as an intermediate step.
+Kopiur owns backup and passive Restore population for the protected application
+fleet. VolSync Restic continues running in parallel as the rollback backup and
+retained restore path until the clean-cluster rebuild passes; do not migrate to
+VolSync-Kopia as an intermediate step.
 
 The selected rollout is:
 
@@ -278,10 +291,10 @@ The selected rollout is:
 8. Remove VolSync only after the rebuilt applications and their data pass
    verification.
 
-Kopiur enablement adds `SnapshotPolicy` and `SnapshotSchedule` resources only;
-it does not replace existing PVCs or restore wiring. A bound PVC's
-`dataSourceRef` is immutable, so any later VolSync retirement remains a
-deliberate per-app cutover rather than an in-place mutation.
+The cutover cannot mutate a bound PVC's `dataSourceRef`. It therefore requires
+stopping each workload and deliberately deleting and recreating its PVC from
+the Kopiur Restore. VolSync retirement remains separate and happens only after
+the clean-cluster rebuild and application verification pass.
 
 ### Why Not VolSync-Kopia
 
@@ -306,11 +319,11 @@ Kopiur is not yet the sole backup system. Local evidence now includes both
 production backends, maintenance, and restore tests; peer testing remains
 useful supporting evidence rather than a substitute for those local results.
 
-## Bazarr Production Acceptance
+## Kopiur Production Acceptance
 
 Track the rollout in
 [Adopt Kopiur (#1487)](https://github.com/alex-matthews/home-ops/issues/1487).
-Bazarr is the first production-acceptance app because it has meaningful
+Bazarr was the first production-acceptance app because it has meaningful
 configuration and database state while remaining reconstructable.
 
 The production shape follows
@@ -320,8 +333,8 @@ The production shape follows
   not pass through the NFS daemon.
 - The remote repository is independent R2 with its own encryption password,
   schedule, retention, and maintenance. `RepositoryReplication` is not used.
-- VolSync remains enabled and continues to own the existing PVC and restore
-  wiring.
+- During Bazarr acceptance, VolSync remained enabled and continued to own its
+  PVC and restore wiring.
 
 Both production restore paths have been proven through temporary GitOps
 resources. Garage and R2 each restored the latest Bazarr snapshot into an
@@ -376,15 +389,27 @@ App cutover should not proceed until a Kopiur snapshot for that app has
 succeeded with non-zero file content. The expected cutover shape is:
 
 1. Confirm the recorded TheLounge/Garage and Plex/R2 restore gates remain
-   applicable; rerun only if the restore shape materially changes.
+   applicable, every remote cache resize has converged, and a later remote
+   backup succeeded; rerun a drill only if the restore shape materially
+   changes.
 2. Prepare and render the fleet component switch, proving no target PVC
    capacity shrinks.
-3. In an explicitly approved window, stop the workloads and delete the old app
-   PVCs deliberately.
-4. Let Flux recreate each PVC with the Kopiur `Restore` data source.
-5. Confirm every Restore and PVC, validate application data, and start the
+3. In an explicitly approved window, stop the workloads and verify that no pod
+   mounts a target application PVC.
+4. Merge the component switch. Until the old PVCs are deleted, expect the 19
+   app Kustomizations to report apply failures for immutable `dataSourceRef`
+   changes; pruning the old ReplicationDestinations may wait for the first
+   successful apply. Treat this bounded state as expected during the window,
+   not as permission to start workloads.
+5. Delete exactly the 19 old application PVCs deliberately, then let Flux
+   recreate each PVC with the Kopiur `Restore` data source.
+6. If a Restore mover exhausts its retries, keep that workload stopped, fix the
+   cause, and delete the terminal Restore so Flux recreates it. Use the
+   per-application declarative VolSync rollback instead if recovery is not
+   prompt or trustworthy.
+7. Confirm every Restore and PVC, validate application data, and start the
    workloads.
-6. Confirm a later incremental snapshot, then run the complete
+8. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
 
 After the fleet cutover, update the custom `home-ops-cockpit` Grafana
@@ -447,20 +472,29 @@ Useful read-only checks:
 
 ```sh
 kubectl get replicationsource,replicationdestination -A
-kubectl get clusterrepository,snapshotpolicy,snapshotschedule,snapshot -A
+kubectl get clusterrepository,snapshotpolicy,snapshotschedule,snapshot,restores.kopiur.home-operations.com -A
 kubectl -n kopiur-system get maintenance,job
 kubectl get persistentvolumeclaim -A
 kubectl -n default get hpa
 kubectl -n observability get probe nfs -o yaml
-kubectl -n default get replicationdestination -o jsonpath='{range .items[*]}{.metadata.name}{" cap="}{.spec.restic.capacity}{" cache="}{.spec.restic.cacheCapacity}{" repo="}{.spec.restic.repository}{" ssa="}{.metadata.labels.kustomize\.toolkit\.fluxcd\.io/ssa}{"\n"}{end}'
 ```
 
-Current Restic snapshot and restore helpers:
+Current Restic inspection and guarded in-place restore helpers:
 
 ```sh
 just volsync list-previous default <app>
-just volsync restore default <app> 0
+just volsync list-previous default <app> remote
+just volsync restore-in-place default <app> 0
+just volsync restore-in-place default <app> 0 remote
 ```
+
+`restore-in-place` is destructive: it stops a Deployment or StatefulSet and
+overwrites its existing PVC directly. It refuses PVCs that were not populated
+by a VolSync `ReplicationDestination`, including post-cutover Kopiur PVCs. It
+is not the fleet cutover or normal rollback path. For rollback after cutover,
+recompose the retained `volsync/restore` component (and its `remote` override
+only for remote DR), then deliberately recreate the affected PVC as described
+above.
 
 Render checks for future manifest changes:
 
