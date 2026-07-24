@@ -387,6 +387,13 @@ succeeded with non-zero file content. The expected cutover shape is:
 6. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
 
+After the fleet cutover, update the custom `home-ops-cockpit` Grafana
+dashboard. Its Backups stat, dashboard link, and backup branch in Attention
+detail currently use only VolSync metrics. During the rollback overlap, add
+Kopiur health and freshness signals while retaining the VolSync signals.
+Remove the VolSync query branches only when VolSync itself is retired after
+the teardown/bootstrap gate.
+
 ## Kopiur Known Quirks
 
 Observed during the 0.7.5 pilot and 0.8.0 production acceptance; re-test on
@@ -415,6 +422,13 @@ upgrades and file upstream if still present when it next bites:
   `Restore` status with their narrow service-account permissions. Source
   resolution and restore completion still succeed. Do not widen mover RBAC
   locally to silence the warning; report it upstream and re-test on upgrade.
+- Persistent mover-cache PVCs are create-only in Kopiur 0.8.0. Changing
+  `mover.cache.capacity` affects new claims but does not update an existing
+  claim's storage request. Expand an existing cache deliberately through the
+  PVC, then expect `FileSystemResizePending` while it is idle; the next mover
+  mount completes the filesystem resize. Do not assume a Ready
+  `SnapshotPolicy` proves that an existing cache matches its configured
+  capacity.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule` (including via Flux prune)
   no longer purges the repository as of kopiur 0.8.0: policy/schedule deletion
   cascades only to the `Snapshot` CRs (`spec.deletion.onPolicyDelete` /
