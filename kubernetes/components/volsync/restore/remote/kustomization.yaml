@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: volsync.backube
+      version: v1alpha1
+      kind: ReplicationDestination
+      name: '^\$\{APP\}-dst$'
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "${APP}-r2-dst"
+      - op: replace
+        path: /spec/restic/repository
+        value: "${APP}-volsync-r2-secret"
+  - target:
+      version: v1
+      kind: PersistentVolumeClaim
+      name: '^\$\{APP\}$'
+    patch: |-
+      - op: replace
+        path: /spec/dataSourceRef/name
+        value: "${APP}-r2-dst"

@@ -17,10 +17,10 @@ spec:
     cacheAccessModes:
       - "${VOLSYNC_CACHE_ACCESSMODES:=ReadWriteOnce}"
     cacheCapacity: "${VOLSYNC_CACHE_CAPACITY:=5Gi}"
-    storageClassName: "${VOLSYNC_STORAGECLASS:=ceph-block}"
+    storageClassName: "${PVC_STORAGECLASS:=ceph-block}"
     accessModes:
-      - "${VOLSYNC_ACCESSMODES:=ReadWriteOnce}"
-    capacity: "${VOLSYNC_CAPACITY:=5Gi}"
+      - "${PVC_ACCESSMODES:=ReadWriteOnce}"
+    capacity: "${PVC_CAPACITY:=5Gi}"
     moverSecurityContext:
       runAsUser: ${VOLSYNC_PUID:=1032}
       runAsGroup: ${VOLSYNC_PGID:=100}
