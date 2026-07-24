@@ -184,6 +184,14 @@ Flux and Kubernetes rendering:
 mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 ```
 
+In this repository, the rendered `FluxInstance` pins its sync source to the
+remote `main` branch. Flate follows that source when resolving child
+Kustomization content, so a successful local run proves the committed baseline
+is renderable but can miss branch-only changes beneath those child paths.
+Do not cite it as branch-diff evidence without first proving the changed objects
+appear in its output. Use the Konflate pull-request render, or an explicitly
+branch-aware disposable render, as the authority for those changes.
+
 Image diff for Kubernetes app changes:
 
 ```sh
