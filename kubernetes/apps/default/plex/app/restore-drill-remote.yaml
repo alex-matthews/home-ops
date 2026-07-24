@@ -41,7 +41,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: plex-restore-remote-drill-validate-v2
+  name: plex-restore-remote-drill-validate-v3
 spec:
   activeDeadlineSeconds: 3600
   backoffLimit: 0
@@ -67,25 +67,24 @@ spec:
             - |
               set -eu
 
-              stats="$(
-                find /restore \( -type f -o -type l \) -printf '%U:%G %s\n' |
-                  awk '
-                    {
-                      files++
-                      bytes += $2
-                      owners[$1]++
+              find /restore \( -type f -o -type l \) -printf '%U:%G %s\n' |
+                awk '
+                  {
+                    files++
+                    bytes += $2
+                    owners[$1]++
+                  }
+                  END {
+                    printf "files=%d bytes=%.0f\n", files, bytes
+                    printf "owners=1000:100=%d,1032:100=%d\n",
+                      owners["1000:100"], owners["1032:100"]
+                    printf "unexpected_owners=%d\n",
+                      files - owners["1000:100"] - owners["1032:100"]
+                    if (files == 0 || owners["1000:100"] + owners["1032:100"] != files) {
+                      exit 1
                     }
-                    END {
-                      printf "files=%d bytes=%.0f\n", files, bytes
-                      printf "owners=1000:100=%d,1032:100=%d\n",
-                        owners["1000:100"], owners["1032:100"]
-                      if (files == 0 || owners["1000:100"] == 0 || owners["1032:100"] == 0 || owners["1000:100"] + owners["1032:100"] != files) {
-                        exit 1
-                      }
-                    }
-                  '
-              )"
-              printf '%s\n' "$${stats}"
+                  }
+                '
 
               database_dir="/restore/Plug-in Support/Databases"
               sqlite="/usr/lib/plexmediaserver/Plex SQLite"
