@@ -90,19 +90,19 @@ spec:
                     }
                   '
               )"
-              printf '%s\n' "${stats}"
+              printf '%s\n' "$${stats}"
 
               database_dir="/restore/Plug-in Support/Databases"
               sqlite="/usr/lib/plexmediaserver/Plex SQLite"
               for database in \
-                "${database_dir}/com.plexapp.plugins.library.db" \
-                "${database_dir}/com.plexapp.plugins.library.blobs.db"
+                "$${database_dir}/com.plexapp.plugins.library.db" \
+                "$${database_dir}/com.plexapp.plugins.library.blobs.db"
               do
-                if [ ! -f "${database}" ]; then
+                if [ ! -f "$${database}" ]; then
                   echo "expected Plex database is missing"
                   exit 1
                 fi
-                if [ "$("${sqlite}" "${database}" "PRAGMA integrity_check;")" != "ok" ]; then
+                if [ "$("$${sqlite}" "$${database}" "PRAGMA integrity_check;")" != "ok" ]; then
                   echo "restored Plex database integrity check failed"
                   exit 1
                 fi
