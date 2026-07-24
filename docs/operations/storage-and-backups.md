@@ -460,12 +460,22 @@ kubectl -n observability get probe nfs -o yaml
 kubectl -n default get replicationdestination -o jsonpath='{range .items[*]}{.metadata.name}{" cap="}{.spec.restic.capacity}{" cache="}{.spec.restic.cacheCapacity}{" repo="}{.spec.restic.repository}{" ssa="}{.metadata.labels.kustomize\.toolkit\.fluxcd\.io/ssa}{"\n"}{end}'
 ```
 
-Current Restic snapshot and restore helpers:
+Current Restic inspection and pre-cutover in-place restore helpers:
 
 ```sh
 just volsync list-previous default <app>
-just volsync restore default <app> 0
+just volsync list-previous default <app> remote
+just volsync restore-in-place default <app> 0
+just volsync restore-in-place default <app> 0 remote
 ```
+
+`restore-in-place` is destructive: it stops a Deployment or StatefulSet and
+overwrites its existing PVC directly. It refuses PVCs that were not populated
+by a VolSync `ReplicationDestination`, including post-cutover Kopiur PVCs. It
+is not the fleet cutover or normal rollback path. For rollback after cutover,
+recompose the retained `volsync/restore` component (and its `remote` override
+only for remote DR), then deliberately recreate the affected PVC as described
+above.
 
 Render checks for future manifest changes:
 
