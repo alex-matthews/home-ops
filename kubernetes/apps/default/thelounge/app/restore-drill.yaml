@@ -41,7 +41,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: thelounge-restore-local-drill-validate
+  name: thelounge-restore-local-drill-validate-v2
 spec:
   activeDeadlineSeconds: 3600
   backoffLimit: 0
@@ -122,14 +122,12 @@ spec:
           volumeMounts:
             - name: restore
               mountPath: /restore
-              readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: restore
           persistentVolumeClaim:
             claimName: thelounge-restore-local-drill
-            readOnly: true
         - name: tmp
           emptyDir:
             sizeLimit: 128Mi
