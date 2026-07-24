@@ -10,12 +10,16 @@ spec:
     name: kopiur
   interval: 1h
   values:
-    # Pilot install (#1487): defaults only, least privilege. installScope stays
-    # "cluster" (chart default) so CRs in workload namespaces reconcile, but the
-    # secrets-write feature flags (credentialProjection, kopiaUi) remain off —
-    # the pilot uses a namespaced Repository, so no projection is needed.
+    # Cluster scope is intentional: policies live in workload namespaces and
+    # use shared ClusterRepositories.
     monitoring:
       serviceMonitor:
         enabled: true
       prometheusRule:
         enabled: true
+      dashboards:
+        enabled: true
+        grafanaOperator:
+          enabled: true
+          matchLabels:
+            dashboards: grafana
