@@ -67,12 +67,16 @@ Secrets reach workloads through three mechanisms; pick by data shape:
 
 Backup posture is chosen from an app's value and recovery requirements, not
 from the presence of a PVC. Protected application state — the norm in the
-`default` namespace — gets its PVC from the VolSync component
-(`kubernetes/components/volsync`): a `${APP}` claim on `ceph-block` with a
-restore-capable `dataSourceRef`, an hourly local Restic `ReplicationSource`,
-and a daily remote one. Some persistent workloads, notably observability
-storage, intentionally use plain PVCs with no VolSync coverage. Backup
-topology and restore criteria live in
+`default` namespace — currently gets its PVC from the compatibility VolSync
+component (`kubernetes/components/volsync`), which composes separately
+selectable `backup` and `restore` concerns: a `${APP}` claim on `ceph-block`
+with a restore-capable `dataSourceRef`, an hourly local Restic
+`ReplicationSource`, and a daily remote one. The `restore/remote` override
+retargets the same restore wiring to the remote repository for disaster
+recovery. The prepared Kopiur `restore` component provides the passive
+Restore/PVC population path for the approved cutover. Some persistent
+workloads, notably observability storage, intentionally use plain PVCs with no
+VolSync coverage. Backup topology and restore criteria live in
 [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md);
 restore templates live under `volsync/`.
 

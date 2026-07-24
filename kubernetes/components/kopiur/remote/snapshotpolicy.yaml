@@ -29,6 +29,6 @@ spec:
       runAsUser: ${KOPIUR_PUID:=1032}
       runAsGroup: ${KOPIUR_PGID:=100}
     cache:
-      capacity: "${KOPIUR_REMOTE_CACHE_CAPACITY:=2Gi}"
+      capacity: "${KOPIUR_CACHE_CAPACITY:=5Gi}"
       mode: Persistent
       storageClassName: ceph-block

@@ -10,10 +10,10 @@ Persistent application data primarily lives on Rook-Ceph `ceph-block` PVCs.
 Selected media-adjacent workloads also mount Synology NAS storage over NFS at
 runtime. VolSync currently protects app PVCs with Restic.
 
-Bazarr is the first production-acceptance app for Kopiur. It additionally has
-hourly snapshots to a local Garage S3 repository and daily snapshots to an
-independent R2 repository. VolSync remains enabled and retains the existing PVC
-and restore wiring while Kopiur completes fleet acceptance.
+All 19 protected application PVCs additionally have hourly Kopiur snapshots to
+the local Garage S3 repository and daily snapshots to the independent R2
+repository. VolSync remains enabled and retains the existing PVC and restore
+wiring until the separately approved fleet cutover.
 
 The shared VolSync component creates three things for each participating app:
 
@@ -63,6 +63,12 @@ Historical `1000:1000` app exceptions should not be reintroduced as manifest-onl
 changes. If an app's runtime identity changes, migrate the PVC ownership in the
 same maintenance window and prove the app can read and write its data afterward.
 
+Plex retains historical `1000:100` entries alongside newer `1032:100` entries.
+The legacy entries are group-writable, Plex runs as `1032:100`, and the remote
+restore drill normalised the restored application PVC to `1032:100`. Do not
+churn the source PVC with a pre-cutover ownership rewrite; the Kopiur restore
+produces the desired ownership naturally.
+
 ## Backup Inventory
 
 This inventory is derived from the currently included resources in
@@ -71,7 +77,7 @@ This inventory is derived from the currently included resources in
 | App           | VolSync local | VolSync remote | Runtime NAS | Zeroscaler | Notes                                                         |
 | ------------- | ------------- | -------------- | ----------- | ---------- | ------------------------------------------------------------- |
 | `agregarr`    | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
-| `atuin`       | yes           | yes            | no          | no         | 1Gi VolSync capacity.                                         |
+| `atuin`       | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `autobrr`     | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
 | `bazarr`      | yes           | yes            | yes         | yes        | Kopiur local + remote acceptance; VolSync remains enabled.    |
 | `brrpolice`   | yes           | yes            | no          | no         | Default VolSync capacity.                                     |
@@ -124,6 +130,67 @@ changes as storage migrations rather than ordinary refactors. Before merging
 one, verify a recent local and remote backup, decide whether a temporary
 prune-disable guard is warranted, and make any destructive PVC deletion an
 explicit operator action.
+
+Application PVC capacity is provider-neutral:
+
+- `PVC_CAPACITY` defaults to 5Gi.
+- Plex keeps a 50Gi `plex` application PVC.
+- Separately declared runtime cache PVCs keep their own capacities and are not
+  Kopiur sources; notably, `plex-cache` remains 75Gi.
+
+Kopiur's local and remote persistent mover caches both use
+`KOPIUR_CACHE_CAPACITY`, defaulting to 5Gi. This is deliberately independent of
+application PVC sizing. The old Plex `VOLSYNC_CACHE_CAPACITY` override sizes
+only VolSync's Restic mover cache and disappears with VolSync.
+
+## Composable Population Components
+
+The compatibility component at `kubernetes/components/volsync` combines
+independently selectable concerns:
+
+- `volsync/backup`: local and remote Restic `ReplicationSource` objects and
+  their credential templates;
+- `volsync/restore`: the local `ReplicationDestination` and application PVC
+  populated from it;
+- `volsync/restore/remote`: a disaster-recovery override composed with
+  `volsync/restore` to point that same restore wiring at the existing remote
+  Restic repository.
+
+The root `kopiur` component currently composes the local and remote snapshot
+concerns. The prepared `kopiur/restore` concern instead declares a passive
+`Restore` using `source.fromPolicy`, `target.populator: {}`, and
+`onMissingSnapshot: Fail`, plus the application PVC whose `dataSourceRef`
+consumes that Restore. The Restore selects offset 0, pins that snapshot for the
+life of the Restore object, and is recreated without status during a clean
+cluster bootstrap so it selects the repository's latest matching snapshot
+again. Fail-closed population is deliberate: a missing or mismatched snapshot
+must block the protected app rather than silently create blank state.
+
+The app files remain stable during cutover and rollback: every protected app
+includes one root `kopiur` line and one root `volsync` line. Only the two root
+components change:
+
+| State                  | Kopiur root                    | VolSync root                            |
+| ---------------------- | ------------------------------ | --------------------------------------- |
+| Current                | `local` + `remote`             | `backup` + `restore`                    |
+| Kopiur cutover         | `local` + `remote` + `restore` | `backup`                                |
+| VolSync local rollback | `local` + `remote`             | `backup` + `restore`                    |
+| VolSync remote DR      | `local` + `remote`             | `backup` + `restore` + `restore/remote` |
+
+The VolSync restore helper and remote override remain in Git, and both
+repository credentials remain supplied by `volsync/backup` throughout the
+cutover. The remote override gives the destination a distinct
+`${APP}-r2-dst` name as well as changing its repository, so an existing
+`IfNotPresent` local destination cannot silently retain the local backend.
+Because a PVC's `dataSourceRef` is immutable, either rollback still requires
+stopping the affected workloads, deliberately deleting their Kopiur-populated
+PVCs, and letting Flux recreate them from the selected VolSync composition. Use
+local rollback first; add the remote override only if the local Restic
+repository is unavailable or untrusted.
+
+After the clean-cluster rebuild passes, the app files drop the VolSync line and
+retain only the Kopiur root. The retained helpers are removed only with the
+separately approved VolSync retirement.
 
 ## VolSync Restore Object Drift
 
@@ -186,7 +253,7 @@ as an intermediate step.
 The selected rollout is:
 
 1. Keep VolSync and its PVC/populator wiring unchanged throughout Kopiur
-   enablement and soak.
+   enablement and the two non-Bazarr restore drills.
 2. Use Garage S3 as the local Kopiur repository and an independent R2
    repository, with separate credentials, encryption, schedules, retention,
    and maintenance.
@@ -196,8 +263,20 @@ The selected rollout is:
 4. After Bazarr acceptance, enable snapshot-only Kopiur components for the
    remaining apps in one additive fleet PR. Hashed schedules stagger the load;
    VolSync remains the rollback path.
-5. Require a seven-day fleet soak and two non-Bazarr restore drills before
-   opening a separate VolSync retirement decision.
+5. Restore TheLounge from Garage and Plex from R2 into isolated temporary PVCs.
+   Compare file and byte counts, numeric ownership, applicable database
+   integrity, and service-isolation signals without displaying application
+   content.
+6. Switch the fleet's application PVC population from the VolSync
+   `ReplicationDestination` to passive Kopiur Restore objects in one approved
+   cutover, while keeping VolSync backup sources active.
+7. Require a successful post-cutover incremental Kopiur snapshot, then perform
+   the acceptance test: completely tear down cluster state, bootstrap Talos,
+   Kubernetes, and Flux normally from Git, and verify that Kopiur discovers the
+   existing repositories and repopulates every protected application PVC
+   without manually creating Restore, Snapshot, or PVC objects.
+8. Remove VolSync only after the rebuilt applications and their data pass
+   verification.
 
 Kopiur enablement adds `SnapshotPolicy` and `SnapshotSchedule` resources only;
 it does not replace existing PVCs or restore wiring. A bound PVC's
@@ -263,22 +342,50 @@ write, direct R2 restore, maintenance evidence, and service-isolation test cover
 the distinct failure modes. Repetition moves into Phase 3 while VolSync remains
 available.
 
-Phase 3 adds snapshot-only Kopiur components across the remaining apps while
-leaving VolSync untouched. Fleet acceptance requires seven consecutive green
-days, including initial seeds and later incrementals, successful quick and full
-maintenance, no NFS-probe or zeroscaler events, and two non-Bazarr restore
-drills—one Garage and one R2. Review remote-storage usage and cluster
-snapshot/Job load at the end. Seven green days permit a separate VolSync
-retirement decision; they do not automatically remove VolSync.
+Phase 3 added snapshot-only Kopiur components across the remaining apps while
+leaving VolSync untouched. Initial local and remote seeds and later
+incrementals are now available for every protected app.
+
+The expedited acceptance sequence supersedes the earlier seven-day Phase 3
+wait: the completed two non-Bazarr drills lead to one fleet cutover, one
+successful post-cutover incremental, and then the complete teardown/bootstrap
+test. Existing soak evidence is retained; these steps do not restart or extend
+it. VolSync remains the rollback path until the rebuild passes.
+
+The two non-Bazarr restore gates passed on 2026-07-24:
+
+- TheLounge restored its latest local Garage snapshot into a temporary PVC.
+  The restored file and byte counts matched the selected snapshot, ownership
+  was `1032:100`, and its SQLite database passed `PRAGMA integrity_check`.
+- Plex restored its latest independent R2 snapshot into a temporary 50Gi PVC
+  in roughly ten minutes. Both Plex databases passed
+  `PRAGMA integrity_check`, and the restored entries were normalised to
+  `1032:100`. The filesystem walk was 12 entries and 194 bytes above Kopiur's
+  snapshot counters, consistent with preserved symlink metadata.
+- Both production applications remained Ready without a drill-induced restart.
+  The temporary Restore, PVC, and validation Job resources were pruned through
+  GitOps, and the retained local and remote VolSync sources remained successful.
+
+The first validation Jobs exposed harness issues rather than restore failures:
+SQLite crash recovery needs a writable temporary clone, Flux substitutions must
+be escaped in embedded shell, and validation scripts must be tested with the
+target image's shell and utilities. Future drills should validate the
+post-substitution script with `flux envsubst --strict` before merge.
 
 App cutover should not proceed until a Kopiur snapshot for that app has
 succeeded with non-zero file content. The expected cutover shape is:
 
-1. Scale the app down.
-2. Delete the old app PVC deliberately.
-3. Let Flux recreate the PVC with the Kopiur `Restore` data source.
-4. Confirm the restored PVC contents.
-5. Scale the app back up.
+1. Confirm the recorded TheLounge/Garage and Plex/R2 restore gates remain
+   applicable; rerun only if the restore shape materially changes.
+2. Prepare and render the fleet component switch, proving no target PVC
+   capacity shrinks.
+3. In an explicitly approved window, stop the workloads and delete the old app
+   PVCs deliberately.
+4. Let Flux recreate each PVC with the Kopiur `Restore` data source.
+5. Confirm every Restore and PVC, validate application data, and start the
+   workloads.
+6. Confirm a later incremental snapshot, then run the complete
+   teardown/bootstrap acceptance test before removing VolSync.
 
 ## Kopiur Known Quirks
 
@@ -304,6 +411,10 @@ upgrades and file upstream if still present when it next bites:
   `Maintenance` CR status. Still present on upstream `main` as of
   2026-07-23; report upstream rather than working around it in manifests —
   controller-owned status is not GitOps-writable.
+- Restore movers emit a non-fatal warning when they cannot read the parent
+  `Restore` status with their narrow service-account permissions. Source
+  resolution and restore completion still succeed. Do not widen mover RBAC
+  locally to silence the warning; report it upstream and re-test on upgrade.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule` (including via Flux prune)
   no longer purges the repository as of kopiur 0.8.0: policy/schedule deletion
   cascades only to the `Snapshot` CRs (`spec.deletion.onPolicyDelete` /
