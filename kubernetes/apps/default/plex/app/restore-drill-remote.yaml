@@ -41,7 +41,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: plex-restore-remote-drill-validate
+  name: plex-restore-remote-drill-validate-v2
 spec:
   activeDeadlineSeconds: 3600
   backoffLimit: 0
@@ -79,12 +79,7 @@ spec:
                       printf "files=%d bytes=%.0f\n", files, bytes
                       printf "owners=1000:100=%d,1032:100=%d\n",
                         owners["1000:100"], owners["1032:100"]
-                      if (
-                        files == 0 ||
-                        owners["1000:100"] == 0 ||
-                        owners["1032:100"] == 0 ||
-                        owners["1000:100"] + owners["1032:100"] != files
-                      ) {
+                      if (files == 0 || owners["1000:100"] == 0 || owners["1032:100"] == 0 || owners["1000:100"] + owners["1032:100"] != files) {
                         exit 1
                       }
                     }
