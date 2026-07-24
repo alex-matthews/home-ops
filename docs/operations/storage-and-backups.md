@@ -164,11 +164,12 @@ The root `kopiur` component composes the local and remote snapshot concerns
 with `kopiur/restore`. The restore concern declares a passive
 `Restore` using `source.fromPolicy`, `target.populator: {}`, and
 `onMissingSnapshot: Fail`, plus the application PVC whose `dataSourceRef`
-consumes that Restore. The Restore selects offset 0, pins that snapshot for the
-life of the Restore object, and is recreated without status during a clean
-cluster bootstrap so it selects the repository's latest matching snapshot
-again. Fail-closed population is deliberate: a missing or mismatched snapshot
-must block the protected app rather than silently create blank state.
+consumes that Restore. When population starts, the mover resolves offset 0
+against the repository and does not re-resolve during that Restore. Recreating
+the Restore without status during a clean cluster bootstrap selects the
+repository's latest matching snapshot again. Fail-closed population is
+deliberate: a missing or mismatched snapshot must block the protected app
+rather than silently create blank state.
 
 The app files remain stable during cutover and rollback: every protected app
 includes one root `kopiur` line and one root `volsync` line. Only the two root
@@ -381,15 +382,27 @@ App cutover should not proceed until a Kopiur snapshot for that app has
 succeeded with non-zero file content. The expected cutover shape is:
 
 1. Confirm the recorded TheLounge/Garage and Plex/R2 restore gates remain
-   applicable; rerun only if the restore shape materially changes.
+   applicable, every remote cache resize has converged, and a later remote
+   backup succeeded; rerun a drill only if the restore shape materially
+   changes.
 2. Prepare and render the fleet component switch, proving no target PVC
    capacity shrinks.
-3. In an explicitly approved window, stop the workloads and delete the old app
-   PVCs deliberately.
-4. Let Flux recreate each PVC with the Kopiur `Restore` data source.
-5. Confirm every Restore and PVC, validate application data, and start the
+3. In an explicitly approved window, stop the workloads and verify that no pod
+   mounts a target application PVC.
+4. Merge the component switch. Until the old PVCs are deleted, expect the 19
+   app Kustomizations to report apply failures for immutable `dataSourceRef`
+   changes; pruning the old ReplicationDestinations may wait for the first
+   successful apply. Treat this bounded state as expected during the window,
+   not as permission to start workloads.
+5. Delete exactly the 19 old application PVCs deliberately, then let Flux
+   recreate each PVC with the Kopiur `Restore` data source.
+6. If a Restore mover exhausts its retries, keep that workload stopped, fix the
+   cause, and delete the terminal Restore so Flux recreates it. Use the
+   per-application declarative VolSync rollback instead if recovery is not
+   prompt or trustworthy.
+7. Confirm every Restore and PVC, validate application data, and start the
    workloads.
-6. Confirm a later incremental snapshot, then run the complete
+8. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
 
 After the fleet cutover, update the custom `home-ops-cockpit` Grafana
