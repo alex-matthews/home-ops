@@ -505,17 +505,30 @@ Kopiur health and freshness signals while retaining the VolSync signals.
 Remove the VolSync query branches only when VolSync itself is retired after
 the teardown/bootstrap gate.
 
+Write those Kopiur queries against the `namespace` label, not
+`exported_namespace`. From 0.8.1 the chart's `ServiceMonitor` sets
+`honorLabels: true`, so each `kopiur_*` series keeps the namespace of the CR
+it describes instead of having it overwritten by the controller's namespace
+and displaced to `exported_namespace`. The chart's own dashboard already
+assumed CR-namespace semantics, so the upgrade fixes it rather than breaking
+it; nothing in this repo currently keys on the old label.
+
 ## Kopiur Known Quirks
 
 Observed during the 0.7.5 pilot and 0.8.0 production acceptance; re-test on
 upgrades and file upstream if still present when it next bites:
 
-- A `Repository` whose bootstrap Job has exhausted `backoffLimit` goes
+- A `Repository` whose repository-level Job has exhausted `backoffLimit` goes
   `Stalled` and is not retried when the spec changes, even though the operator
-  observes the new generation — the exhausted Job object (deterministic name
-  `<repo>-bootstrap`) blocks it. Recovery: fix the cause, then
-  `kubectl delete job <repo>-bootstrap` in the repository's namespace; the
-  next reconcile recreates the Job with the current spec.
+  observes the new generation — the exhausted Job object blocks it. Recovery:
+  fix the cause, then delete that Job in the repository's namespace; the next
+  reconcile recreates it with the current spec. **The Job was renamed in
+  0.8.1**: it is `<repo>-discovery` from 0.8.1 onward and `<repo>-bootstrap`
+  on 0.8.0 and earlier. Upgrading performs a one-time foreground reap of the
+  legacy Job per repository before creating the renamed successor, so expect
+  a brief repository-Job churn on the upgrade reconcile. The kopia username
+  sentinel is deliberately _not_ renamed, so repository-side identity is
+  stable and snapshots taken on 0.8.0 stay resolvable.
 - Related root cause to know: repository-level movers (bootstrap, maintenance)
   take their identity from `Repository.spec.moverDefaults.securityContext`,
   not from any `SnapshotPolicy` — leave it unset and they run as UID 65532,
