@@ -17,6 +17,13 @@ Garage S3 repository and daily snapshots to the independent R2 repository.
 VolSync remains enabled for local and remote backups until the clean-cluster
 rebuild and application verification pass.
 
+The fleet PVC-population cutover completed on 2026-07-25: all 19 application
+PVCs are now populated by Kopiur `Restore` objects, the VolSync
+`ReplicationDestination` objects are gone from the live state, and all 38
+VolSync `ReplicationSource` backups are retained. Restored file counts matched
+the pre-cutover snapshots exactly for every app, `nfs_probe` never dipped, and
+no zeroscaler event occurred.
+
 During the rollback window, `volsync/backup` keeps two Restic backup paths and
 their credential templates for each protected app:
 
@@ -386,7 +393,10 @@ target image's shell and utilities. Future drills should validate the
 post-substitution script with `flux envsubst --strict` before merge.
 
 App cutover should not proceed until a Kopiur snapshot for that app has
-succeeded with non-zero file content. The expected cutover shape is:
+succeeded with non-zero file content. The fleet cutover ran on 2026-07-25
+against this shape; the numbered steps below are the executed sequence with
+the corrections that run produced. Read the "Cutover holds are not durable"
+subsection before running anything like it again.
 
 1. Confirm the recorded TheLounge/Garage and Plex/R2 restore gates remain
    applicable, every remote cache resize has converged, and a later remote
@@ -398,7 +408,10 @@ succeeded with non-zero file content. The expected cutover shape is:
    Kustomizations and HelmReleases, suspend the Recyclarr CronJob, and set the
    eight zeroscaler HPAs' `scaleUp.selectPolicy` to `Disabled`. The cutover
    commit carries the same HPA hold so it survives reconciliation. Stop the
-   workloads and verify that no pod mounts a target application PVC.
+   workloads by scaling the 18 Deployments to zero, and verify that no pod
+   mounts a target application PVC. Delete any completed CronJob Job whose pod
+   still references a target PVC; a `Succeeded` pod can otherwise hold the
+   `pvc-protection` finalizer and stall that deletion in step 6.
 4. With the application PVCs quiescent, complete and verify a final local and
    remote VolSync cycle and one manual local Kopiur Snapshot per app. These are
    the exact rollback and restore points for the window; do not continue from
@@ -408,19 +421,58 @@ succeeded with non-zero file content. The expected cutover shape is:
    changes; pruning the old ReplicationDestinations may wait for the first
    successful apply. Treat this bounded state as expected during the window,
    not as permission to start workloads.
-6. Resume the application Kustomizations, verify the HelmRelease and HPA holds
-   remain in place, and delete exactly the 19 old application PVCs
-   deliberately. Let Flux recreate each PVC with the Kopiur `Restore` data
-   source.
+6. Delete exactly the 19 old application PVCs deliberately, then let Flux
+   recreate each one with the Kopiur `Restore` data source (force a
+   reconcile rather than waiting out the interval). Re-assert the
+   HelmRelease holds immediately after the PVCs and Restores exist:
+   deleting the PVCs is what makes Flux's dry-run succeed, and that same
+   apply clears any imperative hold. Population is controller-driven once a
+   `Restore` exists, so re-suspending does not interrupt it.
 7. If a Restore mover exhausts its retries, keep that workload stopped, fix the
    cause, and delete the terminal Restore so Flux recreates it. Use the
    per-application declarative VolSync rollback instead if recovery is not
    prompt or trustworthy.
 8. Confirm every Restore and PVC and validate application data. Restore the
-   zeroscaler `scaleUp.selectPolicy: Max` setting, resume the HelmReleases and
-   Recyclarr schedule, and start the workloads.
+   zeroscaler `scaleUp.selectPolicy: Max` setting by merging the prepared
+   revert PR — never by patching the live HPAs, because Flux owns that field
+   and reverts a manual patch within the reconcile interval, silently
+   re-disabling scale-up. Then resume the HelmReleases and Recyclarr
+   schedule, and **scale the 18 Deployments back to one**. Step 8 must mirror
+   step 3 explicitly: most charts pin no `replicas`, so un-suspending alone
+   leaves every workload at zero.
 9. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
+
+### Cutover Holds Are Not Durable
+
+Every hold applied with `kubectl` during a window lives only until Flux next
+applies that object from Git. The 2026-07-25 cutover proved this the hard way:
+merging the switch made Flux reconcile the app Kustomizations and clear their
+imperative `suspend` immediately. Plan for it.
+
+- **Only Git-backed holds survive.** The zeroscaler `scaleUp.selectPolicy`
+  hold was carried in the cutover commit and held throughout. Imperative
+  Kustomization suspends did not.
+- **What actually kept the workloads down was Flux failing its dry-run** on
+  the immutable `dataSourceRef` of the still-present PVCs. A failed dry-run
+  makes Flux apply _nothing_ from that Kustomization, which is why the
+  HelmRelease holds survived until the PVCs were deleted. Treat that as a
+  fortunate side effect, not a control: deleting the PVCs clears the dry-run
+  failure and releases every imperative hold in the same reconcile.
+- **Gate destructive steps on a re-checked precondition**, not on state
+  asserted earlier in the window. A guard immediately before the deletion
+  caught the cleared suspends and refused to proceed.
+- **Suspending a Flux Kustomization does not stop controllers.** Kopiur
+  `SnapshotSchedule`s keep firing and VolSync `ReplicationSource`s keep
+  syncing, because those are driven by their own controllers against live
+  CRs. Suppress them explicitly (`spec.schedule.suspend`, `spec.paused`) and
+  expect Flux to clear that suppression on its next successful apply.
+- Setting `spec.trigger.manual` on a `ReplicationSource` puts it in manual
+  mode and parks the cron: `nextSyncTime` empties and the scheduled run does
+  not fire while the manual token is satisfied.
+- A restored PVC carries one root-owned `lost+found` directory (mode
+  `drwxrws---`) from `mkfs`. It is not restored data and not an ownership
+  fault; count files with `-type f` when comparing against snapshot stats.
 
 Tuppr deliberately blocks Talos and Kubernetes upgrades while any Kopiur
 Restore is `Resolving` or `Restoring`. Expect that guardrail to hold throughout
