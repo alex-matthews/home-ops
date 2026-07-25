@@ -12,7 +12,9 @@ small, reviewable, and independently reconcilable.
 - `.agents/instructions/` is reserved for narrow reusable instructions such as
   YAML ordering. Load only the files relevant to the task.
 - `.agents/skills/` holds task recipes such as `add-app`. Load a skill only
-  when performing that task.
+  when performing that task. Load `maintenance-window` before planning or
+  executing any window that stops workloads, deletes or recreates PVCs, or
+  holds imperative cluster state across a merge.
 - `backlog.md`, if present, is scratch state.
 
 ## Before Editing
@@ -46,6 +48,13 @@ small, reviewable, and independently reconcilable.
   `describe`, `logs`, `events`, `top`, `auth can-i`, `diff`, and
   `apply --dry-run=server`, plus the equivalent `flux`, `helm`, and `talosctl`
   read commands.
+- Imperative cluster state is a lease, not a lock. Anything set with `kubectl`
+  on a Flux-managed object is cleared by the next successful apply of the
+  Kustomization that owns it — often an apply you trigger yourself. Before
+  relying on any imperative hold, name the Git field that owns it and the next
+  apply that will clear it; if it must survive, put it in Git or suspend the
+  controller. Gate destructive steps on freshly re-read state, never on state
+  asserted earlier in the session.
 - Treat every mutating cluster command as an imperative fix that needs explicit
   user approval of the exact action first: `kubectl apply`, `create`, `delete`,
   `edit`, `patch`, `replace`, `scale`, `rollout`, `annotate`, `label`,

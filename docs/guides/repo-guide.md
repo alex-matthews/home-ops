@@ -8,7 +8,8 @@ commands. Agent behavior and change-control rules live in
 
 - `.agents/instructions/`: narrow reusable agent instructions such as YAML
   ordering and GitHub linking.
-- `.agents/skills/`: task recipes such as `add-app` and `audit-findings`.
+- `.agents/skills/`: task recipes such as `add-app`, `audit-findings`, and
+  `maintenance-window`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
 - `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
