@@ -394,22 +394,32 @@ succeeded with non-zero file content. The expected cutover shape is:
    changes.
 2. Prepare and render the fleet component switch, proving no target PVC
    capacity shrinks.
-3. In an explicitly approved window, stop the workloads and verify that no pod
-   mounts a target application PVC.
-4. Merge the component switch. Until the old PVCs are deleted, expect the 19
+3. In an explicitly approved window, suspend the 19 application
+   Kustomizations and HelmReleases, suspend the Recyclarr CronJob, and set the
+   eight zeroscaler HPAs' `scaleUp.selectPolicy` to `Disabled`. The cutover
+   commit carries the same HPA hold so it survives reconciliation. Stop the
+   workloads and verify that no pod mounts a target application PVC.
+4. With the application PVCs quiescent, complete and verify a final local and
+   remote VolSync cycle and one manual local Kopiur Snapshot per app. These are
+   the exact rollback and restore points for the window; do not continue from
+   an older running-workload snapshot.
+5. Merge the component switch. Until the old PVCs are deleted, expect the 19
    app Kustomizations to report apply failures for immutable `dataSourceRef`
    changes; pruning the old ReplicationDestinations may wait for the first
    successful apply. Treat this bounded state as expected during the window,
    not as permission to start workloads.
-5. Delete exactly the 19 old application PVCs deliberately, then let Flux
-   recreate each PVC with the Kopiur `Restore` data source.
-6. If a Restore mover exhausts its retries, keep that workload stopped, fix the
+6. Resume the application Kustomizations, verify the HelmRelease and HPA holds
+   remain in place, and delete exactly the 19 old application PVCs
+   deliberately. Let Flux recreate each PVC with the Kopiur `Restore` data
+   source.
+7. If a Restore mover exhausts its retries, keep that workload stopped, fix the
    cause, and delete the terminal Restore so Flux recreates it. Use the
    per-application declarative VolSync rollback instead if recovery is not
    prompt or trustworthy.
-7. Confirm every Restore and PVC, validate application data, and start the
-   workloads.
-8. Confirm a later incremental snapshot, then run the complete
+8. Confirm every Restore and PVC and validate application data. Restore the
+   zeroscaler `scaleUp.selectPolicy: Max` setting, resume the HelmReleases and
+   Recyclarr schedule, and start the workloads.
+9. Confirm a later incremental snapshot, then run the complete
    teardown/bootstrap acceptance test before removing VolSync.
 
 Tuppr deliberately blocks Talos and Kubernetes upgrades while any Kopiur
