@@ -467,9 +467,21 @@ imperative `suspend` immediately. Plan for it.
   syncing, because those are driven by their own controllers against live
   CRs. Suppress them explicitly (`spec.schedule.suspend`, `spec.paused`) and
   expect Flux to clear that suppression on its next successful apply.
-- Setting `spec.trigger.manual` on a `ReplicationSource` puts it in manual
-  mode and parks the cron: `nextSyncTime` empties and the scheduled run does
-  not fire while the manual token is satisfied.
+- Setting `spec.trigger.manual` on a `ReplicationSource` parks its cron only
+  **while the token is present**: `nextSyncTime` empties and the scheduled
+  run is skipped. Do not rely on this as a hold. Neither `trigger.manual` nor
+  `spec.paused` is in Git, so Flux's next successful apply strips both, the
+  source returns to cron with a `lastSyncTime` older than the current slot,
+  and VolSync immediately fires a catch-up sync. In the 2026-07-25 cutover
+  that put 18 of 19 local sources into the population window (01:09–01:17)
+  within two minutes of the apply that recreated the PVCs. It was harmless
+  only because VolSync cannot snapshot an unbound PVC and therefore waits for
+  each populator: every sync succeeded against fully-populated data, and the
+  largest app synced at 01:17, after its 01:15 restore. That is timing, not
+  design. If concurrent backup load during population is unacceptable, stop
+  the VolSync controller or suspend its Kustomization — suppressing
+  individual sources will not survive the apply that deletes and recreates
+  the PVCs.
 - A restored PVC carries one root-owned `lost+found` directory (mode
   `drwxrws---`) from `mkfs`. It is not restored data and not an ownership
   fault; count files with `-type f` when comparing against snapshot stats.
