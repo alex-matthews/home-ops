@@ -415,7 +415,11 @@ subsection before running anything like it again.
 4. With the application PVCs quiescent, complete and verify a final local and
    remote VolSync cycle and one manual local Kopiur Snapshot per app. These are
    the exact rollback and restore points for the window; do not continue from
-   an older running-workload snapshot.
+   an older running-workload snapshot. Once they are verified, suspend both
+   backup controllers for the destructive phase — `just volsync suspend`, and
+   suspend the Kopiur Kustomization — so no mover competes with deletion or
+   population. Rollback coverage is unaffected: the restore points already
+   exist.
 5. Merge the component switch. Until the old PVCs are deleted, expect the 19
    app Kustomizations to report apply failures for immutable `dataSourceRef`
    changes; pruning the old ReplicationDestinations may wait for the first
@@ -478,10 +482,13 @@ imperative `suspend` immediately. Plan for it.
   only because VolSync cannot snapshot an unbound PVC and therefore waits for
   each populator: every sync succeeded against fully-populated data, and the
   largest app synced at 01:17, after its 01:15 restore. That is timing, not
-  design. If concurrent backup load during population is unacceptable, stop
-  the VolSync controller or suspend its Kustomization — suppressing
-  individual sources will not survive the apply that deletes and recreates
-  the PVCs.
+  design. Suppressing individual sources will not survive the apply that
+  deletes and recreates the PVCs. Use `just volsync suspend` instead, which
+  suspends the VolSync Kustomization and HelmRelease and scales the
+  controller to zero; resume with `just volsync resume` after the restored
+  PVCs are validated. Suspending VolSync for the deletion-and-population
+  phase costs no rollback coverage, because the local and remote restore
+  points were already captured and verified in step 4.
 - A restored PVC carries one root-owned `lost+found` directory (mode
   `drwxrws---`) from `mkfs`. It is not restored data and not an ownership
   fault; count files with `-type f` when comparing against snapshot stats.
