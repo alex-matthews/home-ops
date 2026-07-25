@@ -34,5 +34,6 @@ spec:
         - type: Pods
           value: 1
           periodSeconds: 15
-      selectPolicy: Max
+      # Cutover hold: restore Max after the Kopiur-populated PVCs are verified.
+      selectPolicy: Disabled
       stabilizationWindowSeconds: 0

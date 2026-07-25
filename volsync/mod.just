@@ -4,17 +4,23 @@ set quiet
 set script-interpreter := ['bash', '-euo', 'pipefail']
 set shell := ['bash', '-euo', 'pipefail', '-c']
 
-[doc('List snapshots (and corresponding previous offset integers) in the restic repo for an app')]
-list-previous ns app:
-    kubectl -n "{{ ns }}" get secret "{{ app }}-volsync-secret" -o json \
+[arg('repository', pattern='local|remote')]
+[doc('List snapshots (and corresponding previous offset integers) in a Restic repo for an app')]
+list-previous ns app repository="local":
+    secret="{{ app }}-volsync-secret"
+    if [[ "{{ repository }}" == remote ]]; then
+        secret="{{ app }}-volsync-r2-secret"
+    fi
+    kubectl -n "{{ ns }}" get secret "$secret" -o json \
         | jq -r '.data | to_entries[] | "export \(.key)=\(.value | @base64d | @sh)"' \
         | bash -euo pipefail -c 'source /dev/stdin && restic snapshots --json' \
         | jq -r '[.. | objects | select(has("id") and has("time")) | {id: (.short_id // .id[0:8]), time: (.time | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 | strflocaltime("%Y-%m-%d %H:%M:%S")), host: (.hostname // ""), tags: ((.tags // []) | join(",")), paths: ((.paths // []) | join(",")), bytes: (.summary.total_bytes_processed // 0)}] | unique_by(.id) | sort_by(.time) | reverse | to_entries[] | [(.key | tostring), .value.id, .value.time, .value.host, .value.tags, .value.paths, (.value.bytes | tostring)] | @tsv' \
         | awk -F $'\t' 'function humansize(n, mib, gib, tib){mib=1024*1024; gib=mib*1024; tib=gib*1024; if(n>=tib)return sprintf("%.3f TiB",n/tib); if(n>=gib)return sprintf("%.3f GiB",n/gib); if(n>=mib)return sprintf("%.3f MiB",n/mib); if(n>=1024)return sprintf("%.3f KiB",n/1024); return sprintf("%d B",n)} BEGIN{printf "%-4s  %-8s  %-19s  %-10s  %-10s  %-5s  %s\n","Prev","ID","Time","Host","Tags","Paths","Size"; print "--------------------------------------------------------------------------------"} {printf "%-4s  %-8s  %-19s  %-10s  %-10s  %-5s  %s\n",$1,$2,$3,$4,$5,$6,humansize($7+0)} END{print "--------------------------------------------------------------------------------"}'
 
-[doc('Restore an app from a snapshot based on previous offset integer (0=latest)')]
-restore ns app previous:
-    just volsync restore-run "{{ ns }}" "{{ app }}" "{{ previous }}"
+[arg('repository', pattern='local|remote')]
+[doc('DESTRUCTIVE: Restore a VolSync-populated PVC in place from a Restic snapshot')]
+restore-in-place ns app previous repository="local":
+    just volsync restore-in-place-run "{{ ns }}" "{{ app }}" "{{ previous }}" "{{ repository }}"
 
 [doc('Resume VolSync')]
 resume:
@@ -68,21 +74,36 @@ autoscaler-resume ns app:
     flux -n "{{ ns }}" reconcile kustomization "{{ app }}" --with-source
 
 [private]
-restore-run ns app previous:
+restore-in-place-run ns app previous repository:
     [[ "{{ previous }}" =~ ^[0-9]+$ ]] || {
         echo "previous must be an integer offset (0=latest, 1=one snapshot back)" >&2
         exit 1
     }
+    source="{{ app }}"
+    repository_secret="{{ app }}-volsync-secret"
+    if [[ "{{ repository }}" == remote ]]; then
+        source="{{ app }}-r2"
+        repository_secret="{{ app }}-volsync-r2-secret"
+    fi
+    rs="replicationsources/$source"
+    claim="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.sourcePVC}')"
+    controller="$(just volsync detect-controller "{{ ns }}" "{{ app }}")"
+    data_source_group="$(kubectl -n "{{ ns }}" get pvc "$claim" \
+        -o jsonpath='{.spec.dataSourceRef.apiGroup}')"
+    data_source_kind="$(kubectl -n "{{ ns }}" get pvc "$claim" \
+        -o jsonpath='{.spec.dataSourceRef.kind}')"
+    if [[ "$data_source_group" != volsync.backube \
+        || "$data_source_kind" != ReplicationDestination ]]; then
+        echo "Refusing restore-in-place: {{ ns }}/$claim is not populated by a VolSync ReplicationDestination" >&2
+        echo "Use the Git-managed VolSync rollback component and recreate the PVC instead" >&2
+        exit 2
+    fi
     flux -n "{{ ns }}" suspend kustomization "{{ app }}"
     flux -n "{{ ns }}" suspend helmrelease "{{ app }}"
     just volsync autoscaler-suspend "{{ ns }}" "{{ app }}" || true
-    kubectl -n "{{ ns }}" scale \
-        "$(just volsync detect-controller "{{ ns }}" "{{ app }}")/{{ app }}" \
-        --replicas=0
+    kubectl -n "{{ ns }}" scale "$controller/{{ app }}" --replicas=0
     kubectl -n "{{ ns }}" wait pod --for=delete \
         --selector="app.kubernetes.io/name={{ app }}" --timeout=5m || true
-    rs="replicationsources/{{ app }}"
-    claim="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.sourcePVC}')"
     access_modes="$(kubectl -n "{{ ns }}" get "$rs" -o jsonpath='{.spec.restic.accessModes}')"
     storage_class_name="$(kubectl -n "{{ ns }}" get "$rs" \
         -o jsonpath='{.spec.restic.storageClassName}')"
@@ -98,6 +119,7 @@ restore-run ns app previous:
         STORAGE_CLASS_NAME="$storage_class_name" \
         PUID="$puid" \
         PGID="$pgid" \
+        REPOSITORY="$repository_secret" \
             just template "{{ source_directory() }}/replicationdestination.yaml.j2" \
             | kubectl apply --server-side -f -
     until kubectl -n "{{ ns }}" get job/volsync-dst-{{ app }}-manual &>/dev/null; do sleep 5; done
