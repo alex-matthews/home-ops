@@ -20,13 +20,12 @@ commands. Agent behavior and change-control rules live in
 - `docs/`: durable documentation, including ADRs, guides, and operations docs.
 - `kubernetes/apps/`: Flux-managed application declarations.
 - `kubernetes/components/`: reusable Kustomize components, including alerts,
-  Dragonfly, SOPS, VolSync, and zeroscaler.
+  Dragonfly, Kopiur, SOPS, and zeroscaler.
 - `kubernetes/flux/cluster`: top-level Flux cluster entrypoint used by render
   tooling.
 - `kubernetes/mod.just`: local/operator Kubernetes commands, not CI validation
   glue.
 - `talos/`: Talos machine config templates and local helpers.
-- `volsync/`: local/operator restore templates and workflows.
 
 ## How the Cluster Works
 
@@ -68,21 +67,16 @@ Secrets reach workloads through three mechanisms; pick by data shape:
 
 Backup posture is chosen from an app's value and recovery requirements, not
 from the presence of a PVC. Protected application state — the norm in the
-`default` namespace — currently gets its PVC from the compatibility VolSync
-component (`kubernetes/components/volsync`), which composes separately
-selectable `backup` and `restore` concerns: a `${APP}` claim on `ceph-block`
-with a restore-capable `dataSourceRef`, an hourly local Restic
-`ReplicationSource`, and a daily remote one. The `restore/remote` override
-retargets the same restore wiring to the remote repository for disaster
-recovery. The prepared Kopiur `restore` component provides the passive
-Restore/PVC population path for the approved cutover. Some persistent
-workloads, notably observability storage, intentionally use plain PVCs with no
-VolSync coverage. Backup topology and restore criteria live in
-[`../operations/storage-and-backups.md`](../operations/storage-and-backups.md);
-restore templates live under `volsync/`.
+`default` namespace — gets its PVC from the Kopiur component
+(`kubernetes/components/kopiur`), which composes three selectable concerns:
+`local` and `remote` snapshot policies, and `restore`, which supplies the
+`${APP}` claim on `ceph-block` plus the passive `Restore` that populates it.
+Some persistent workloads, notably observability storage, intentionally use
+plain PVCs with no backup coverage. Backup topology and restore criteria live
+in [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
 
-VolSync-backed apps run as `runAsUser: 1032` / `runAsGroup: 100` /
-`fsGroup: 100`, matching their Restic movers and the NAS-side convention;
+Protected apps run as `runAsUser: 1032` / `runAsGroup: 100` /
+`fsGroup: 100`, matching their Kopiur movers and the NAS-side convention;
 other apps run whatever identity their image expects. Do not change a
 backed-up app's identity without migrating PVC ownership in the same window.
 
@@ -140,10 +134,8 @@ Treat these as high-risk:
 - `*.sops.yaml` files: do not reformat or reshape encrypted content.
 - `ExternalSecret` names, target secret names, and template keys.
 - PVC names, storage classes, access modes, and `dataSourceRef` fields.
-- VolSync `ReplicationSource` and `ReplicationDestination` objects.
 - Kopiur repository, policy, schedule, restore, and PVC populator wiring
-  (pilot live under `kubernetes/apps/default/bazarr/backup/` and
-  `kubernetes/apps/kopiur-system/`).
+  (`kubernetes/components/kopiur/` and `kubernetes/apps/kopiur-system/`).
 - Backup retention, schedule, copy method, repository secret, and restore wiring.
 - Rook-Ceph, Cilium, Flux, External Secrets, and cert-manager CRDs.
 - Namespace names and app names used by Flux, HelmRelease, alerts, dashboards, or
@@ -364,9 +356,6 @@ Common non-goals:
   [eleboucher/homelab], and [onedr0p/home-ops] for ClusterRepository, mover
   defaults, credential projection, SnapshotPolicy/SnapshotSchedule, passive
   Restore, and PVC populator shape.
-- VolSync and restore caution: use [bo0tzz/clusterfuck],
-  [carpenike/k8s-gitops], and [Pumba98/flux2-gitops] for VolSync restore docs,
-  one-shot restore gates, shared-PVC caution, and `dataSourceRef` immutability.
 
 [auricom/home-ops]: https://github.com/auricom/home-ops
 [billimek/k8s-gitops]: https://github.com/billimek/k8s-gitops

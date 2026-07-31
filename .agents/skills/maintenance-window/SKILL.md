@@ -41,12 +41,11 @@ Rules for filling it in:
   `kubectl` call. Carry it in Git, or suspend the controller.
 - Prefer controller-level suspension to per-object suppression. Per-object
   flags (`spec.paused`, `spec.schedule.suspend`, `spec.suspend`) are cleared
-  by the next apply; a suspended controller is not. This repo already has
-  `just volsync suspend` / `just volsync resume`, which suspend the
-  Kustomization and HelmRelease and scale the controller to zero.
+  by the next apply; a suspended controller is not. Suspend the operator's own
+  Kustomization and HelmRelease and scale its Deployment to zero.
 - Name every controller that acts on the target objects, not just the
   workloads that mount them. Suspending an app's Kustomization does not stop
-  Kopiur, VolSync, or any other operator from acting on live CRs.
+  Kopiur or any other operator from acting on live CRs.
 - Stop and start steps must mirror each other explicitly. Most charts here
   pin no `replicas`, so un-suspending a HelmRelease does not undo a manual
   scale-to-zero; the window must scale back up by hand.
