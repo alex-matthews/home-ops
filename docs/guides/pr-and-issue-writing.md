@@ -48,13 +48,14 @@ not.
 
 ### Keeping the body current
 
-Refresh an open pull request's body as the branch moves. A body written when
-the branch was opened describes work that has since changed, and it is the
-record the moment it merges.
+The squash commit takes its message from the commits, not from the pull request
+body, so the commit messages are the durable record. The body is the operator's
+view of a branch while it is still open.
 
-Update it when the scope changes, when review turns up something the body now
-contradicts, and before asking for a merge — so the operator can see where the
-branch actually stands without reconstructing it from the commit log.
+Most pull requests here open and merge within the hour and need no refresh.
+Update the body when one outlives a single sitting: when scope changes, when
+review turns up something it now contradicts, or before asking for a merge on a
+branch that has moved since it was opened.
 
 ### Validation
 
