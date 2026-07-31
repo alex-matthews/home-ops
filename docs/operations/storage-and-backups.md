@@ -156,7 +156,7 @@ restore-test outcomes. Do not disable maintenance.
 
 ## Known Quirks
 
-Observed on 0.7.5 through 0.8.1; re-test on upgrades and file upstream if still
+Observed on 0.7.5 through 0.9.0; re-test on upgrades and file upstream if still
 present when one next bites.
 
 - A `Repository` whose repository-level Job has exhausted `backoffLimit` goes
@@ -172,8 +172,7 @@ present when one next bites.
 - `Maintenance` CR status is unreliable even though maintenance runs correctly:
   `nextScheduledAt` is never written, `lastHandledAt` is skipped for successful
   runs, and `consecutiveFailures` has no writer. Verify maintenance from mover
-  Job history and metrics, not CR status. Still present on upstream `main` as
-  of 2026-07-25.
+  Job history and metrics, not CR status. Still present as of 0.9.0.
 - `Restore` CR status carries no stats. Verify a restore from the target PVC's
   contents, not from the CR.
 - Restore movers emit a non-fatal warning when they cannot read the parent

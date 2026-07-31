@@ -280,7 +280,7 @@ jobs:
               context, not action items.
             Treat these one-line diffs as high risk: CRD schema/version/
             `conversion.webhook`; webhook Service/Deployment/certs; RBAC or
-            ServiceAccount; PVC/storage/backup/VolSync/Kopiur; runAsUser,
+            ServiceAccount; PVC/storage/backup/Kopiur; runAsUser,
             runAsGroup, fsGroup, or fsGroupChangePolicy with persistence; routes,
             gateways, ingresses, public hostnames; image digests with unclear
             provenance. For CRD conversion webhooks, verify the webhook Service

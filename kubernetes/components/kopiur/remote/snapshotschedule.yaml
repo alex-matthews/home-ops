@@ -8,8 +8,7 @@ spec:
   policyRef:
     name: "${APP}-remote"
   schedule:
-    # Daily in the H 3 window, disjoint from VolSync remote (00:30) and from
-    # both repositories' full maintenance (H 4 local, H 5 remote); timezone
-    # inherits from the repository.
+    # Daily in the H 3 window, ahead of both repositories' full maintenance
+    # (H 4 local, H 5 remote); timezone inherits from the repository.
     cron: "H 3 * * *"
     runOnCreate: false
