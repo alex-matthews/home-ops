@@ -78,7 +78,7 @@ cluster-wide rule.
 ## High-risk surfaces
 
 Changing these can break reconciliation, lose data, or silently drop backup
-coverage. `AGENTS.md` carries the prohibitions; this is where they live:
+coverage. The prohibitions are in `AGENTS.md`.
 
 - `*.sops.yaml` files: do not reformat or reshape encrypted content.
 - `ExternalSecret` names, target secret names, and template keys.

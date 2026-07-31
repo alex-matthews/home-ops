@@ -39,9 +39,6 @@ conventions rather than sources of them.
 | [xunholy/k8s-gitops]   | Subagent definitions, a pattern this repo does not use                                                                                                                |
 | [carpenike/k8s-gitops] | Running more than one assistant's instructions side by side                                                                                                           |
 
-Peers not listed here were dropped for lack of a distinct reason to open them,
-not for being inactive. Add one back when a specific question needs it.
-
 ## Reading peer pull requests
 
 Most peers run Renovate under a custom app identity, so raw pull request volume

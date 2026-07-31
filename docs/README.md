@@ -35,5 +35,5 @@ be corrected without rewriting a decision.
 
 The root `README.md` is the repository's front page, not an index. It is
 curated for a visitor trying to understand the repo, so operational and
-recovery docs belong in the map above rather than on the shopfront. The map is
-the complete index; keep it so.
+recovery docs belong in the map above rather than on the shopfront. Every doc
+belongs in that map.

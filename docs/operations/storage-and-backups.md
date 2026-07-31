@@ -104,7 +104,7 @@ directory is an `emptyDir`. Do not add persistence or backup coverage unless
 the workbench design changes.
 
 `chaski` runs in `default` with no PVC and no Kopiur component. It is stateless
-by design, so its absence from the table above is deliberate rather than a gap.
+by design.
 
 ## Components
 
