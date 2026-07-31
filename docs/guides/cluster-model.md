@@ -9,8 +9,11 @@ surfaces are high-risk to touch. For repository layout and app file shape see
 
 ## How a merged change reaches the cluster
 
-1. Flux follows `main` through the `flux-system` `GitRepository` managed by
-   Flux Operator.
+1. On push to `main`, a GitHub webhook reaches the `github-webhook` `Receiver`,
+   which reconciles the `flux-system` `GitRepository` and Kustomization
+   immediately. Flux follows `main` through that GitRepository, managed by Flux
+   Operator. The configured intervals are drift-correction fallbacks, not the
+   normal path — a merged change does not wait for the next poll.
 2. `kubernetes/flux/cluster/ks.yaml` defines the `cluster-apps` Kustomization.
    It reconciles `./kubernetes/apps`, enables SOPS decryption, and patches
    every child Kustomization with the same decryption and HelmRelease

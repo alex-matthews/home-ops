@@ -62,6 +62,32 @@ The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
 a 500 GB SATA SSD for system and scratch storage, and a dedicated 1 TB NVMe disk
 for the replicated Ceph pool.
 
+## Networking
+
+The cluster sits behind a UniFi Dream Machine Pro, which routes and firewalls
+the network and peers with the cluster over BGP.
+
+Cilium runs with `kubeProxyReplacement` and native routing, and advertises
+LoadBalancer addresses to the gateway over BGP rather than announcing them on
+the local segment. There are no L2 announcements: service addresses are routed,
+so failover follows the routing table instead of gratuitous ARP, and the
+addresses are reachable from anywhere the router will route to.
+
+Those addresses come from a dedicated Services network rather than the client
+network, which keeps cluster service addresses off the segment where laptops and
+phones live and lets them carry their own firewall policy.
+
+### DNS
+
+Two ExternalDNS instances keep records in sync:
+
+- **Private** — every route, synced to the gateway through the
+  [ExternalDNS UniFi webhook](https://github.com/home-operations/external-dns-unifi-webhook).
+- **Public** — only routes on the external Gateway, synced to Cloudflare.
+
+The result is split-horizon DNS: at home, public hostnames resolve to LAN
+addresses, so traffic to my own services never leaves the network.
+
 ## Key Paths
 
 ```text
@@ -72,22 +98,11 @@ for the replicated Ceph pool.
 │   ├── apps/           # Flux-managed applications, grouped by namespace
 │   ├── components/     # Shared Kustomize components, SOPS, alerts, Kopiur
 │   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
-├── talos/              # Talos config templates and operator commands
+└── talos/              # Talos config templates and operator commands
 ```
 
-Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles the
-applications under `kubernetes/apps`. Most application directories follow this
-shape:
-
-```text
-kubernetes/apps/<namespace>/<app>/ks.yaml
-kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
-kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
-kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
-```
-
-Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
-`servicemonitor.yaml`, dashboards, alerts, and app-specific configuration.
+Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles
+the applications under `kubernetes/apps`.
 
 ## Automation / CI
 
@@ -135,7 +150,7 @@ diagnostics and Talos operations.
   for the Hermes and ToolHive workbench: current surface, boundaries, and the
   cluster-health triage loop.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
-  current backup posture and backup migration criteria.
+  backup posture, the protected application set, and how to verify a restore.
 
 ## Thanks
 
@@ -145,8 +160,8 @@ This repository builds on patterns from
 [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops), and the
 [Home Operations](https://discord.gg/home-operations) community.
 
-[kubesearch.dev](https://kubesearch.dev/) remains a great way to find examples of
-how others deploy applications in similar clusters.
+[kubesearch.dev](https://kubesearch.dev/) is a great way to find examples of how
+others deploy applications in similar clusters.
 
 ## License
 

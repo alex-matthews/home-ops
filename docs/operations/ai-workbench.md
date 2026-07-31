@@ -206,9 +206,8 @@ If Hermes reports `session terminated (404). need to re-initialize`,
 `MCP event loop is not running`, treat that as a Hermes MCP session lifecycle
 failure. A ToolHive workload replacement invalidates its in-memory Streamable
 HTTP session, but Hermes should detect that on its next keepalive, reconnect,
-and repopulate the MCP tools automatically. Wait one keepalive interval
-(currently 180 seconds), confirm the ToolHive catalog is present on the MCP
-page, then retry the same single-tool smoke prompt. Reload MCP or restart the
+and repopulate the MCP tools automatically. Wait for the catalog to reappear on
+the MCP page, then retry the same single-tool smoke prompt. Reload MCP or restart the
 Hermes gateway only if the catalog does not return or the retry still fails
 with a session-lifecycle error. Model-provider failures occur before the MCP
 call and should be diagnosed separately.
