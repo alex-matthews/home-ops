@@ -46,6 +46,16 @@ Length should track the change, not the effort spent on it. A long body is
 right when the reasoning is long; a one-line diff with a validation matrix is
 not.
 
+### Keeping the body current
+
+Refresh an open pull request's body as the branch moves. A body written when
+the branch was opened describes work that has since changed, and it is the
+record the moment it merges.
+
+Update it when the scope changes, when review turns up something the body now
+contradicts, and before asking for a merge — so the operator can see where the
+branch actually stands without reconstructing it from the commit log.
+
 ### Validation
 
 State what was checked and what it showed. Command invocations with their
