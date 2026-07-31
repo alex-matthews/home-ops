@@ -19,10 +19,6 @@ mod kube "kubernetes"
 [group('Talos')]
 mod talos "talos"
 
-# VolSync Recipes
-[group('VolSync')]
-mod volsync "volsync"
-
 [private]
 log lvl msg *args:
     gum log -t rfc3339 -s -l "{{ lvl }}" "{{ msg }}" {{ args }}

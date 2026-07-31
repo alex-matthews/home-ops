@@ -46,8 +46,8 @@ applied by Flux.
   [1Password Connect](https://1password.com/)
 - Storage: [Rook-Ceph](https://github.com/rook/rook),
   [OpenEBS](https://github.com/openebs/openebs), and Synology NFS
-- Backups: [VolSync](https://github.com/backube/volsync), with
-  [Kopiur](https://github.com/home-operations/kopiur) adoption in progress
+- Backups: [Kopiur](https://github.com/home-operations/kopiur) to Garage S3 and
+  Cloudflare R2
 - Observability:
   [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
   [Grafana](https://github.com/grafana/grafana), and
@@ -70,10 +70,9 @@ for the replicated Ceph pool.
 ├── docs/               # ADRs, repo guidance, and operational notes
 ├── kubernetes/
 │   ├── apps/           # Flux-managed applications, grouped by namespace
-│   ├── components/     # Shared Kustomize components, SOPS, alerts, VolSync
+│   ├── components/     # Shared Kustomize components, SOPS, alerts, Kopiur
 │   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
 ├── talos/              # Talos config templates and operator commands
-└── volsync/            # Local restore and snapshot helpers
 ```
 
 Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles the
@@ -128,7 +127,7 @@ just -l
 ```
 
 `just` is for local/operator workflows such as cluster bootstrap, Kubernetes
-diagnostics, Talos operations, and VolSync restore helpers.
+diagnostics and Talos operations.
 
 ## Operations Docs
 
