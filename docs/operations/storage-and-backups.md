@@ -154,6 +154,23 @@ staggered so the local and remote full runs do not overlap each other or the
 remote snapshot window. Watch duration, failure count, repository size, and
 restore-test outcomes. Do not disable maintenance.
 
+## Cluster-Scoped Resources
+
+Kopiur owns one resource outside its namespace. From chart 0.9.1 the operator
+ships a default-on `FlowSchema`, `kopiur-leader-election`, at
+`matchingPrecedence: 200`. It places the operator ServiceAccount's
+`coordination.k8s.io/leases` get/create/update calls in `kopiur-system` into
+the built-in guaranteed API Priority and Fairness lane, so a busy API server
+cannot starve leader-election renewals. It grants no new permissions — it only
+re-prioritises calls the ServiceAccount already made. Disable with
+`leaderElection.flowSchema.enabled: false` if it ever conflicts with another
+FlowSchema.
+
+The same release added the `KopiurLeaderElectionFlapping` and
+`KopiurLeaderRenewSlow` alerts, and dropped the upstream lease renew period
+from 5s to 2s. The `leaderElection.timings.*` values render only when set;
+they are not set here, so the upstream defaults apply.
+
 ## Known Quirks
 
 Observed on 0.7.5 through 0.9.1; re-test on upgrades and file upstream if still
