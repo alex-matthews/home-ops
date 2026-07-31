@@ -36,6 +36,10 @@ small, reviewable, and independently reconcilable.
 - Compare against peer or upstream patterns where one exists, using the catalog
   in `docs/guides/peers.md`. Avoid bespoke glue unless local constraints
   require it.
+- Before merging a Renovate PR, read the Renovate PR Review bot's comment. It
+  analyses the chart templates, which is where a chart's surface actually
+  changes — release notes describe the code and routinely miss it. See
+  `docs/guides/validation.md`.
 - Verify a convention's scope before writing it as a default. Grep the set it
   actually applies to; a pattern that holds for one component or one app is not
   a repository-wide rule. State the scoping rule rather than a count.

@@ -42,6 +42,21 @@ evidence without first proving the changed objects appear in its output. Use
 the Konflate pull-request render, or an explicitly branch-aware disposable
 render, as the authority for those changes.
 
+## What release notes do not prove
+
+Release notes describe the code. They do not describe what a chart's templates
+ship, and chart-shipped resources are where the deployed surface actually
+changes. Reviewing an upgrade from release notes alone will miss those.
+
+The Renovate PR Review bot reads the chart templates, so read its comment
+before merging a Renovate PR. On kopiur 0.9.1 it caught a new default-on
+cluster-scoped `FlowSchema` that a release-notes-only review missed entirely —
+see [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
+
+Treat its blocker-level findings as high-priority signals rather than
+advisory. If the finding is a documented intentional convention, that is a
+reason to fix the reviewer's prompt, not to skip reading it.
+
 ## Per-change heuristics
 
 - Workflow or tooling changes: run the formatting and workflow checks above,
