@@ -1118,7 +1118,7 @@
         "type": "prometheus",
         "uid": "$${DS_PROMETHEUS}"
       },
-      "description": "VolSync out-of-sync volumes and missed scheduled intervals over the last 24 hours.",
+      "description": "Backup health signals over the last 24 hours.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1167,7 +1167,7 @@
       "id": 54,
       "links": [
         {
-          "title": "VolSync dashboards",
+          "title": "Kopiur dashboards",
           "url": "https://grafana.${SECRET_DOMAIN}/dashboards?query=kopiur",
           "targetBlank": true
         }

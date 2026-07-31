@@ -19,7 +19,6 @@ spec:
     substitute:
       APP: plex
       PVC_CAPACITY: 50Gi
-      VOLSYNC_CACHE_CAPACITY: 25Gi
     substituteFrom:
       - kind: Secret
         name: cluster-secrets

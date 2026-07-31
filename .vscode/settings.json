@@ -19,7 +19,6 @@
     "flux": "folder_kubernetes",
     "talos": "folder_linux",
     "nodes": "folder_server",
-    "volsync": "folder_aws",
     "local": "folder_download",
     "remote": "folder_connection",
     "actions-runner-system": "folder_github",
@@ -33,7 +32,6 @@
     "openebs-system": "folder_database",
     "rook-ceph": "folder_database",
     "system-upgrade": "folder_config",
-    "volsync-system": "folder_aws",
     "alerts": "folder_audit",
     "zeroscaler": "folder_connection",
     "sops": "folder_security"

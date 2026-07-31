@@ -12,7 +12,7 @@ structure:
 
 | Reference app                       | Shows                                                                                       |
 | ----------------------------------- | ------------------------------------------------------------------------------------------- |
-| `kubernetes/apps/default/atuin`     | Small app: internal route, VolSync-backed PVC, no secrets                                   |
+| `kubernetes/apps/default/atuin`     | Small app: internal route, Kopiur-backed PVC, no secrets                                    |
 | `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                                        |
 | `kubernetes/apps/default/resolute`  | ExternalSecret, SOPS-encrypted config Secret, ServiceMonitor, CronJob, single-writer SQLite |
 | `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service           |
@@ -44,11 +44,11 @@ Confirm with the user anything not already given:
    justification per `AGENTS.md`).
 4. **Persistence**: choose backup posture from the app's value and recovery
    requirements, not from the presence of a PVC. Protected application state
-   (the norm in the `default` namespace) uses the VolSync component, which
-   wires backups and requires the Rook-Ceph dependency. Some persistent
-   workloads — observability data especially — intentionally use plain PVCs
-   with no VolSync; do not add VolSync coverage just because the app is
-   stateful.
+   (the norm in the `default` namespace) uses the Kopiur component, which
+   supplies the PVC and its backups and requires the Rook-Ceph dependency.
+   Some persistent workloads — observability data especially — intentionally
+   use plain PVCs with no backup coverage; do not add coverage just because
+   the app is stateful.
 5. **Secrets**: an ExternalSecret sourced from 1Password. Get the exact item
    and field names; never guess them.
 6. **Config files**: mounted config uses `configMapGenerator` plus a
@@ -77,9 +77,9 @@ kubernetes/apps/<namespace>/<app>/
 
 Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
 
-- `components` + `dependsOn` (rook-ceph-cluster): only with a VolSync PVC.
-- `postBuild.substitute.APP` is required by the VolSync component; add
-  `VOLSYNC_CAPACITY` when the component default (5Gi) is wrong.
+- `components` + `dependsOn` (rook-ceph-cluster): only with a Kopiur PVC.
+- `postBuild.substitute.APP` is required by the Kopiur component; add
+  `PVC_CAPACITY` when the component default (5Gi) is wrong.
 - `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
   and other substituted values, and it only works in namespaces whose
   `kustomization.yaml` includes the SOPS component (`../../components/sops`) —
@@ -107,11 +107,11 @@ Copy atuin's and adapt. Invariants to keep:
 - `spec.values` order: `controllers`, `defaultPodOptions`, `service`, `route`,
   `configMaps`, `persistence` (see
   `.agents/instructions/yaml-ordering.instructions.md`).
-- `defaultPodOptions.securityContext` for VolSync-backed apps only:
+- `defaultPodOptions.securityContext` for Kopiur-backed apps only:
   `runAsNonRoot: true`, `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
-  `fsGroupChangePolicy: OnRootMismatch` — the identity the Restic movers and
+  `fsGroupChangePolicy: OnRootMismatch` — the identity the Kopiur movers and
   the NAS convention expect (`docs/operations/storage-and-backups.md`). Apps
-  without VolSync persistence run whatever identity their image expects; keep
+  without backed-up persistence run whatever identity their image expects; keep
   `runAsNonRoot: true` where the image allows it.
 - Container `securityContext`: `allowPrivilegeEscalation: false`,
   `readOnlyRootFilesystem: true`, `capabilities: { drop: ["ALL"] }`. Add an
@@ -123,7 +123,7 @@ Copy atuin's and adapt. Invariants to keep:
   than the minimum.
 - Route hostnames use `"{{ .Release.Name }}.${SECRET_DOMAIN}"`; never hardcode
   the domain. Public routes get a Gatus endpoint annotation (see plex).
-- VolSync persistence mounts `existingClaim: "{{ .Release.Name }}"`.
+- Kopiur-backed persistence mounts `existingClaim: "{{ .Release.Name }}"`.
 - Config files mount as `type: configMap` with
   `name: "{{ .Release.Name }}-configmap"` (see recyclarr); SOPS-encrypted
   config mounts as `type: secret` (see resolute).

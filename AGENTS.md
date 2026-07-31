@@ -85,7 +85,7 @@ small, reviewable, and independently reconcilable.
   inventories.
 - Do not modify ExternalSecret names, target secret names, or secret key names
   unless explicitly requested.
-- Do not casually change PVC names, storage classes, VolSync or Kopiur objects,
+- Do not casually change PVC names, storage classes, Kopiur objects,
   backup schedules, or restore wiring.
 - Do not introduce new operators, CRD families, storage systems, ingress paths,
   or backup systems without a short rationale in the PR or a follow-up note.
