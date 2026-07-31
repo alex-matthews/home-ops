@@ -10,6 +10,9 @@ spec:
     name: prometheus-adapter
   interval: 1h
   values:
+    # Chart default is 4, which logs every request; klog still emits warnings
+    # and errors unconditionally at 1
+    logLevel: 1
     prometheus:
       url: http://prometheus-operated.observability.svc.cluster.local
     rules:
