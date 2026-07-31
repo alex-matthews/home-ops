@@ -107,6 +107,10 @@ small, reviewable, and independently reconcilable.
   tools directly unless there is a specific reason to do otherwise.
 - Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
   available on the ambient `PATH`.
+- Use Conventional Commit titles: `type(scope): summary`. Keep the subject in
+  the imperative and let the body carry the reasoning.
+- Do not add AI attribution or generated-by trailers to commits, pull request
+  descriptions, or code comments.
 
 
 ## Communication
