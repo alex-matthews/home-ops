@@ -73,9 +73,11 @@ the local segment. There are no L2 announcements: service addresses are routed,
 so failover follows the routing table instead of gratuitous ARP, and the
 addresses are reachable from anywhere the router will route to.
 
-Those addresses come from a dedicated Services network rather than the client
-network, which keeps cluster service addresses off the segment where laptops and
-phones live and lets them carry their own firewall policy.
+Those addresses come from a dedicated Services network that the nodes hold no
+interface on — they simply advertise routes to it over their primary link.
+Because nothing else lives in that range, reaching a service address can never
+be a local-segment conversation: every client routes via the gateway, which is
+where policy is applied rather than assumed.
 
 ### DNS
 
