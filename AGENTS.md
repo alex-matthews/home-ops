@@ -5,23 +5,26 @@ small, reviewable, and independently reconcilable.
 
 ## Entry Points
 
-- This file is the canonical agent entrypoint and the authority on change
-  control. Where it and another document disagree, this file wins.
-- `docs/guides/` holds the working references. Each opens with a **When to
-  use** line; read only those whose triggers match the task at hand.
-    - `cluster-model.md`: how a change reaches the cluster, secrets, backups,
-      and which surfaces are high-risk to touch.
-    - `app-pattern.md`: repository layout and app file shape.
-    - `yaml-ordering.md`: key ordering conventions for YAML edits.
-    - `validation.md`: what to run, what each check proves, CI and tooling
-      boundaries, bypass merges.
-    - `peers.md`: reference repository catalog and how to use it.
-    - `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
-      comments. Read it before posting or editing any GitHub prose.
-- `.agents/skills/`: task recipes such as `add-app`. Load a skill only when
-  performing that task. Load `maintenance-window` before planning or executing
-  any window that stops workloads, deletes or recreates PVCs, or holds
-  imperative cluster state across a merge.
+This file is the canonical agent entrypoint and the authority on change
+control. Where it and another document disagree, this file wins.
+
+`docs/guides/` holds the working references. Each opens with a **When to use**
+line; read only those whose triggers match the task at hand.
+
+- `cluster-model.md`: how a change reaches the cluster, secrets, backups, and
+  which surfaces are high-risk to touch.
+- `app-pattern.md`: repository layout and app file shape.
+- `yaml-ordering.md`: key ordering conventions for YAML edits.
+- `validation.md`: what to run, what each check proves, CI and tooling
+  boundaries, bypass merges.
+- `peers.md`: reference repository catalog and how to use it.
+- `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
+  comments. Read it before posting or editing any GitHub prose.
+
+`.agents/skills/` holds task recipes such as `add-app`. Load a skill only when
+performing that task. Load `maintenance-window` before planning or executing
+any window that stops workloads, deletes or recreates PVCs, or holds imperative
+cluster state across a merge.
 
 ## Before Editing
 
