@@ -24,6 +24,10 @@ If the stable DNS name is unavailable (router or DNS failure):
   (`kubectl --server=https://<node>:6443 ...`). Node identities are in the
   API server certificate by default, so TLS verification still passes.
 
+Re-test both paths after every UniFi OS upgrade. They depend on router
+behaviour that a firmware change can alter, and the failure is silent until the
+moment you need them.
+
 ## Client certificate lifecycle
 
 `just talos cert-check` reports expiry; `just talos cert-renew` renews within
