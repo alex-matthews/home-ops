@@ -27,6 +27,19 @@ spec:
             use_tcp: true
         port: 53
         plugins:
+          # The cluster is SingleStack/IPv4, so an AAAA answer is unusable even
+          # when upstream returns one. Answer AAAA locally with NODATA instead
+          # of forwarding it. Plugin order comes from plugin.cfg, not this
+          # list: template(60) runs before kubernetes(67) and forward(73), so
+          # AAAA never leaves the cluster.
+          #
+          # This is a `.`-wide blackhole with no fallthrough and it fails
+          # silently as NODATA, not as an error. Remove it before introducing
+          # IPv6 or reaching any IPv6-only external host.
+          - name: template
+            parameters: ANY AAAA
+            configBlock: |-
+              authority "{{ .Zone }} 60 IN SOA ns.dns.cluster.local. hostmaster.cluster.local. (1 60 60 60 60)"
           - name: errors
           - name: health
             configBlock: |-
@@ -41,10 +54,14 @@ spec:
             parameters: "@kubernetes"
           - name: forward
             parameters: . /etc/resolv.conf
+          # servfail 0: upstream failures here are intermittent and the same
+          # names resolve on retry, so replaying a cached SERVFAIL for 5s only
+          # widens the blast radius.
           - name: cache
             configBlock: |-
               prefetch 20
               serve_stale
+              servfail 0
           - name: loop
           - name: reload
           - name: loadbalance
@@ -53,6 +70,9 @@ spec:
           - name: log
             configBlock: |-
               class error
+    # Cluster DNS should not be evicted ahead of ordinary workloads under node
+    # memory pressure.
+    priorityClassName: system-cluster-critical
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
