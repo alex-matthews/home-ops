@@ -72,22 +72,11 @@ for the replicated Ceph pool.
 │   ├── apps/           # Flux-managed applications, grouped by namespace
 │   ├── components/     # Shared Kustomize components, SOPS, alerts, Kopiur
 │   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
-├── talos/              # Talos config templates and operator commands
+└── talos/              # Talos config templates and operator commands
 ```
 
-Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles the
-applications under `kubernetes/apps`. Most application directories follow this
-shape:
-
-```text
-kubernetes/apps/<namespace>/<app>/ks.yaml
-kubernetes/apps/<namespace>/<app>/app/kustomization.yaml
-kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml
-kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
-```
-
-Common additions include `externalsecret.yaml`, `pvc.yaml`, `httproute.yaml`,
-`servicemonitor.yaml`, dashboards, alerts, and app-specific configuration.
+Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles
+the applications under `kubernetes/apps`.
 
 ## Automation / CI
 
@@ -135,7 +124,7 @@ diagnostics and Talos operations.
   for the Hermes and ToolHive workbench: current surface, boundaries, and the
   cluster-health triage loop.
 - [Storage and Backups](docs/operations/storage-and-backups.md) describes the
-  current backup posture and backup migration criteria.
+  backup posture, the protected application set, and how to verify a restore.
 
 ## Thanks
 
@@ -145,8 +134,8 @@ This repository builds on patterns from
 [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops), and the
 [Home Operations](https://discord.gg/home-operations) community.
 
-[kubesearch.dev](https://kubesearch.dev/) remains a great way to find examples of
-how others deploy applications in similar clusters.
+[kubesearch.dev](https://kubesearch.dev/) is a great way to find examples of how
+others deploy applications in similar clusters.
 
 ## License
 
