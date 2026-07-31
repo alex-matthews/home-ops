@@ -1118,7 +1118,7 @@
         "type": "prometheus",
         "uid": "$${DS_PROMETHEUS}"
       },
-      "description": "Backup health signals over the last 24 hours.",
+      "description": "Kopiur policies with no successful backup in over 26 hours, or with consecutive failures. 26h clears the daily remote cadence plus jitter.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1195,7 +1195,7 @@
             "uid": "$${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "vector(0)",
+          "expr": "(count((time() - kopiur_policy_last_backup_success_timestamp_seconds) > 93600) or vector(0)) + (count(kopiur_snapshot_consecutive_failures > 0) or vector(0))",
           "instant": true,
           "legendFormat": "Backups",
           "range": false,
