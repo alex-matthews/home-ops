@@ -68,12 +68,14 @@ spec:
         scrapeConfigSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
         retention: 14d
-        retentionSize: 50GB
+        # Parsed base-2, so an explicit GiB suffix keeps the next reader out of
+        # the 50GB == 50GiB trap that put this guard above the volume capacity
+        retentionSize: 40GiB
         resources:
           requests:
             cpu: 100m
           limits:
-            memory: 2000Mi
+            memory: 3Gi
         storageSpec:
           volumeClaimTemplate:
             spec:
