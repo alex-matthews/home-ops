@@ -9,10 +9,9 @@ keys are generated on each appliance and never transit.
 - Each UI has one internal DNS name under the cluster domain, maintained as a
   manual router record alongside the stable Kubernetes API name. There are no
   public A records; issuance is DNS-01 against the public zone.
-- Each appliance holds its own zone-scoped Cloudflare API token (Zone: Read,
-  DNS: Edit, single zone, no expiry), stored in 1Password as `svc-acme-nas`
-  and `svc-acme-unifi`. Rotating a token never affects issued certificates,
-  only future renewals.
+- Each appliance holds its own zone-scoped Cloudflare API token — Zone: Read,
+  DNS: Edit, one zone, no expiry — held in 1Password, one item per appliance.
+  Rotating a token never affects issued certificates, only future renewals.
 
 ## Synology
 

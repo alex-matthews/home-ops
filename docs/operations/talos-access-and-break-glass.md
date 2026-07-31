@@ -42,4 +42,4 @@ path depends on the removed SAN entries.
 - 2026-07-18: direct-node Talos API access proven on all three nodes
   (`talosctl -n <node> -e <node> version` with TLS verification), and
   Kubernetes API TLS proven against a direct node name
-  (`kubectl --server=https://m1:6443 version`), both after #1553.
+  (`kubectl --server=https://<node>:6443 version`), both after #1553.

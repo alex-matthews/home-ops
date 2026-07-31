@@ -62,10 +62,11 @@ normalises ownership naturally — do not churn the source PVC to fix them.
 
 ## Protected Application Inventory
 
-Derived from the resources included in `kubernetes/apps/default/kustomization.yaml`.
-Every row has local and remote Kopiur protection, so the table records only what
-varies. Separately declared cache PVCs are runtime-only and are not backup
-sources.
+Scope: every app whose Kustomization includes the `kopiur` component. That is
+the rule to re-derive this table from, not the `default` namespace membership —
+stateless apps in `default` are deliberately outside it. Every row therefore has
+both local and remote protection, so the table records only what varies.
+Separately declared cache PVCs are runtime-only and are not backup sources.
 
 | App           | App PVC | Runtime NAS | Zeroscaler | Other state or constraint          |
 | ------------- | ------- | ----------- | ---------- | ---------------------------------- |
@@ -101,6 +102,9 @@ telemetry history or non-declarative UI state, not the Git source of truth.
 Hermes and the AI workbench are intentionally stateless; the Hermes home
 directory is an `emptyDir`. Do not add persistence or backup coverage unless
 the workbench design changes.
+
+`chaski` runs in `default` with no PVC and no Kopiur component. It is stateless
+by design, so its absence from the table above is deliberate rather than a gap.
 
 ## Components
 
