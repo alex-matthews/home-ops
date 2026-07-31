@@ -56,6 +56,32 @@ applied by Flux.
   [Konflate](https://github.com/home-operations/konflate), and
   [GitHub Actions](https://github.com/features/actions)
 
+## Networking
+
+The cluster sits behind a UniFi Dream Machine Pro, which routes and firewalls
+the network and peers with the cluster over BGP.
+
+Cilium runs with `kubeProxyReplacement` and native routing, and advertises
+LoadBalancer addresses to the gateway over BGP rather than announcing them on
+the local segment. There are no L2 announcements: service addresses are routed,
+so failover follows the routing table instead of gratuitous ARP, and the
+addresses are reachable from anywhere the router will route to.
+
+Those addresses come from a dedicated Services network rather than the client
+network, which keeps cluster service addresses off the segment where laptops and
+phones live and lets them carry their own firewall policy.
+
+### DNS
+
+Two ExternalDNS instances keep records in sync:
+
+- **Private** — every route, synced to the gateway through the
+  [ExternalDNS UniFi webhook](https://github.com/home-operations/external-dns-unifi-webhook).
+- **Public** — only routes on the external Gateway, synced to Cloudflare.
+
+The result is split-horizon DNS: at home, public hostnames resolve to LAN
+addresses, so traffic to my own services never leaves the network.
+
 ### Hardware
 
 The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
