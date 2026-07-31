@@ -48,9 +48,9 @@ not.
 
 ### Keeping the body current
 
-The squash commit takes its message from the commits, not from the pull request
-body, so the commit messages are the durable record. The body is the operator's
-view of a branch while it is still open.
+The squash commit is built from the commit messages, not from the pull request
+body, so put the reasoning there. The body is the operator's view of a branch
+while it is still open.
 
 Most pull requests here open and merge within the hour and need no refresh.
 Update the body when one outlives a single sitting: when scope changes, when
