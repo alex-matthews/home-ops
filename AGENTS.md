@@ -44,62 +44,82 @@ small, reviewable, and independently reconcilable.
   actually applies to; a pattern that holds for one component or one app is not
   a repository-wide rule. State the scoping rule rather than a count.
 
+## Treat This Repository As Public
+
+Issues, pull requests, release notes, and durable repo prose are public by
+default.
+
+Never publish sensitive operational metadata to GitHub issues, PR bodies, PR
+comments, or other public prose unless the user explicitly asks for that exact
+detail to be public. This includes GitHub App/client/installation/ruleset
+identifiers, webhook identifiers, 1Password vault/item names, secret key names,
+private-key or credential storage topology, and detailed permission
+inventories.
+
+Avoid hardcoding hostnames in manifests, durable docs, rules files, or workflow
+defaults. Prefer `${SECRET_DOMAIN}` or existing repo secrets/vars such as
+`KONFLATE_URL`; generated CI comments and status links may expose configured
+public hostnames when needed.
+
+Writing standards and the pre-publication checklist are in
+[`docs/guides/pr-and-issue-writing.md`](docs/guides/pr-and-issue-writing.md).
+Read it rather than inferring house style from surrounding text.
+
 ## Safety Boundaries
 
-- Do not add or expand bespoke scripts, provider systems, permissions, webhooks,
-  storage, auth surfaces, or public routes without explicit justification and
-  approval.
-- If live verification shows unexpected behavior, stop and report before
-  layering additional fixes.
-- Use PR branches for high-risk changes unless the user explicitly approves
-  direct-to-main edits.
-- Do not make imperative cluster fixes except for diagnostics explicitly
-  requested by the user.
-- Read-only cluster inspection counts as diagnostics: `kubectl get`,
-  `describe`, `logs`, `events`, `top`, `auth can-i`, `diff`, and
-  `apply --dry-run=server`, plus the equivalent `flux`, `helm`, and `talosctl`
-  read commands.
-- Imperative cluster state is a lease, not a lock. Anything set with `kubectl`
-  on a Flux-managed object is cleared by the next successful apply of the
-  Kustomization that owns it — often an apply you trigger yourself. Before
-  relying on any imperative hold, name the Git field that owns it and the next
-  apply that will clear it; if it must survive, put it in Git or suspend the
-  controller. Gate destructive steps on freshly re-read state, never on state
-  asserted earlier in the session.
-- Treat every mutating cluster command as an imperative fix that needs explicit
-  user approval of the exact action first: `kubectl apply`, `create`, `delete`,
-  `edit`, `patch`, `replace`, `scale`, `rollout`, `annotate`, `label`,
-  `cordon`, `drain`; `flux reconcile`, `suspend`, `resume`; `helm` install,
-  upgrade, or rollback; `talosctl` apply or upgrade; and anything else that
-  changes live state.
-- Classify `kubectl exec`, `port-forward`, `cp`, and `debug` by behavior, not
-  name. Acceptable diagnostics: exec'ing a strictly read-only command in an
-  existing pod, or a short-lived local port-forward to inspect an internal
-  endpoint. Ask first for anything that changes state: exec'ing commands that
-  write files or run repairs, `kubectl cp` into a pod, and `kubectl debug`,
-  which creates debug workloads. Copying out of a pod is state-preserving but
-  can extract data — state the reason before copying anything out, and never
-  use exec, cp, or port-forward to read or move secret material.
-- Do not edit generated outputs, rendered manifests, caches, logs, credentials,
-  or local auth/session state.
-- Do not reformat SOPS-encrypted files; their encrypted document shape is
-  intentional.
-- Avoid hardcoding hostnames in manifests, durable docs, rules files, or
-  workflow defaults. Prefer `${SECRET_DOMAIN}` or existing repo secrets/vars
-  such as `KONFLATE_URL`; generated CI comments and status links may expose
-  configured public hostnames when needed.
-- Never publish sensitive operational metadata to GitHub issues, PR bodies, PR
-  comments, or other public prose unless the user explicitly asks for that exact
-  detail to be public. This includes GitHub App/client/installation/ruleset
-  identifiers, webhook identifiers, 1Password vault/item names, secret key names,
-  private-key or credential storage topology, and detailed permission
-  inventories.
-- Do not modify ExternalSecret names, target secret names, or secret key names
-  unless explicitly requested.
-- Do not casually change PVC names, storage classes, Kopiur objects,
-  backup schedules, or restore wiring.
-- Do not introduce new operators, CRD families, storage systems, ingress paths,
-  or backup systems without a short rationale in the PR or a follow-up note.
+Changes reach the cluster through Git. Imperative fixes are for diagnostics the
+user explicitly requested, and if live verification shows unexpected behaviour,
+stop and report rather than layering further fixes.
+
+### Always
+
+Read-only inspection needs no approval: `kubectl get`, `describe`, `logs`,
+`events`, `top`, `auth can-i`, `diff`, and `apply --dry-run=server`, plus the
+equivalent `flux`, `helm`, and `talosctl` read commands. Also allowed are
+exec'ing a strictly read-only command in an existing pod, and a short-lived
+local port-forward to inspect an internal endpoint.
+
+Local validation, rendering, and formatting are always allowed.
+
+### Ask first
+
+Get explicit user approval of the exact action before:
+
+- Any mutating cluster command: `kubectl apply`, `create`, `delete`, `edit`,
+  `patch`, `replace`, `scale`, `rollout`, `annotate`, `label`, `cordon`,
+  `drain`; `flux reconcile`, `suspend`, `resume`; `helm` install, upgrade, or
+  rollback; `talosctl` apply or upgrade; and anything else that changes live
+  state.
+- `kubectl exec` running commands that write files or run repairs, `kubectl cp`
+  into a pod, and `kubectl debug`, which creates debug workloads. Classify
+  these by behaviour, not by command name.
+- Copying anything out of a pod. It is state-preserving but can extract data,
+  so state the reason first.
+- Editing `main` directly. Use a PR branch for high-risk changes unless the
+  user explicitly approves otherwise.
+- Adding or expanding bespoke scripts, provider systems, permissions, webhooks,
+  storage, auth surfaces, or public routes.
+- Introducing new operators, CRD families, storage systems, ingress paths, or
+  backup systems. Record the rationale in the PR or a follow-up note.
+- Modifying ExternalSecret names, target secret names, or secret key names.
+- Changing PVC names, storage classes, Kopiur objects, backup schedules, or
+  restore wiring.
+
+### Never
+
+- Use `exec`, `cp`, or `port-forward` to read or move secret material.
+- Edit generated outputs, rendered manifests, caches, logs, credentials, or
+  local auth/session state.
+- Reformat SOPS-encrypted files; their encrypted document shape is intentional.
+
+### Imperative state is a lease, not a lock
+
+Anything set with `kubectl` on a Flux-managed object is cleared by the next
+successful apply of the Kustomization that owns it — often an apply you trigger
+yourself. Before relying on any imperative hold, name the Git field that owns
+it and the next apply that will clear it; if it must survive, put it in Git or
+suspend the controller. Gate destructive steps on freshly re-read state, never
+on state asserted earlier in the session.
 
 ## Repo Conventions
 
@@ -137,11 +157,6 @@ what lets a later reader judge whether it still holds, and a rule with no
 evidence is the first thing to rot.
 
 ## Communication
-
-Treat GitHub issues, PRs, release notes, and durable repo prose as public by
-default. The writing standards and the pre-publication safety checklist are in
-[`docs/guides/pr-and-issue-writing.md`](docs/guides/pr-and-issue-writing.md);
-read it rather than inferring house style from surrounding text.
 
 When reporting to the user, state what changed, what was validated, and any
 remaining gap or risk plainly.
