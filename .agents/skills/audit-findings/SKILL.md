@@ -23,7 +23,7 @@ mix evidence gathering with changes.
 - Distinguish confirmed observations from hypotheses. An unverified hypothesis
   stays labelled as one — do not let it harden into a finding without
   evidence.
-- Compare against peer or upstream patterns where useful (repo-guide reference
+- Compare against peer or upstream patterns where useful (`docs/guides/peers.md`
   catalog), but treat them as comparison inputs, not targets.
 
 ## Workflow

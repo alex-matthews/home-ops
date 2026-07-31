@@ -242,8 +242,8 @@ jobs:
             PR: #${{ env.PR_NUMBER }}
             Review fingerprint: ${{ steps.review.outputs.fingerprint }}
             Force re-review requested: ${{ env.FORCE_REVIEW }}
-            Follow this prompt, then `AGENTS.md`, `docs/guides/repo-guide.md`,
-            and only relevant `.agents/instructions/`. Preflight already chose
+            Follow this prompt, then `AGENTS.md`, and only the guides under
+            `docs/guides/` whose triggers match. Preflight already chose
             this PR; do not duplicate-skip or stop because an older comment exists.
             Review contract:
             - Read `gh pr view` and `gh pr diff`. For each upgraded artifact,

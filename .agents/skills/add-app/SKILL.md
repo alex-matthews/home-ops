@@ -106,7 +106,7 @@ Copy atuin's and adapt. Invariants to keep:
 - Schema comment pointing at the app-template helmrelease schema.
 - `spec.values` order: `controllers`, `defaultPodOptions`, `service`, `route`,
   `configMaps`, `persistence` (see
-  `.agents/instructions/yaml-ordering.instructions.md`).
+  `docs/guides/yaml-ordering.md`).
 - `defaultPodOptions.securityContext` for Kopiur-backed apps only:
   `runAsNonRoot: true`, `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
   `fsGroupChangePolicy: OnRootMismatch` — the identity the Kopiur movers and

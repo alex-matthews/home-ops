@@ -9,10 +9,59 @@ Durable decisions belong in ADRs, tasks belong in GitHub, and reusable operating
 patterns belong here. Prompt experiments, raw transcripts, and one-off debug
 notes should stay out of this file.
 
+## Topology
+
+```text
+GitHub Actions
+  └─ Renovate PR Review
+       └─ Claude Code action
+
+Cluster
+  ├─ ToolHive
+  │    ├─ Konflate MCP
+  │    ├─ GitHub MCP
+  │    ├─ Flux MCP
+  │    ├─ Grafana MCP
+  │    └─ Context7 MCP
+  ├─ Hermes
+  ├─ LiteLLM, internal-only
+  │    └─ Dragonfly cache/router state
+  ├─ future OpenClaw assistant
+  ├─ future scheduled triage workers
+  └─ future shared memory service
+
+External services
+  ├─ GitHub
+  ├─ Context7
+  ├─ cloud LLM providers
+  ├─ Cloudflare API, read-only/scoped if enabled
+  └─ 1Password tooling, local/dev-first if enabled
+```
+
+## State Boundaries
+
+| State                  | Source of truth                                              |
+| ---------------------- | ------------------------------------------------------------ |
+| Cluster desired state  | This repository and Flux                                     |
+| Backlog                | GitHub Issues, optionally GitHub Projects                    |
+| Architecture decisions | ADRs under `docs/adr/`                                       |
+| Scratch planning       | Issue drafts                                                 |
+| Assistant memory       | Hermes-local or future shared memory, non-authoritative      |
+| Secrets                | 1Password, SOPS, External Secrets, and cluster secret stores |
+
+Assistant memory may retain summaries, observations, and references, but it is
+not a source of truth. Hermes-local memory is acceptable for proving behaviour;
+a shared backend such as Memini can be considered later to avoid tying recall to
+a single client. Durable tasks and decisions stay in GitHub and the repo.
+
 ## Current Surface
 
 Hermes is the interactive client. It uses the internal LiteLLM gateway by
 default and reaches tools through the ToolHive vMCP surface.
+
+LiteLLM runs as a single internal-only replica with no public route and no
+PostgreSQL, backed by a non-persistent Dragonfly instance for Redis-compatible
+cache and router state.
 
 The Hermes dashboard is exposed through the internal Envoy Gateway route. For
 non-loopback binds, Hermes requires a dashboard auth provider; this deployment
@@ -116,10 +165,10 @@ Promotion criteria:
 
 ## Hermes Skills And Memory
 
-Hermes UI skills are runtime state unless this repo adopts them. Codex also
-supports repo-local skills under `.agents/skills/<name>/SKILL.md`, but this repo
-has not adopted that convention yet. The only committed agent-specific directory
-today is `.agents/instructions/` for narrow reusable instructions.
+Hermes UI skills are runtime state unless this repo adopts them. Repo-local
+skills live under `.agents/skills/<name>/SKILL.md` — `add-app`,
+`audit-findings`, and `maintenance-window`. Narrow reusable conventions live in
+`docs/guides/`.
 
 Before relying on generated skills, confirm this guardrail posture in the
 Hermes config:
@@ -135,16 +184,15 @@ Use these states when evaluating a Hermes-generated skill:
   testing, not durable behavior.
 - Reviewed runtime skill: manually inspected in Hermes and acceptable for
   interactive use; still not a repo source of truth.
-- Repo-owned guidance: committed in `AGENTS.md`, `.agents/instructions/`,
+- Repo-owned guidance: committed in `AGENTS.md`, `docs/guides/`,
   `.agents/skills/`, ADRs, or operations docs; useful across clients and
   reviewable like normal repo content.
 - Automation-approved: explicitly approved for scheduled or write-adjacent use,
   with durable state, reviewed prompts or skills, and a clear approval boundary.
 
 If a Hermes skill should move out of runtime state, choose the smallest durable
-form: a short operations note, a narrow `.agents/instructions/` file, or a
-first `.agents/skills/<name>/SKILL.md` that establishes the repo skill
-convention.
+form: a short operations note, a narrow guide under `docs/guides/`, or a new
+`.agents/skills/<name>/SKILL.md`.
 
 Before relying on Hermes self-improvement, persist `/opt/data`, keep generated
 memory non-authoritative, and review generated skill diffs before reuse. A
