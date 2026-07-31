@@ -56,8 +56,9 @@ cluster-scoped `FlowSchema` that a release-notes-only review missed entirely —
 see [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
 
 Treat its blocker-level findings as high-priority signals rather than
-advisory. If the finding is a documented intentional convention, that is a
-reason to fix the reviewer's prompt, not to skip reading it.
+advisory. If it flags something this repo documents as intentional, fix the
+reviewer's prompt — it is inline in `.github/workflows/renovate-review.yaml` —
+rather than learning to skip the comment.
 
 ## Per-change heuristics
 

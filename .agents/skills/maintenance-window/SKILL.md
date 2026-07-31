@@ -99,6 +99,6 @@ Also during execution:
   a participant in the window.
 - Using local render tooling as branch-diff evidence when it resolves child
   Kustomization content from the pinned remote ref (see the validation notes
-  in `docs/guides/repo-guide.md`).
+  in `docs/guides/validation.md`).
 - Asserting a shape is schema-valid from field names alone without checking
   `required`; CRD admission is not exercised by a Kustomize render.
