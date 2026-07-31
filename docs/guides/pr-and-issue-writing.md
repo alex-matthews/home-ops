@@ -1,5 +1,7 @@
 # Issue and PR Writing
 
+**When to use:** Writing or editing an issue body, pull request description, or comment; public prose; linking to another repository; sanitising something already published.
+
 Issues and pull requests are the durable public record of why this repository
 changed. Write them for someone reading in six months, not for the moment of
 writing.

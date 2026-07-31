@@ -1,5 +1,7 @@
 # YAML Ordering
 
+**When to use:** Editing YAML, key order, sorting, `metadata`, HelmRelease `spec` or `values` order, containers, resources, embedded config.
+
 Use these rules when editing YAML in this repository. They describe the repo's
 current conventions, not a request to mass-sort files. Preserve nearby patterns
 when they are more specific than these generic rules. For repository layout and

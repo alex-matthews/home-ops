@@ -7,7 +7,8 @@ small, reviewable, and independently reconcilable.
 
 - This file is the canonical agent entrypoint and the authority on change
   control. Where it and another document disagree, this file wins.
-- `docs/guides/` holds the working references. Read the one the task needs:
+- `docs/guides/` holds the working references. Each opens with a **When to
+  use** line; read only those whose triggers match the task at hand.
     - `cluster-model.md`: how a change reaches the cluster, secrets, backups,
       and which surfaces are high-risk to touch.
     - `app-pattern.md`: repository layout and app file shape.

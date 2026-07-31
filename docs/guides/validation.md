@@ -1,5 +1,7 @@
 # Validation and Tooling
 
+**When to use:** What to run before merging, render, flate, Konflate, kubeconform, image diff, bypass merge, CI boundaries, `just` versus `mise`, release notes, Renovate PR Review bot.
+
 Use the smallest validation set that matches the change. What to run, what each
 check actually proves, and where the tooling boundaries sit.
 

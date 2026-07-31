@@ -1,5 +1,7 @@
 # Peer Repositories
 
+**When to use:** Peer repositories, how others solved it, upstream pattern, comparison, reference catalog, adopting a pattern.
+
 Use peer repositories to answer a narrow question: "how have others solved this
 specific problem?" They are comparison inputs, not constraints. Before adopting
 a pattern, inspect the relevant current files or pull requests and call out

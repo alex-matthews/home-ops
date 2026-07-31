@@ -1,5 +1,7 @@
 # Repository Layout and App Pattern
 
+**When to use:** New app, where a file lives, repository layout, `ks.yaml`, HelmRelease, OCIRepository, kustomization, app-template values, sibling directories.
+
 Where things live and what shape a new app takes. For how a change reaches the
 cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
 [`validation.md`](validation.md).

@@ -1,5 +1,7 @@
 # Cluster Model
 
+**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, high-risk surfaces.
+
 How a change reaches the cluster, how secrets and state get there, and which
 surfaces are high-risk to touch. For repository layout and app file shape see
 [`app-pattern.md`](app-pattern.md); for validation commands see
