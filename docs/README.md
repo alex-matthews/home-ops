@@ -29,3 +29,11 @@ experiments out of this tree.
 - `operations/`: how the live cluster is operated, restored, migrated, or
   understood.
 
+A decision record holds the decision and its consequences only. Architecture
+reference and current-state inventories belong in `operations/`, where they can
+be corrected without rewriting a decision.
+
+The root `README.md` is the repository's front page, not an index. It is
+curated for a visitor trying to understand the repo, so operational and
+recovery docs belong in the map above rather than on the shopfront. The map is
+the complete index; keep it so.

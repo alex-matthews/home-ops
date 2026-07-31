@@ -116,6 +116,25 @@ small, reviewable, and independently reconcilable.
 - Do not add AI attribution or generated-by trailers to commits, pull request
   descriptions, or code comments.
 
+## Recording What You Learn
+
+When a session establishes a durable working preference or a non-obvious fact
+about this repository, write it into the document that owns the topic. Do not
+leave it in agent-private memory: other agents and other clients cannot read
+it, so guidance held by one assistant is guidance every other one ignores.
+
+- A prose, review, or issue-hygiene convention → `docs/guides/pr-and-issue-writing.md`.
+- A cluster, secret, or storage fact → `docs/guides/cluster-model.md`, or the
+  relevant note under `docs/operations/`.
+- A caveat about what a check does or does not prove →
+  `docs/guides/validation.md`.
+- A peer-comparison scoping rule → `docs/guides/peers.md`.
+- A rule that changes what an agent is allowed to do → this file.
+- If nothing owns it, add a guide rather than widening this file.
+
+Record the evidence alongside the rule. The observation that produced it is
+what lets a later reader judge whether it still holds, and a rule with no
+evidence is the first thing to rot.
 
 ## Communication
 

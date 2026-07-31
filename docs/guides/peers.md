@@ -5,6 +5,11 @@ specific problem?" They are comparison inputs, not constraints. Before adopting
 a pattern, inspect the relevant current files or pull requests and call out
 material differences from this repo.
 
+"Peer repositories" means this catalog — the home-ops and k8s-gitops clusters
+listed below. Other repositories that happen to sit alongside this one, such as
+applications deployed by it, are consumers of these conventions rather than
+sources of them; do not compare against those.
+
 ## Non-goals
 
 - Do not copy public routes, domains, OIDC setup, broad RBAC, storage classes,
