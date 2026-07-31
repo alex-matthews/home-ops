@@ -1,6 +1,6 @@
 # Validation and Tooling
 
-**When to use:** What to run before merging, render, flate, Konflate, kubeconform, image diff, bypass merge, CI boundaries, `just` versus `mise`, release notes, Renovate PR Review bot.
+**When to use:** What to run before merging, render, flate, Konflate, kubeconform, image diff, bypass merge, CI boundaries, `just` versus `mise`, release notes, Renovate PR Review bot, firing alerts, Alertmanager, silences.
 
 Use the smallest validation set that matches the change. What to run, what each
 check actually proves, and where the tooling boundaries sit.
@@ -59,6 +59,24 @@ Treat its blocker-level findings as high-priority signals rather than
 advisory. If it flags something this repo documents as intentional, fix the
 reviewer's prompt — it is inline in `.github/workflows/renovate-review.yaml` —
 rather than learning to skip the comment.
+
+## What a firing alert does not prove
+
+Prometheus reports an alert as firing whether or not it is silenced — silencing
+is an Alertmanager concept. Querying Prometheus `/api/v1/alerts` tells you what
+is evaluating true, not what needs attention.
+
+Ask Alertmanager instead. `/api/v2/alerts` marks each alert `active` or
+`suppressed` and carries `silencedBy` and `inhibitedBy`, so the actionable set
+is whatever is active and not suppressed. Long-standing benign warnings are silenced
+deliberately and declaratively — the CRs live in
+`kubernetes/apps/observability/silence-operator/silences/` and appear in-cluster
+as `silences.observability.giantswarm.io`. Check there before reporting one as
+new.
+
+The `home-ops-cockpit` dashboard already filters to actionable alerts, so when
+it disagrees with a raw Prometheus query, check this distinction before
+concluding the panel is wrong.
 
 ## Per-change heuristics
 
