@@ -48,9 +48,11 @@ not.
 
 ### Keeping the body current
 
-The squash commit is built from the commit messages, not from the pull request
-body, so put the reasoning there. The body is the operator's view of a branch
-while it is still open.
+The commit messages and the body serve different readers, so write both to fit
+what each carries rather than choosing between them. The squash commit is built
+from the commit messages, so those are what `git log` and `git blame` surface
+later. The body is what a reviewer reads now, what the operator checks while the
+branch is open, and what someone following a link finds afterwards.
 
 Most pull requests here open and merge within the hour and need no refresh.
 Update the body when one outlives a single sitting: when scope changes, when
