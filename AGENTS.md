@@ -5,33 +5,40 @@ small, reviewable, and independently reconcilable.
 
 ## Entry Points
 
-- This file is the canonical agent entrypoint.
-- `docs/guides/repo-guide.md` contains repo layout, app patterns, and
-  validation commands. Read it before non-trivial repo, workflow, or GitOps
-  edits.
-- `.agents/instructions/` is reserved for narrow reusable instructions such as
-  YAML ordering. Load only the files relevant to the task.
-- `.agents/skills/` holds task recipes such as `add-app`. Load a skill only
-  when performing that task. Load `maintenance-window` before planning or
-  executing any window that stops workloads, deletes or recreates PVCs, or
-  holds imperative cluster state across a merge.
-- `backlog.md`, if present, is scratch state.
+- This file is the canonical agent entrypoint and the authority on change
+  control. Where it and another document disagree, this file wins.
+- `docs/guides/` holds the working references. Read the one the task needs:
+    - `cluster-model.md`: how a change reaches the cluster, secrets, backups,
+      and which surfaces are high-risk to touch.
+    - `app-pattern.md`: repository layout and app file shape.
+    - `yaml-ordering.md`: key ordering conventions for YAML edits.
+    - `validation.md`: what to run, what each check proves, CI and tooling
+      boundaries, bypass merges.
+    - `peers.md`: reference repository catalog and how to use it.
+    - `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
+      comments. Read it before posting or editing any GitHub prose.
+- `.agents/skills/`: task recipes such as `add-app`. Load a skill only when
+  performing that task. Load `maintenance-window` before planning or executing
+  any window that stops workloads, deletes or recreates PVCs, or holds
+  imperative cluster state across a merge.
 
 ## Before Editing
 
-- For non-trivial infra, workflow, GitOps, and automation changes, briefly state
-  the intended diff, relevant reference or upstream pattern when useful,
-  validation plan, and done criteria before editing. Keep this short when
-  immediate implementation is requested.
+- For non-trivial infra, workflow, GitOps, and automation changes, state the
+  intended diff, the validation plan, and the done criteria before editing.
+  Keep this short when immediate implementation is requested.
 - Read the relevant manifests, workflows, docs, or scripts before proposing a
   fix.
 - Keep changes close to the requested scope. If a branch or PR is the active
   iteration surface, amend that branch rather than accumulating work on `main`.
 - If a Renovate PR has human companion commits, do not rebase it or let Renovate
   rewrite it unless the user accepts that risk.
-- For non-trivial changes, compare against relevant peer or upstream patterns
-  when useful. Use `docs/guides/repo-guide.md` for the reference repo catalog,
-  and avoid bespoke glue unless local constraints require it.
+- Compare against peer or upstream patterns where one exists, using the catalog
+  in `docs/guides/peers.md`. Avoid bespoke glue unless local constraints
+  require it.
+- Verify a convention's scope before writing it as a default. Grep the set it
+  actually applies to; a pattern that holds for one component or one app is not
+  a repository-wide rule. State the scoping rule rather than a count.
 
 ## Safety Boundaries
 
@@ -92,31 +99,28 @@ small, reviewable, and independently reconcilable.
 
 ## Repo Conventions
 
-- Follow nearby manifests and the app patterns in `docs/guides/repo-guide.md`
+- Follow nearby manifests and the app patterns in `docs/guides/app-pattern.md`
   before introducing a new shape.
-- For YAML ordering, use `.agents/instructions/yaml-ordering.instructions.md`
-  and the surrounding files' established pattern.
+- For YAML ordering, use `docs/guides/yaml-ordering.md` and the surrounding
+  files' established pattern.
 - Keep `just` focused on local/operator workflows. CI should call purpose-built
   tools directly unless there is a specific reason to do otherwise.
 - Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
   available on the ambient `PATH`.
 
+
 ## Communication
 
-- Prefer comments and PR bodies that read as operator notes, not AI transcripts.
-- Treat GitHub issues, PRs, release notes, and durable repo prose as public by
-  default. Keep them summary-level and use redacted categories when evidence
-  would otherwise expose exact identifiers, credential topology, public route
-  maps, or control mechanisms.
-- Before posting or updating GitHub text, review it for unnecessary identifiers,
-  credential relationships, permission details, public endpoint inventories, and
-  state-changing automation details. Keep exact values in terminal output,
-  private notes, or local validation context instead of public prose.
+Treat GitHub issues, PRs, release notes, and durable repo prose as public by
+default. The writing standards and the pre-publication safety checklist are in
+[`docs/guides/pr-and-issue-writing.md`](docs/guides/pr-and-issue-writing.md);
+read it rather than inferring house style from surrounding text.
+
+When reporting to the user, state what changed, what was validated, and any
+remaining gap or risk plainly.
 
 ## Validation
 
-Use the smallest validation set that matches the change. For repo layout, app
-patterns, and command examples, see `docs/guides/repo-guide.md`.
-
-When a task is done, state what changed, what was validated, and any remaining
-gap or risk plainly.
+Use the smallest validation set that matches the change. Commands, per-change
+heuristics, and the caveats that make a given check trustworthy are in
+`docs/guides/validation.md`.

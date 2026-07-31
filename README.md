@@ -110,7 +110,7 @@ request render and diff gate.
 
 `Label Sync` keeps repository labels consistent.
 
-See [Repo Guide](docs/guides/repo-guide.md) for local validation commands and
+See [Validation and Tooling](docs/guides/validation.md) for local validation commands and
 repository conventions.
 
 ## Local Workflow

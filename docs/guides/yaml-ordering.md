@@ -1,8 +1,9 @@
-# YAML Ordering Instructions
+# YAML Ordering
 
 Use these rules when editing YAML in this repository. They describe the repo's
 current conventions, not a request to mass-sort files. Preserve nearby patterns
-when they are more specific than these generic rules.
+when they are more specific than these generic rules. For repository layout and
+app file shape see [`app-pattern.md`](app-pattern.md).
 
 All YAML documents should start with `---`. Add a yaml-language-server schema
 comment immediately below `---` when this repo already has a matching schema
