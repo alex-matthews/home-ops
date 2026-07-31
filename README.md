@@ -56,6 +56,12 @@ applied by Flux.
   [Konflate](https://github.com/home-operations/konflate), and
   [GitHub Actions](https://github.com/features/actions)
 
+### Hardware
+
+The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
+a 500 GB SATA SSD for system and scratch storage, and a dedicated 1 TB NVMe disk
+for the replicated Ceph pool.
+
 ## Networking
 
 The cluster sits behind a UniFi Dream Machine Pro, which routes and firewalls
@@ -81,12 +87,6 @@ Two ExternalDNS instances keep records in sync:
 
 The result is split-horizon DNS: at home, public hostnames resolve to LAN
 addresses, so traffic to my own services never leaves the network.
-
-### Hardware
-
-The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
-a 500 GB SATA SSD for system and scratch storage, and a dedicated 1 TB NVMe disk
-for the replicated Ceph pool.
 
 ## Key Paths
 
