@@ -17,11 +17,27 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/thelounge/thelounge
-              tag: 4.5.2@sha256:8806dd11965c8c07ef209ba884423cc611a37e8d6ee0e128dd55f427486122e0
+              repository: ghcr.io/home-operations/thelounge
+              tag: 4.5.2@sha256:7e18ada1421f341b6b129dbb8e4a307320c34ffe38ceef0799ead7f5a3643dbc
             env:
+              # Already this image's default, kept explicit so a future image
+              # bump cannot relocate the data path silently
               THELOUNGE_HOME: /config/thelounge
-              # Avoid Node 22 dual-stack connection failures for IRC hosts when IPv6 is
+              # Set explicitly rather than left to the image default: a Kubernetes
+              # service-link variable of the same name would otherwise override it
+              THELOUNGE_PORT: &port 80
+              # Adopting this image's storage policy: sqlite only, and a background
+              # task deleting every message older than 30 days. These four are the
+              # image's own defaults, restated here because they delete data — the
+              # retention this cluster keeps should be visible in git rather than
+              # inherited, and an upstream change to the window should be a diff.
+              # They reach thelounge as --config flags, which Config.merge applies
+              # after config.js is read, so they override the config file.
+              THELOUNGE_MESSAGE_STORAGE: "[sqlite]"
+              THELOUNGE_STORAGE_POLICY_ENABLED: "true"
+              THELOUNGE_STORAGE_POLICY_MAX_AGE_DAYS: "30"
+              THELOUNGE_STORAGE_POLICY_DELETION_POLICY: everything
+              # Avoid Node dual-stack connection failures for IRC hosts when IPv6 is
               # resolvable from the pod but not routable from the cluster.
               NODE_OPTIONS: "--no-network-family-autoselection"
               SQLITE_TMPDIR: /tmp
@@ -55,7 +71,7 @@ spec:
       app:
         ports:
           http:
-            port: 9000
+            port: *port
     route:
       app:
         hostnames:
