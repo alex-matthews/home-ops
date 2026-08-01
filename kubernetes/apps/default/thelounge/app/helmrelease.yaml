@@ -37,9 +37,6 @@ spec:
               THELOUNGE_STORAGE_POLICY_ENABLED: "true"
               THELOUNGE_STORAGE_POLICY_MAX_AGE_DAYS: "30"
               THELOUNGE_STORAGE_POLICY_DELETION_POLICY: everything
-              # Avoid Node dual-stack connection failures for IRC hosts when IPv6 is
-              # resolvable from the pod but not routable from the cluster.
-              NODE_OPTIONS: "--no-network-family-autoselection"
               SQLITE_TMPDIR: /tmp
             securityContext:
               allowPrivilegeEscalation: false
