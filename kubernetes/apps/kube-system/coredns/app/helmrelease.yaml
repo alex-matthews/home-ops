@@ -36,6 +36,12 @@ spec:
           # This is a `.`-wide blackhole with no fallthrough and it fails
           # silently as NODATA, not as an error. Remove it before introducing
           # IPv6 or reaching any IPv6-only external host.
+          #
+          # Something now depends on this: thelounge dropped its
+          # --no-network-family-autoselection workaround because this makes the
+          # dual-stack race it guarded impossible. Restore that env var in the
+          # same change that lifts this blackhole, or its IRC connections start
+          # stalling on unroutable AAAA answers again.
           - name: template
             parameters: ANY AAAA
             configBlock: |-
