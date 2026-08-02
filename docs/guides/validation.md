@@ -106,8 +106,7 @@ request check. It runs Flate on `main` after changes under `kubernetes/` so
 merge trains can stay lightweight while the applied branch still gets rendered.
 Konflate remains the pull request render and diff gate. Render's failures are
 silent unless watched, and post-merge breakage also surfaces through Flux
-alerts to Alertmanager; whether Render stays is tracked in
-[#1560](https://github.com/alex-matthews/home-ops/issues/1560).
+alerts to Alertmanager.
 
 `mise` owns the repo-local environment and toolchain contract. Use it for
 environment variables, project-specific tool installation, and reproducible

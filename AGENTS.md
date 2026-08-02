@@ -8,6 +8,12 @@ small, reviewable, and independently reconcilable.
 This file is the canonical agent entrypoint and the authority on change
 control. Where it and another document disagree, this file wins.
 
+`CLAUDE.md` at the repository root is a symlink to this file. Claude Code
+auto-loads `CLAUDE.md` at session start and has no knowledge of `AGENTS.md`, so
+without the link a session starts with the user's global instructions and none
+of this repository's — including the guide index and the skills below. Edit
+this file; never the link.
+
 `docs/guides/` holds the working references. Each opens with a **When to use**
 line; read only those whose triggers match the task at hand.
 
