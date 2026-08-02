@@ -26,10 +26,33 @@ The two repositories are independent by design ([ADR-0002](../adr/0002-kopiur-ba
 no replication between them, so local repository damage cannot propagate
 off-site.
 
-VolSync was retired on 2026-07-25 after the fleet cutover, post-cutover
-incrementals, and fleet-wide database integrity verification all passed. Its
-Restic repositories are not deleted; recovering from them means restoring the
-manifests from Git history.
+## The Retired VolSync Archive
+
+The fleet cut over to Kopiur on 2026-07-25; VolSync itself was removed on
+2026-07-31, once post-cutover incrementals and fleet-wide database integrity
+verification had passed. It ran alongside Kopiur for that week, so Kopiur's own
+repositories already cover every point in time from the cutover onward. What
+the VolSync archive uniquely holds is history from before it.
+
+Its R2 Restic repositories are retained: one per app, at `<repository>/<app>`,
+where the base came from the template the retired remote `ExternalSecret`
+supplied. That manifest is in Git history at
+`kubernetes/components/volsync/backup/remote/externalsecret.yaml` and names the
+1Password item and the fields to read from it.
+
+Recovery is the restic CLI pointed straight at a repository — VolSync does not
+need to be redeployed, and the earlier guidance to restore its manifests from
+Git history no longer applies. All nineteen repositories were verified with
+`restic check` on 2026-08-02, and one additionally with `--read-data-subset=5%`.
+
+The matching local repositories, and the MinIO instance on the NAS that hosted
+them, were removed at the same time. They carried the same seven dailies plus
+intra-day granularity from VolSync's final day — a window Kopiur independently
+covers, so nothing unique was lost.
+
+`RESTIC_PASSWORD` from that 1Password item is the only key to this archive.
+Restic cannot open a repository without it and there is no recovery path, so
+the item outlives the manifests that used to consume it.
 
 ## UID/GID And Mover Permissions
 
