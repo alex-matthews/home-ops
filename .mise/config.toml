@@ -27,7 +27,7 @@ lefthook = "2.1.10"
 oxfmt = "0.61.0"
 sops = "3.13.3"
 talosctl = "1.13.7"
-zizmor = "1.28.0"
+zizmor = "1.29.0"
 
 [hooks]
 postinstall = "lefthook install"
