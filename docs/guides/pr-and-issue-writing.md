@@ -85,6 +85,12 @@ goes stale the moment it merges.
 
 No ceremony headers, no emoji, no AI attribution, no celebratory closing.
 
+Do not hard-wrap. Repository files and commit messages wrap at 80 columns;
+issue and pull request bodies, review comments, and release notes take one line
+per paragraph and let the browser wrap them. The destination decides, not the
+file the text was drafted in — GitHub prose drafted in a scratch markdown file
+beside 80-column repository files is exactly where this goes wrong.
+
 Nothing that only makes sense while the work is open: instructions to
 collaborators, merge ordering, rebase recipes, in-flight status, or
 restatements of the rules in `AGENTS.md`.
