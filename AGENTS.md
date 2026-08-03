@@ -8,11 +8,18 @@ small, reviewable, and independently reconcilable.
 This file is the canonical agent entrypoint and the authority on change
 control. Where it and another document disagree, this file wins.
 
-`CLAUDE.md` at the repository root is a symlink to this file. Claude Code
-auto-loads `CLAUDE.md` at session start and has no knowledge of `AGENTS.md`, so
-without the link a session starts with the user's global instructions and none
-of this repository's — including the guide index and the skills below. Edit
-this file; never the link.
+Edit this file, never the `CLAUDE.md` link beside it.
+
+<!--
+CLAUDE.md at the repository root is a symlink to this file. Claude Code loads
+CLAUDE.md at session start and does not read AGENTS.md, so without the link a
+session starts with the user's global instructions and none of this
+repository's. Verified against the Claude Code memory documentation on
+2026-08-03, which recommends the symlink for exactly this case.
+
+Block-level HTML comments are stripped before this file enters context, so this
+explanation costs nothing to keep here.
+-->
 
 `docs/guides/` holds the working references. Each opens with a **When to use**
 line; read only those whose triggers match the task at hand.
@@ -39,8 +46,8 @@ cluster state across a merge.
   Keep this short when immediate implementation is requested.
 - Read the relevant manifests, workflows, docs, or scripts before proposing a
   fix.
-- Keep changes close to the requested scope. If a branch or PR is the active
-  iteration surface, amend that branch rather than accumulating work on `main`.
+- If a branch or pull request is the active iteration surface, amend it rather
+  than accumulating work on `main`.
 - If a Renovate PR has human companion commits, do not rebase it or let Renovate
   rewrite it unless the user accepts that risk.
 - Compare against peer or upstream patterns where one exists, using the catalog
@@ -141,19 +148,20 @@ on state asserted earlier in the session.
   tools directly unless there is a specific reason to do otherwise.
 - Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
   available on the ambient `PATH`.
-- Use Conventional Commit titles: `type(scope): summary`. Keep the subject in
-  the imperative and let the body carry the reasoning.
-- Do not add AI attribution or generated-by trailers to commits, pull request
-  descriptions, or code comments.
+- Keep commit subjects in the imperative.
 
 ## Recording What You Learn
 
 When a session establishes a durable working preference or a non-obvious fact
-about this repository, write it into the document that owns the topic. Do not
-leave it in agent-private memory: other agents and other clients cannot read
-it, so guidance held by one assistant is guidance every other one ignores.
+about this repository, write it into the document that owns the topic.
 
-- A prose, review, or issue-hygiene convention → `docs/guides/pr-and-issue-writing.md`.
+Agent memory is not a home for it. Some harnesses write memory automatically,
+so the rule is not "never use it" but "never let it be the only copy": other
+agents and other clients cannot read it, and guidance held by one assistant is
+guidance every other one ignores.
+
+- A prose, review, or issue-hygiene convention →
+  `docs/guides/pr-and-issue-writing.md`.
 - A cluster, secret, or storage fact → `docs/guides/cluster-model.md`, or the
   relevant note under `docs/operations/`.
 - A caveat about what a check does or does not prove →
