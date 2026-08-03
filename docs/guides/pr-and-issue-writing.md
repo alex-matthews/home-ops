@@ -48,11 +48,18 @@ not.
 
 ### Keeping the body current
 
-The commit messages and the body serve different readers, so write both to fit
-what each carries rather than choosing between them. The squash commit is built
-from the commit messages, so those are what `git log` and `git blame` surface
-later. The body is what a reviewer reads now, what the operator checks while the
-branch is open, and what someone following a link finds afterwards.
+The body is the durable record. The squash commit takes the pull request title
+and body verbatim, so what is written here is what `git log` and `git blame`
+surface later — a reader six months on sees this text and not the commit
+messages, which end at the merge.
+
+That makes an inaccurate body a permanent inaccuracy rather than a temporary
+one. It also means the body should describe where the change landed, not the
+route: a superseded approach explained in the body reads, later, as though it
+were the conclusion.
+
+Commit messages serve review. Keep subjects informative enough to follow the
+branch and leave the argument to the body.
 
 Most pull requests here open and merge within the hour and need no refresh.
 Update the body when one outlives a single sitting: when scope changes, when
