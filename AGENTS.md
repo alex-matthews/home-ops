@@ -8,11 +8,18 @@ small, reviewable, and independently reconcilable.
 This file is the canonical agent entrypoint and the authority on change
 control. Where it and another document disagree, this file wins.
 
-`CLAUDE.md` at the repository root is a symlink to this file. Claude Code
-auto-loads `CLAUDE.md` at session start and has no knowledge of `AGENTS.md`, so
-without the link a session starts with the user's global instructions and none
-of this repository's — including the guide index and the skills below. Edit
-this file; never the link.
+Edit this file, never the `CLAUDE.md` link beside it.
+
+<!--
+CLAUDE.md at the repository root is a symlink to this file. Claude Code loads
+CLAUDE.md at session start and does not read AGENTS.md, so without the link a
+session starts with the user's global instructions and none of this
+repository's. Verified against the Claude Code memory documentation on
+2026-08-03, which recommends the symlink for exactly this case.
+
+Block-level HTML comments are stripped before this file enters context, so this
+explanation costs nothing to keep here.
+-->
 
 `docs/guides/` holds the working references. Each opens with a **When to use**
 line; read only those whose triggers match the task at hand.
@@ -27,6 +34,10 @@ line; read only those whose triggers match the task at hand.
 - `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
   comments. Read it before posting or editing any GitHub prose.
 
+`.claude/rules/` holds path-scoped triggers. They carry no guidance of their
+own; each names the guides to read when a session touches a matching file, so
+reading them stops depending on someone deciding to. Claude Code only, for now.
+
 `.agents/skills/` holds task recipes such as `add-app`. Load a skill only when
 performing that task. Load `maintenance-window` before planning or executing
 any window that stops workloads, deletes or recreates PVCs, or holds imperative
@@ -39,8 +50,8 @@ cluster state across a merge.
   Keep this short when immediate implementation is requested.
 - Read the relevant manifests, workflows, docs, or scripts before proposing a
   fix.
-- Keep changes close to the requested scope. If a branch or PR is the active
-  iteration surface, amend that branch rather than accumulating work on `main`.
+- If a branch or pull request is the active iteration surface, amend it rather
+  than accumulating work on `main`.
 - If a Renovate PR has human companion commits, do not rebase it or let Renovate
   rewrite it unless the user accepts that risk.
 - Compare against peer or upstream patterns where one exists, using the catalog
@@ -50,9 +61,6 @@ cluster state across a merge.
   analyses the chart templates, which is where a chart's surface actually
   changes — release notes describe the code and routinely miss it. See
   `docs/guides/validation.md`.
-- Verify a convention's scope before writing it as a default. Grep the set it
-  actually applies to; a pattern that holds for one component or one app is not
-  a repository-wide rule. State the scoping rule rather than a count.
 
 ## Treat This Repository As Public
 
@@ -105,8 +113,6 @@ Get explicit user approval of the exact action before:
   these by behaviour, not by command name.
 - Copying anything out of a pod. It is state-preserving but can extract data,
   so state the reason first.
-- Editing `main` directly. Use a PR branch for high-risk changes unless the
-  user explicitly approves otherwise.
 - Adding or expanding bespoke scripts, provider systems, permissions, webhooks,
   storage, auth surfaces, or public routes.
 - Introducing new operators, CRD families, storage systems, ingress paths, or
@@ -118,8 +124,7 @@ Get explicit user approval of the exact action before:
 ### Never
 
 - Use `exec`, `cp`, or `port-forward` to read or move secret material.
-- Edit generated outputs, rendered manifests, caches, logs, credentials, or
-  local auth/session state.
+- Edit generated outputs, rendered manifests, caches, or logs.
 - Reformat SOPS-encrypted files; their encrypted document shape is intentional.
 
 ### Imperative state is a lease, not a lock
@@ -141,19 +146,20 @@ on state asserted earlier in the session.
   tools directly unless there is a specific reason to do otherwise.
 - Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
   available on the ambient `PATH`.
-- Use Conventional Commit titles: `type(scope): summary`. Keep the subject in
-  the imperative and let the body carry the reasoning.
-- Do not add AI attribution or generated-by trailers to commits, pull request
-  descriptions, or code comments.
+- Keep commit subjects in the imperative.
 
 ## Recording What You Learn
 
 When a session establishes a durable working preference or a non-obvious fact
-about this repository, write it into the document that owns the topic. Do not
-leave it in agent-private memory: other agents and other clients cannot read
-it, so guidance held by one assistant is guidance every other one ignores.
+about this repository, write it into the document that owns the topic.
 
-- A prose, review, or issue-hygiene convention → `docs/guides/pr-and-issue-writing.md`.
+Agent memory is not a home for it. Some harnesses write memory automatically,
+so the rule is not "never use it" but "never let it be the only copy": other
+agents and other clients cannot read it, and guidance held by one assistant is
+guidance every other one ignores.
+
+- A prose, review, or issue-hygiene convention →
+  `docs/guides/pr-and-issue-writing.md`.
 - A cluster, secret, or storage fact → `docs/guides/cluster-model.md`, or the
   relevant note under `docs/operations/`.
 - A caveat about what a check does or does not prove →
@@ -161,10 +167,6 @@ it, so guidance held by one assistant is guidance every other one ignores.
 - A peer-comparison scoping rule → `docs/guides/peers.md`.
 - A rule that changes what an agent is allowed to do → this file.
 - If nothing owns it, add a guide rather than widening this file.
-
-Record the evidence alongside the rule. The observation that produced it is
-what lets a later reader judge whether it still holds, and a rule with no
-evidence is the first thing to rot.
 
 ## Communication
 
