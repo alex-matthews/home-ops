@@ -1,9 +1,4 @@
-# .claude/* rather than .claude/, because git cannot re-include anything
-# inside an excluded directory. Path-scoped rules are shared configuration
-# rather than local state: they name the guides a session must read when it
-# touches a matching file.
-.claude/*
-!.claude/rules/
+.claude/
 .private/
 .pytest_cache/
 .venv/

@@ -34,10 +34,6 @@ line; read only those whose triggers match the task at hand.
 - `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
   comments. Read it before posting or editing any GitHub prose.
 
-`.claude/rules/` holds path-scoped triggers. They carry no guidance of their
-own; each names the guides to read when a session touches a matching file, so
-reading them stops depending on someone deciding to. Claude Code only, for now.
-
 `.agents/skills/` holds task recipes such as `add-app`. Load a skill only when
 performing that task. Load `maintenance-window` before planning or executing
 any window that stops workloads, deletes or recreates PVCs, or holds imperative
