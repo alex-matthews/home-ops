@@ -8,7 +8,7 @@ cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
 
 ## Layout
 
-- `.agents/skills/`: task recipes such as `add-app`, `audit-findings`, and
+- `.agents/skills/`: task recipes such as `add-app` and
   `maintenance-window`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.

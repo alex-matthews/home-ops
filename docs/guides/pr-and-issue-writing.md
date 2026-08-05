@@ -28,6 +28,13 @@ structure — a section narrating a wrong call is itself the problem.
 Keep operational lessons; drop the chronology. "What we learned that changes
 future behaviour" survives. "Step 4 completed successfully" does not.
 
+A findings report from audit-shaped work goes where the driving issue directs —
+an issue comment, or a note under `docs/operations/` when it is long enough to
+outlive the issue. Include an at-a-glance table (finding, severity, fix,
+suggested order, status) once there are more than a few findings, and keep the
+raw topology, addresses and identifiers out of it; those belong in local scratch
+or private notes, per **Public safety** below.
+
 ## Pull requests
 
 Open with the substance in a sentence or two. No summary preamble, no restating

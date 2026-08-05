@@ -5,21 +5,14 @@ small, reviewable, and independently reconcilable.
 
 ## Entry Points
 
-This file is the canonical agent entrypoint and the authority on change
-control. Where it and another document disagree, this file wins.
+This file is the canonical agent entrypoint and, among this repository's own
+documents, the authority on change control: where it and another document here
+disagree, this file wins. It adds to the global agent rules in
+`~/.config/agents/AGENTS.md` and does not relax them — those set a floor this
+file can raise and not lower.
 
-Edit this file, never the `CLAUDE.md` link beside it.
-
-<!--
-CLAUDE.md at the repository root is a symlink to this file. Claude Code loads
-CLAUDE.md at session start and does not read AGENTS.md, so without the link a
-session starts with the user's global instructions and none of this
-repository's. Verified against the Claude Code memory documentation on
-2026-08-03, which recommends the symlink for exactly this case.
-
-Block-level HTML comments are stripped before this file enters context, so this
-explanation costs nothing to keep here.
--->
+`CLAUDE.md` beside it is a compatibility symlink to this file, because Claude
+Code reads that name and not `AGENTS.md`. Edit this file, never the link.
 
 `docs/guides/` holds the working references. Each opens with a **When to use**
 line; read only those whose triggers match the task at hand.
@@ -142,7 +135,6 @@ on state asserted earlier in the session.
   tools directly unless there is a specific reason to do otherwise.
 - Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
   available on the ambient `PATH`.
-- Keep commit subjects in the imperative.
 
 ## Recording What You Learn
 
