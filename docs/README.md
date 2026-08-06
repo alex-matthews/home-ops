@@ -19,6 +19,7 @@ experiments out of this tree.
 | Operate or test the Hermes/ToolHive workbench  | [AI Workbench](operations/ai-workbench.md)                                           |
 | Understand backup posture or verify a restore  | [Storage and Backups](operations/storage-and-backups.md)                             |
 | Renew or replace appliance management TLS      | [Appliance TLS](operations/appliance-tls.md)                                         |
+| Run or watch a Talos/Kubernetes node rollout   | [Node Upgrades](operations/node-upgrades.md)                                         |
 | Reach the cluster when DNS or the router fails | [Talos Access and Break-Glass](operations/talos-access-and-break-glass.md)           |
 
 ## Placement Rule

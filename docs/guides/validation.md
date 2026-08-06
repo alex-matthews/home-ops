@@ -78,6 +78,17 @@ The `home-ops-cockpit` dashboard already filters to actionable alerts, so when
 it disagrees with a raw Prometheus query, check this distinction before
 concluding the panel is wrong.
 
+During a node reboot that moves a Ceph mgr pod, expect a brief window where
+rook-ceph alert annotations render as the literal text "error expanding
+template" and `PrometheusRuleFailures` fires. Both mgr pods are scraped while
+the old one terminates, the duplicated `ceph_*_metadata` series make the
+rules' `group_left` joins many-to-many, and evaluation plus the annotations'
+inline template queries fail together. Observed on the 2026-08-06 Talos
+rollout; it self-heals when the stale scrape target drops. Confirm with
+`prometheus_rule_evaluation_failures_total` returning to zero rather than
+treating the garbled alert text as new breakage; it is upstream rule
+fragility, not a local rule error.
+
 ## Per-change heuristics
 
 - Workflow or tooling changes: run the formatting and workflow checks above,
