@@ -118,6 +118,12 @@
       minimumGroupSize: 2,
     },
     {
+      description: "Normalise Talos Group version titles",
+      matchPackageNames: ["siderolabs/talos"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
+    },
+    {
       description: "ToolHive Group",
       groupName: "toolhive",
       matchDatasources: ["docker"],
