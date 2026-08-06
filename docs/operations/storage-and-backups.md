@@ -198,30 +198,64 @@ The same release added the `KopiurLeaderElectionFlapping` and
 from 5s to 2s. The `leaderElection.timings.*` values render only when set;
 they are not set here, so the upstream defaults apply.
 
+## Repository Health And The Circuit Breaker
+
+From chart 0.9.3 the backend health probe is on by default and doubles as a
+circuit breaker: after three consecutive failed connects (default probe
+interval 30m) a repository moves to `Degraded`, and snapshots, maintenance,
+replication, and restores against it park until a connect succeeds. Parked
+work is deferred, not lost — schedules default to `Forbid`, so at most one
+snapshot per policy waits, and it fires once on recovery. Recovery is
+automatic: while open, the repository retries its connect on a 120s–600s
+backoff, so it heals within minutes of the backend returning. `Degraded` maps
+to kstatus `Reconciling`, so Flux waits rather than failing the Kustomization.
+
+Neither `ClusterRepository` sets `spec.health.probe`; the defaults are
+deliberate. `onFailure: Alert` restores the pre-0.9.3 alert-only behaviour and
+`enabled: false` disables probing entirely — set either only with a reason.
+
+Operationally this means `<repo>-discovery` connect Jobs appear in
+`kopiur-system` every 30 minutes per repository, repositories can leave
+`Ready` without a spec change, and a backend outage of 15+ minutes fires both
+`KopiurRepositoryBreakerOpen` (warning) and `KopiurRepositoryNotReady`
+(critical) from the chart's PrometheusRule. During an outage, parked snapshots
+sit `Pending` rather than failing, so backup-failure signals stay quiet; watch
+the repository phase and breaker metrics instead.
+
 ## Known Quirks
 
-Observed on 0.7.5 through 0.9.1; re-test on upgrades and file upstream if still
-present when one next bites.
+Rechecked on 2026-08-06 against 0.9.3 source and the live 0.9.2 release. Re-test
+runtime observations after upgrades and file upstream if one still bites.
 
-- A `Repository` whose repository-level Job has exhausted `backoffLimit` goes
-  `Stalled` and is not retried when the spec changes — the exhausted Job blocks
-  it. Recovery: fix the cause, then delete that Job in the repository's
-  namespace. The Job is `<repo>-discovery` from 0.8.1 onward and
-  `<repo>-bootstrap` before that; upgrading reaps the legacy Job once per
-  repository. The kopia username sentinel is deliberately not renamed, so
-  snapshots taken on 0.8.0 stay resolvable.
 - Repository-level movers take their identity from
   `spec.moverDefaults.securityContext`, not from any `SnapshotPolicy`. Left
   unset they run as UID 65532.
-- `Maintenance` CR status is unreliable even though maintenance runs correctly:
-  `nextScheduledAt` is never written, `lastHandledAt` is skipped for successful
-  runs, and `consecutiveFailures` has no writer. Verify maintenance from mover
-  Job history and metrics, not CR status. Still present as of 0.9.0.
-- `Restore` CR status carries no stats. Verify a restore from the target PVC's
-  contents, not from the CR.
-- Restore movers emit a non-fatal warning when they cannot read the parent
-  `Restore` status with their narrow service-account permissions. Restores
-  still succeed; do not widen mover RBAC locally.
+- `Maintenance` CR status is incomplete even though maintenance runs correctly.
+  The mover writes `lastRunAt` only on a real successful run, so that field is
+  the success authority. `lastHandledAt` is a yield marker: a successful run
+  advances `lastRunAt` first, which un-dues the slot before the controller can
+  record it, so it stays absent on a healthy repository (same code in 0.9.2 and
+  0.9.3 — do not wait for it to appear). `nextScheduledAt` and
+  `consecutiveFailures` have no writers, and `lastContentReclaimedBytes` is
+  hard-coded to zero, as is the gauge mirroring it. There are no maintenance
+  success or duration metrics, and mover metrics are OTLP-push-only and not
+  exported here. Verify from `lastRunAt` plus Job history, noting maintenance
+  Jobs self-reap one hour after finishing.
+- `Restore` exposes `status.progress`, but the mover deliberately does not
+  populate it as of 0.9.3, and terminal status carries no stats. Verify a
+  restore from the target PVC's contents, not from CR counters.
+- Restore movers warn `status.resolved read failed` on every `fromPolicy`
+  restore: the mover GETs the parent `Restore` main resource, but its RBAC
+  grants only the `/status` subresource. Restores still succeed, but a retried
+  restore pod re-resolves latest instead of reusing the pinned snapshot. Do not
+  widen mover RBAC locally; the read belongs on the status subresource — an
+  upstream fix.
+- A repository whose `<repo>-discovery` Job exhausted `backoffLimit` on a
+  terminal-class failure (bad credentials, locked repository) parks
+  `Failed`/`Stalled` and does not retry a spec or Secret fix until the finished
+  Job's TTL reaps it, two hours by default; deleting the Job retries
+  immediately. From 0.9.3, outage-class failures instead recycle automatically
+  into the `Degraded` retry loop and need no intervention.
 - Persistent mover-cache PVCs are create-only. Changing `mover.cache.capacity`
   affects new claims only; expand an existing cache through the PVC and expect
   `FileSystemResizePending` until the next mover mount completes the resize. A
@@ -229,9 +263,10 @@ present when one next bites.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule`, including via Flux prune,
   cascades only to `Snapshot` CRs (`onPolicyDelete`/`onScheduleDelete`, default
   `Retain`). Repository-side deletions route through the mass-deletion circuit
-  breaker (`deletionProtection.threshold`, default 10); deleting more than ten
-  snapshots at once holds with `DeletionHeld=True` until the repository is
-  annotated `kopiur.home-operations.com/allow-mass-deletion=<RFC3339>`.
+  breaker (`deletionProtection.threshold`, default 10); ten or more
+  unacknowledged external deletions hold the snapshots with `DeletionHeld=True`
+  and surface `MassDeletionHeld=True` on the repository until it is annotated
+  `kopiur.home-operations.com/allow-mass-deletion=<RFC3339>`.
 - From 0.8.1 the chart's `ServiceMonitor` sets `honorLabels: true`, so
   `kopiur_*` series carry the CR's namespace. Write queries against
   `namespace`, not `exported_namespace`.
