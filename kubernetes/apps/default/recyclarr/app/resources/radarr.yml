@@ -67,6 +67,7 @@ radarr:
             - 8cd3ac70db7ac318cf9a0e01333940a4 # SiC
             - 9681750c690210f0936faed781bb7f06 # 126811
             - 8016f2f66e751dea613e6b5b94bf633c # MainFrame
+            - c3ecdda99c633e0743627c2cc91566ec # UHD Bluray RlsGrp (SQP-4 MA)
           assign_scores_to:
             - trash_id: *sqp4_ma_hybrid
 
