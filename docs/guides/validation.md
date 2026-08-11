@@ -60,6 +60,19 @@ advisory. If it flags something this repo documents as intentional, fix the
 reviewer's prompt — it is inline in `.github/workflows/renovate-review.yaml` —
 rather than learning to skip the comment.
 
+## CRD lifecycle in this cluster
+
+The `cluster-apps` Kustomization patches every child Kustomization so its
+HelmReleases receive `install.crds: CreateReplace` and
+`upgrade.crds: CreateReplace`; leaf HelmRelease files therefore omit those
+fields without inheriting Helm's skip-on-upgrade behavior. Chart CRDs in the
+special `crds/` directory are installed and replaced during reconciliation.
+
+When reviewing a chart upgrade, treat shipped CRD schema changes and new CRDs
+as changes that will reach the cluster. Verify the repo-wide patch in
+`kubernetes/flux/cluster/ks.yaml`; do not infer the effective policy from the
+leaf HelmRelease alone or from Helm's default CRD behavior.
+
 ## What a firing alert does not prove
 
 Prometheus reports an alert as firing whether or not it is silenced — silencing

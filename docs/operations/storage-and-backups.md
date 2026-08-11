@@ -24,7 +24,10 @@ guardrail. Do not route that traffic back through NFS.
 
 The two repositories are independent by design ([ADR-0002](../adr/0002-kopiur-backup-storage-shape.md)):
 no replication between them, so local repository damage cannot propagate
-off-site.
+off-site. Kopiur's `SnapshotReplication` CRD does not change that decision:
+feeding R2 from Garage would make the off-site path depend on the local
+repository, while running replication alongside the direct R2 policies would
+create overlapping writers for the same kopia identities.
 
 ## The Retired VolSync Archive
 
@@ -224,8 +227,10 @@ the repository phase and breaker metrics instead.
 
 ## Known Quirks
 
-Rechecked on 2026-08-06 against 0.9.3 source and the live 0.9.2 release. Re-test
-runtime observations after upgrades and file upstream if one still bites.
+Rechecked on 2026-08-11 against 0.10.0 source. The live rollout verified
+repository, policy, schedule and backup paths; maintenance and restore quirks
+below remain source-verified rather than re-exercised. Re-test runtime
+observations after upgrades and file upstream if one still bites.
 
 - Repository-level movers take their identity from
   `spec.moverDefaults.securityContext`, not from any `SnapshotPolicy`. Left
@@ -234,15 +239,15 @@ runtime observations after upgrades and file upstream if one still bites.
   The mover writes `lastRunAt` only on a real successful run, so that field is
   the success authority. `lastHandledAt` is a yield marker: a successful run
   advances `lastRunAt` first, which un-dues the slot before the controller can
-  record it, so it stays absent on a healthy repository (same code in 0.9.2 and
-  0.9.3 — do not wait for it to appear). `nextScheduledAt` and
+  record it, so it stays absent on a healthy repository (unchanged in 0.10.0 —
+  do not wait for it to appear). `nextScheduledAt` and
   `consecutiveFailures` have no writers, and `lastContentReclaimedBytes` is
   hard-coded to zero, as is the gauge mirroring it. There are no maintenance
   success or duration metrics, and mover metrics are OTLP-push-only and not
   exported here. Verify from `lastRunAt` plus Job history, noting maintenance
   Jobs self-reap one hour after finishing.
 - `Restore` exposes `status.progress`, but the mover deliberately does not
-  populate it as of 0.9.3, and terminal status carries no stats. Verify a
+  populate it as of 0.10.0, and terminal status carries no stats. Verify a
   restore from the target PVC's contents, not from CR counters.
 - Restore movers warn `status.resolved read failed` on every `fromPolicy`
   restore: the mover GETs the parent `Restore` main resource, but its RBAC
@@ -252,10 +257,14 @@ runtime observations after upgrades and file upstream if one still bites.
   upstream fix.
 - A repository whose `<repo>-discovery` Job exhausted `backoffLimit` on a
   terminal-class failure (bad credentials, locked repository) parks
-  `Failed`/`Stalled` and does not retry a spec or Secret fix until the finished
-  Job's TTL reaps it, two hours by default; deleting the Job retries
-  immediately. From 0.9.3, outage-class failures instead recycle automatically
-  into the `Degraded` retry loop and need no intervention.
+  `Failed`/`Stalled`. From 0.10.0, a spec edit changes the repository generation
+  and immediately recycles a stale generation-stamped Job. A Secret-only
+  credential fix does not change the generation and still waits for the
+  finished Job's TTL, two hours by default; deleting the Job retries
+  immediately. One terminal Job created before the 0.10.0 upgrade has no
+  generation stamp and can behave the old way once. From 0.9.3, outage-class
+  failures instead recycle automatically into the `Degraded` retry loop and
+  need no intervention.
 - Persistent mover-cache PVCs are create-only. Changing `mover.cache.capacity`
   affects new claims only; expand an existing cache through the PVC and expect
   `FileSystemResizePending` until the next mover mount completes the resize. A

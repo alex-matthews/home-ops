@@ -76,5 +76,11 @@ inherits the local cadence and retention wholesale.
 - The pilot's `RepositoryReplication` gates in the storage document are
   superseded; the restore-from-R2 proof moves to the first production app's
   acceptance criteria.
+- Kopiur 0.10.0's `SnapshotReplication` does not supersede the independent R2
+  path. Deriving the off-site copy from Garage would reintroduce the local
+  repository as a shared failure and corruption domain, while combining it
+  with direct R2 backups would create overlapping writers for the same kopia
+  identities. A future replication-only third copy needs its own repository
+  and a new decision record.
 - The pilot repository migrates to the S3 backend during production rollout;
   the NFS pilot export is retired afterwards.
