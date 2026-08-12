@@ -1,6 +1,6 @@
 # Cluster Model
 
-**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, high-risk surfaces.
+**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, scheduling, descheduler policy, node placement and rebalancing, rolling Talos upgrades, high-risk surfaces.
 
 How a change reaches the cluster, how secrets and state get there, and which
 surfaces are high-risk to touch. For repository layout and app file shape see
@@ -77,6 +77,19 @@ its SQLite database allows one writer, so it pins `replicas: 1` with
 `strategy: Recreate`, routes writes through the one API pod, and must never
 be scaled. That constraint comes from the app, not from RWO or any
 cluster-wide rule.
+
+## Scheduling and rebalancing
+
+The descheduler's `LowNodeUtilization` strategy uses actual CPU and memory
+utilization plus pod count, while the scheduler's `NodeResourcesFit` scoring
+uses requested resources. Where it has proven its value so far is convergence
+after rolling Talos upgrades. Drains concentrate workloads on the surviving
+nodes; once a rebooted node returns, the strategy evicts eligible pods so the
+scheduler can repopulate it. The observed post-upgrade burst demonstrated
+useful convergence, and similar bursts are expected then. Sustained evictions
+outside an upgrade or recovery event may indicate a policy loop. Changes to
+descheduler policy should preserve equivalent post-upgrade convergence or
+explicitly replace it.
 
 ## High-risk surfaces
 
