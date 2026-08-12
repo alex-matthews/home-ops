@@ -35,6 +35,22 @@ suggested order, status) once there are more than a few findings, and keep the
 raw topology, addresses and identifiers out of it; those belong in local scratch
 or private notes, per **Public safety** below.
 
+### Choosing a shape
+
+Most small issues need no template — a few sentences of prose is the whole
+body. Larger work starts from a template in `.github/ISSUE_TEMPLATE/`:
+
+- **Operational investigation**: observed behaviour that needs evidence, a
+  diagnosis, and possibly a correction.
+- **Design proposal**: a decision among materially different approaches, with
+  goals, non-goals, and trade-offs.
+- **Umbrella**: independently deliverable children where no single child owns
+  the shared scope, sequencing, and cross-child decisions. The umbrella
+  coordinates; it never implements.
+
+Templates are starting shapes: delete sections that do not apply, and rename a
+heading when that makes its contents more accurate.
+
 ## Pull requests
 
 Open with the substance in a sentence or two. No summary preamble, no restating
