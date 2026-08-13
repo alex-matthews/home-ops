@@ -13,7 +13,7 @@ actionlint = "1.7.12"
 age = "1.3.1"
 flux2 = "2.9.4"
 "github:home-operations/flate" = "v0.5.0"
-helm = "4.2.3"
+helm = "4.2.4"
 helmfile = "1.7.3"
 just = "1.58.0"
 # Kopiur CLI. Tracks the v1alpha1 CRDs, so keep it on the operator's release;
