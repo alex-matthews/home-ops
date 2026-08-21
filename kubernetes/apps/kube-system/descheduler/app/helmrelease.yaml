@@ -13,8 +13,6 @@ spec:
     kind: Deployment
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
-      metricsProviders:
-        - source: KubernetesMetrics
       profiles:
         - name: Default
           pluginConfig:
@@ -30,16 +28,13 @@ spec:
               args:
                 evictionLimits:
                   node: 5
-                metricsUtilization:
-                  source: KubernetesMetrics
+                useDeviationThresholds: true
                 thresholds:
-                  cpu: 20
-                  memory: 20
-                  pods: 35
+                  cpu: 10
+                  memory: 10
                 targetThresholds:
-                  cpu: 50
-                  memory: 50
-                  pods: 45
+                  cpu: 10
+                  memory: 10
             - name: RemoveFailedPods
               args:
                 reasons:
