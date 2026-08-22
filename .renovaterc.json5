@@ -50,6 +50,12 @@
       matchUpdateTypes: ["minor", "patch"],
       automerge: false,
     },
+    // Version constraints
+    {
+      description: "Ignore the mispushed prompp 3.8.14 tag, which carries the 0.8.10 digest",
+      matchPackageNames: ["docker.io/prompp/prompp"],
+      allowedVersions: "<3.0.0",
+    },
     // Grouping rules
     {
       description: "Actions Runner Controller Group",
