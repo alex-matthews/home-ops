@@ -28,7 +28,7 @@ conventions rather than sources of them.
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [onedr0p/home-ops]     | Lean GitOps and app shape, Talos and Flux posture, and the prose style this repo's writing conventions are modelled on                                                |
 | [bjw-s-labs/home-ops]  | app-template idioms, from its author; repo-local skills                                                                                                               |
-| [buroa/k8s-gitops]     | Lean GitOps shape and Kopiur adoption — ClusterRepository, mover defaults, SnapshotPolicy, passive Restore                                                            |
+| [buroa/home-ops]       | Lean GitOps shape and Kopiur adoption — ClusterRepository, mover defaults, SnapshotPolicy, passive Restore                                                            |
 | [Tanguille/cluster]    | Agent guidance structure: a compact root file routing to topic satellites, and skills that carry their own references and scripts. Also ToolHive and MCPServer detail |
 | [joryirving/home-ops]  | Renovate AI review conventions and PR review standards; a generated docs site as contrast                                                                             |
 | [eleboucher/homelab]   | AI workbench composition, MCP surfaces, and Memini, which they author                                                                                                 |
@@ -47,7 +47,7 @@ requests before drawing any conclusion; on most peers that leaves very little.
 
 [auricom/home-ops]: https://github.com/auricom/home-ops
 [bjw-s-labs/home-ops]: https://github.com/bjw-s-labs/home-ops
-[buroa/k8s-gitops]: https://github.com/buroa/k8s-gitops
+[buroa/home-ops]: https://github.com/buroa/home-ops
 [carpenike/k8s-gitops]: https://github.com/carpenike/k8s-gitops
 [eleboucher/homelab]: https://github.com/eleboucher/homelab
 [jfroy/flatops]: https://github.com/jfroy/flatops
