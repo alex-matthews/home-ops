@@ -69,6 +69,11 @@ Length should track the change, not the effort spent on it. A long body is
 right when the reasoning is long; a one-line diff with a validation matrix is
 not.
 
+Session worktrees generate branch names like `claude/<adjective-surname-hex>`.
+Rename the branch to a short descriptive slug **before** opening the pull
+request — a head branch cannot be renamed afterwards without closing the pull
+request, which cannot be repointed.
+
 ### Keeping the body current
 
 The body is the durable record, and it is the only one. The squash commit takes
