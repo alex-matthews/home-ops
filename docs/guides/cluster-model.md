@@ -1,6 +1,6 @@
 # Cluster Model
 
-**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, scheduling, descheduler policy, node placement and rebalancing, rolling Talos upgrades, high-risk surfaces.
+**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, scheduling, descheduler policy, node placement and rebalancing, rolling Talos upgrades, service networking, LoadBalancer addresses, BGP, L2 announcements, high-risk surfaces.
 
 How a change reaches the cluster, how secrets and state get there, and which
 surfaces are high-risk to touch. For repository layout and app file shape see
@@ -90,6 +90,24 @@ useful convergence, and similar bursts are expected then. Sustained evictions
 outside an upgrade or recovery event may indicate a policy loop. Changes to
 descheduler policy should preserve equivalent post-upgrade convergence or
 explicitly replace it.
+
+## Service networking
+
+LoadBalancer addresses are advertised to the gateway over BGP only; Cilium's
+L2 announcements are disabled. The addresses come from a dedicated range —
+the `CiliumLoadBalancerIPPool` in
+`kubernetes/apps/kube-system/cilium/app/networking.yaml` — that no node holds
+an interface on; the nodes advertise routes to it over their primary link.
+
+The dedicated range is load-bearing, not cosmetic. If service addresses
+shared the nodes' subnet, hosts on that segment would ARP for them instead of
+routing via the gateway, and with L2 announcements disabled nothing would
+answer. Keeping the range free of real interfaces forces every client —
+including hosts on the nodes' own VLAN — through the gateway, where routing
+and firewall policy are applied, and keeps failover in the routing table
+rather than gratuitous ARP. Do not add real interfaces or other devices to
+this range, and do not move the pool into a subnet that shares an L2
+broadcast domain with the nodes.
 
 ## High-risk surfaces
 

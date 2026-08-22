@@ -65,19 +65,12 @@ for the replicated Ceph pool.
 ## Networking
 
 The cluster sits behind a UniFi Dream Machine Pro, which routes and firewalls
-the network and peers with the cluster over BGP.
+the network.
 
-Cilium runs with `kubeProxyReplacement` and native routing, and advertises
-LoadBalancer addresses to the gateway over BGP rather than announcing them on
-the local segment. There are no L2 announcements: service addresses are routed,
-so failover follows the routing table instead of gratuitous ARP, and the
-addresses are reachable from anywhere the router will route to.
-
-Those addresses come from a dedicated Services network that the nodes hold no
-interface on — they simply advertise routes to it over their primary link.
-Because nothing else lives in that range, reaching a service address can never
-be a local-segment conversation: every client routes via the gateway, which is
-where policy is applied rather than assumed.
+Cilium runs with `kubeProxyReplacement` and native routing, with no L2
+announcements. LoadBalancer addresses come from a dedicated range that no node
+holds an interface on; the nodes advertise routes to it over BGP, so all
+traffic to services goes through the gateway.
 
 ### DNS
 
