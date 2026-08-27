@@ -138,7 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          policy_version="6"
+          policy_version="7"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
           review_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.json"
