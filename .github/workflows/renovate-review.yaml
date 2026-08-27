@@ -304,8 +304,14 @@ jobs:
             changed risk surfaces; use Low when material evidence is unavailable.
             Keep the visible summary compact; put detail in `<details>`.
             Do not link the current PR. Use `redirect.github.com` links for
-            upstream evidence; include 1-3 proper Markdown links and no bare
-            `owner/repo#123` refs.
+            upstream evidence; include 1-3 proper Markdown links. Never write a
+            bare `#123` or `owner/repo#123` reference to an upstream issue or
+            PR. A bare `#123` autolinks to this repository, sends the reader to
+            an unrelated local PR, and emits a cross-reference event onto that
+            PR's timeline. Write every upstream reference as a Markdown link
+            that carries the repository in its text, for example
+            `[owner/repo#123](https://redirect.github.com/owner/repo/pull/123)`.
+            A bare `#123` is correct only for this repository's own issues.
             Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
