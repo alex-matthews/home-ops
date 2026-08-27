@@ -81,6 +81,9 @@ spec:
             memory: 8Gi
       security:
         cephx:
+          daemon:
+            keyRotationPolicy: KeyGeneration
+            keyGeneration: 2 # must exceed the current generation in status.cephx
           csi:
             keyType: aes # aes256k mounts need kernel support; Talos 1.14 backports it
       storage:
