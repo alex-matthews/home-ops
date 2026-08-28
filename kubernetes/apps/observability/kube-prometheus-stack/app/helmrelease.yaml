@@ -52,11 +52,16 @@ spec:
               namespace: network
       prometheusSpec:
         externalUrl: https://prometheus.${SECRET_DOMAIN}
-        version: v2.55.1 # override 'unsupported Prometheus version' error
-        image:
-          registry: docker.io
-          repository: prompp/prompp
-          tag: 0.8.11
+        initContainers:
+          # Converts the prompp-format WAL back to vanilla before Prometheus 3
+          # starts; remove once the engine switch is verified (see PR).
+          - name: prompptool
+            image: docker.io/prompp/prompp:0.8.11
+            command: ["/bin/prompptool", "--working-dir=/prometheus", "--verbose", "walpp"]
+            volumeMounts:
+              - name: prometheus-kube-prometheus-stack-db
+                mountPath: /prometheus
+                subPath: prometheus-db
         securityContext:
           runAsNonRoot: true
           runAsUser: 64535
