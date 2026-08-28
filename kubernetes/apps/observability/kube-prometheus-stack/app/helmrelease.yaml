@@ -52,16 +52,6 @@ spec:
               namespace: network
       prometheusSpec:
         externalUrl: https://prometheus.${SECRET_DOMAIN}
-        initContainers:
-          # Converts the prompp-format WAL back to vanilla before Prometheus 3
-          # starts; remove once the engine switch is verified (see PR).
-          - name: prompptool
-            image: docker.io/prompp/prompp:0.8.11
-            command: ["/bin/prompptool", "--working-dir=/prometheus", "--verbose", "walpp"]
-            volumeMounts:
-              - name: prometheus-kube-prometheus-stack-db
-                mountPath: /prometheus
-                subPath: prometheus-db
         securityContext:
           runAsNonRoot: true
           runAsUser: 64535
