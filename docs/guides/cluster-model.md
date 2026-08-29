@@ -1,6 +1,6 @@
 # Cluster Model
 
-**When to use:** Flux reconcile path, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, scheduling, descheduler policy, node placement and rebalancing, rolling Talos upgrades, service networking, LoadBalancer addresses, BGP, L2 announcements, high-risk surfaces.
+**When to use:** Flux reconcile path, dependsOn, reconciliation ordering, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, scheduling, descheduler policy, node placement and rebalancing, rolling Talos upgrades, service networking, LoadBalancer addresses, BGP, L2 announcements, high-risk surfaces.
 
 How a change reaches the cluster, how secrets and state get there, and which
 surfaces are high-risk to touch. For repository layout and app file shape see
@@ -26,6 +26,56 @@ surfaces are high-risk to touch. For repository layout and app file shape see
 
 Nothing reaches the cluster except through this path. Imperative changes are
 diagnostics-only; Flux overwrites drift on the next reconcile.
+
+## Reconciliation ordering and `dependsOn`
+
+Settled by the #1872 audit (PRs #1877, #1878, #1884, #1885). The graph
+follows a declared-intent rule, chosen over strict proven necessity because
+it survives controller upgrades and needs no per-edge analysis. Re-litigate
+it only on new evidence — a controller behaviour change or an actual
+incident — never on taste.
+
+When adding an app, apply the rule in this order:
+
+- No `dependsOn` by default. A runtime dependency does not require a
+  reconciliation dependency: PVCs wait for provisioning, pods pend on
+  missing devices, and controllers retry. Edges that exist only to wait for
+  resource availability couple their dependents to infrastructure health,
+  so an unhealthy infrastructure Kustomization blocks app updates it does
+  not protect — the 2026-08-28 Ceph maintenance blocked 22 apps this way
+  (PR #1877).
+- One exception class by rule: operator families. Each member depends on
+  the adjacent rung of its family's ladder — instance on operator, operator
+  on its CRD chart, content on instance — whether or not bootstrap also
+  installs the CRDs. These edges are declared intent, not proven necessity;
+  some are provably redundant on current controller versions, and that is
+  accepted.
+- Cross-family CRD consumers get no edge; their CRDs are installed
+  out-of-band at bootstrap (`bootstrap/helmfile/crds.yaml`), and Flux/Helm
+  keep CRD upgrade ownership either way.
+- One exception class by evidence: an availability-shaped edge is kept
+  where its absence demonstrably produces a stored-release Helm failure
+  with bounded remediation. Currently two: `plex` and `drm-exporter` on
+  `intel-gpu-resource-driver`. Both workloads carry DRA resource claims;
+  without the driver their pods cannot schedule, Helm stores the release
+  and then times out waiting, and the bounded remediation can stall rather
+  than self-heal when the driver appears (source-level demonstration;
+  empirical reproduction deliberately waived).
+
+The failure mechanics that make the edge-less default safe, established at
+source level on the pinned Flux controllers: a missing CRD in an ordinary
+Helm manifest fails before the release is stored and consumes no
+remediation, and a failed direct apply requeues at the retry interval —
+both self-heal indefinitely, so edge-less consumers converge on their own.
+The exception bar is the opposite class: post-storage failure (readiness
+waits, hooks, admission during create) consumes bounded remediation and can
+stall until a manual reset, and that is what an evidence-based exception
+must demonstrate. These facts are version-pinned; re-verify them on major
+helm-controller upgrades. Family edges rest on neither — they are kept by
+rule, which is the point of the rule.
+
+The full 52-edge classification, the analysis, and the waived tests are
+recorded in #1872.
 
 ## Secrets
 
