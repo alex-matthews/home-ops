@@ -6,7 +6,7 @@ metadata:
   name: flux-mcp
 spec:
   dependsOn:
-    - name: toolhive-config
+    - name: toolhive-operator
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/flux-mcp/app
   prune: true

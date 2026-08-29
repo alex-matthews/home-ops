@@ -6,7 +6,7 @@ metadata:
   name: konflate-mcp
 spec:
   dependsOn:
-    - name: toolhive-config
+    - name: toolhive-operator
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/konflate-mcp/app
   postBuild:

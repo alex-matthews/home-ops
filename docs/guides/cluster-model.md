@@ -29,41 +29,66 @@ diagnostics-only; Flux overwrites drift on the next reconcile.
 
 ## Reconciliation ordering and `dependsOn`
 
-Settled by the #1872 audit (PRs #1877, #1878, #1884, #1885). The graph
-follows a declared-intent rule, chosen over strict proven necessity because
-it survives controller upgrades and needs no per-edge analysis. Re-litigate
-it only on new evidence — a controller behaviour change or an actual
-incident — never on taste.
+Settled by the #1872 audit (PRs #1877, #1878, #1884–#1888). Re-litigate it
+only on new evidence — a controller behaviour change or an actual incident —
+never on taste.
 
-When adding an app, apply the rule in this order:
+The rule, in one sentence: a Kustomization whose product is instances of an
+operator's API depends on the Kustomization that ships the operator (a
+separate CRD chart sits one rung below its operator); everything else gets
+no edge. Supporting defaults:
 
 - No `dependsOn` by default. A runtime dependency does not require a
   reconciliation dependency: PVCs wait for provisioning, pods pend on
-  missing devices, and controllers retry. Edges that exist only to wait for
-  resource availability couple their dependents to infrastructure health,
-  so an unhealthy infrastructure Kustomization blocks app updates it does
-  not protect — the 2026-08-28 Ceph maintenance blocked 22 apps this way
-  (PR #1877).
-- One exception class by rule: operator families. Each member depends on
-  the adjacent rung of its family's ladder — instance on operator, operator
-  on its CRD chart, content on instance — whether or not bootstrap also
-  installs the CRDs. A dependent is family when its primary resource is an
-  instance of the dependency's API; a workload that applies another
-  component's CR incidentally is a consumer, not family, and gets no edge.
-  Family edges are declared intent, not proven necessity; some are provably
-  redundant on current controller versions, and that is accepted.
-- Cross-family CRD consumers get no edge; their CRDs are installed
-  out-of-band at bootstrap (`bootstrap/helmfile/crds.yaml`, or a
-  whole-product install in the bootstrap apps phase), and Flux/Helm keep
-  CRD upgrade ownership either way.
-- One exception class by evidence: an availability-shaped edge is kept
-  where its absence demonstrably produces a stored-release Helm failure
-  with bounded remediation. Currently two: `plex` and `drm-exporter` on
-  `intel-gpu-resource-driver`. Both workloads carry DRA resource claims;
-  without the driver their pods cannot schedule, Helm stores the release
-  and then times out waiting, and the bounded remediation can stall rather
-  than self-heal when the driver appears (source-level demonstration;
-  empirical reproduction deliberately waived).
+  missing devices, and controllers retry. A workload that applies another
+  component's CRs incidentally is a consumer, not an instance component,
+  and gets no edge — availability edges cost real blocking, as the
+  2026-08-28 Ceph maintenance showed for 22 apps (PR #1877).
+- Cross-family APIs are present before Flux through one of three bootstrap
+  mechanisms: `bootstrap/helmfile/crds.yaml`, a whole-product install in
+  the bootstrap apps phase, or platform/machine bootstrap (currently
+  `talos.dev`, installed by Talos machine configuration). Flux/Helm keep
+  CRD upgrade ownership. Coverage was manually verified at #1887; no
+  automated check enforces it.
+- Exceptions require demonstrated evidence of a stored-release Helm failure
+  with bounded remediation.
+
+The edge table is the graph, not an illustration — change it only with a
+recorded reason.
+
+Instance → operator (the component's product is instances of the target's
+API; declared intent, kept whether or not bootstrap also installs the
+CRDs):
+
+- `rook-ceph-cluster → rook-ceph` — CephCluster and pools; the toolbox
+  also needs operator-created inputs (demonstrated).
+- `ceph-csi-drivers → rook-ceph` — Driver and OperatorConfig; their CRDs
+  and the CSI operator ship in the rook chart.
+- `toolhive-config → toolhive-operator` — MCPGroup, VirtualMCPServer.
+- `context7-mcp`, `flux-mcp`, `github-mcp`, `grafana-mcp`,
+  `konflate-mcp → toolhive-operator` — MCPServer and registry entries.
+- `kopiur-repositories → kopiur` — ClusterRepositories.
+- `tuppr-upgrades → tuppr` — TalosUpgrade, KubernetesUpgrade.
+- `silence-operator-silences → silence-operator` — Silences.
+- `actions-runner-controller-runners → actions-runner-controller` —
+  AutoscalingRunnerSet.
+- `grafana-instance → grafana` — the Grafana CR.
+- `grafana-dashboards → grafana` — dashboards, folders, datasources.
+- `flux-instance → flux-operator` — the FluxInstance CR.
+
+Operator → CRD chart:
+
+- `toolhive-operator → toolhive-operator-crds` — the operator exits during
+  startup without its CRDs (demonstrated at source).
+
+Exceptions, by evidence:
+
+- `plex → intel-gpu-resource-driver` and
+  `drm-exporter → intel-gpu-resource-driver` — DRA resource claims make
+  the pods unschedulable without the driver; Helm stores the release,
+  times out waiting, and the bounded remediation can stall rather than
+  self-heal when the driver appears (source-level demonstration; empirical
+  reproduction deliberately waived).
 
 The failure mechanics that make the edge-less default safe, established at
 source level on the pinned Flux controllers: a missing CRD in an ordinary
@@ -74,11 +99,10 @@ The exception bar is the opposite class: post-storage failure (readiness
 waits, hooks, admission during create) consumes bounded remediation and can
 stall until a manual reset, and that is what an evidence-based exception
 must demonstrate. These facts are version-pinned; re-verify them on major
-helm-controller upgrades. Family edges rest on neither — they are kept by
-rule, which is the point of the rule.
+helm-controller upgrades. Instance edges rest on neither — they are kept
+by rule, which is the point of the rule.
 
-The full 52-edge classification, the analysis, and the waived tests are
-recorded in #1872.
+The audit's history, accounting, and validation record are in #1872.
 
 ## Secrets
 
