@@ -5,10 +5,6 @@ kind: Kustomization
 metadata:
   name: grafana-mcp
 spec:
-  dependsOn:
-    - name: toolhive-config
-    - name: grafana-instance
-      namespace: observability
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/grafana-mcp/app
   prune: true

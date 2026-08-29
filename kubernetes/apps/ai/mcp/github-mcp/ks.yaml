@@ -5,8 +5,6 @@ kind: Kustomization
 metadata:
   name: github-mcp
 spec:
-  dependsOn:
-    - name: toolhive-config
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/github-mcp/app
   prune: true
