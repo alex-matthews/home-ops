@@ -39,6 +39,8 @@ kind: Kustomization
 metadata:
   name: toolhive-config
 spec:
+  dependsOn:
+    - name: toolhive-operator
   interval: 1h
   path: ./kubernetes/apps/ai/toolhive/config
   postBuild:

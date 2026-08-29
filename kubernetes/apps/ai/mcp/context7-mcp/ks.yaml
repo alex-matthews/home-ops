@@ -5,6 +5,8 @@ kind: Kustomization
 metadata:
   name: context7-mcp
 spec:
+  dependsOn:
+    - name: toolhive-config
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/context7-mcp/app
   prune: true

@@ -5,8 +5,6 @@ kind: Kustomization
 metadata:
   name: kromgo
 spec:
-  dependsOn:
-    - name: kube-prometheus-stack
   interval: 1h
   path: ./kubernetes/apps/observability/kromgo/app
   postBuild:

@@ -5,6 +5,8 @@ kind: Kustomization
 metadata:
   name: konflate-mcp
 spec:
+  dependsOn:
+    - name: toolhive-config
   interval: 1h
   path: ./kubernetes/apps/ai/mcp/konflate-mcp/app
   postBuild:

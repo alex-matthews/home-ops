@@ -21,6 +21,8 @@ kind: Kustomization
 metadata:
   name: silence-operator-silences
 spec:
+  dependsOn:
+    - name: silence-operator
   interval: 1h
   path: ./kubernetes/apps/observability/silence-operator/silences
   prune: true
