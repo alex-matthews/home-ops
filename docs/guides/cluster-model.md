@@ -47,12 +47,15 @@ When adding an app, apply the rule in this order:
 - One exception class by rule: operator families. Each member depends on
   the adjacent rung of its family's ladder — instance on operator, operator
   on its CRD chart, content on instance — whether or not bootstrap also
-  installs the CRDs. These edges are declared intent, not proven necessity;
-  some are provably redundant on current controller versions, and that is
-  accepted.
+  installs the CRDs. A dependent is family when its primary resource is an
+  instance of the dependency's API; a workload that applies another
+  component's CR incidentally is a consumer, not family, and gets no edge.
+  Family edges are declared intent, not proven necessity; some are provably
+  redundant on current controller versions, and that is accepted.
 - Cross-family CRD consumers get no edge; their CRDs are installed
-  out-of-band at bootstrap (`bootstrap/helmfile/crds.yaml`), and Flux/Helm
-  keep CRD upgrade ownership either way.
+  out-of-band at bootstrap (`bootstrap/helmfile/crds.yaml`, or a
+  whole-product install in the bootstrap apps phase), and Flux/Helm keep
+  CRD upgrade ownership either way.
 - One exception class by evidence: an availability-shaped edge is kept
   where its absence demonstrably produces a stored-release Helm failure
   with bounded remediation. Currently two: `plex` and `drm-exporter` on
