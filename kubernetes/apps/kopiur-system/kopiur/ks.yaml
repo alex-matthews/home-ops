@@ -21,8 +21,6 @@ kind: Kustomization
 metadata:
   name: kopiur-repositories
 spec:
-  dependsOn:
-    - name: kopiur
   interval: 1h
   path: ./kubernetes/apps/kopiur-system/kopiur/repository
   postBuild:

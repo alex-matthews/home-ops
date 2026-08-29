@@ -21,8 +21,6 @@ kind: Kustomization
 metadata:
   name: tuppr-upgrades
 spec:
-  dependsOn:
-    - name: tuppr
   interval: 1h
   path: ./kubernetes/apps/system-upgrade/tuppr/upgrades
   prune: true

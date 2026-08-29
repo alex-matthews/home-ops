@@ -7,9 +7,6 @@ metadata:
 spec:
   components:
     - ../../../../components/dragonfly
-  dependsOn:
-    - name: dragonfly-operator
-      namespace: database
   interval: 1h
   path: ./kubernetes/apps/ai/litellm/app
   postBuild:
