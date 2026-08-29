@@ -5,11 +5,6 @@ kind: Kustomization
 metadata:
   name: hermes
 spec:
-  dependsOn:
-    - name: toolhive-config
-    - name: litellm
-    - name: context7-mcp
-    - name: konflate-mcp
   interval: 1h
   path: ./kubernetes/apps/ai/hermes/app
   postBuild:

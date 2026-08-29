@@ -21,6 +21,8 @@ kind: Kustomization
 metadata:
   name: grafana-instance
 spec:
+  dependsOn:
+    - name: grafana
   interval: 1h
   path: ./kubernetes/apps/observability/grafana/instance
   postBuild:
@@ -41,6 +43,8 @@ kind: Kustomization
 metadata:
   name: grafana-dashboards
 spec:
+  dependsOn:
+    - name: grafana-instance
   interval: 1h
   path: ./kubernetes/apps/observability/grafana/dashboards
   postBuild:
