@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-local
+  annotations:
+    lbipam.cilium.io/ips: 192.168.96.250
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/instance: echo
+    app.kubernetes.io/name: echo
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
