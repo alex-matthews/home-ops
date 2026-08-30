@@ -36,6 +36,12 @@ directory when possible:
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 ```
 
+`kubectl apply --dry-run=server` runs admission with the caller's own
+permissions, and the ambient kubeconfig is read-only, so a server dry-run
+needs the administrative identity named explicitly:
+`mise exec -- kubectl --kubeconfig ./kubeconfig apply --dry-run=server ...`
+(the flag, not the environment — mise overrides an exported `KUBECONFIG`).
+
 ## What a local render does not prove
 
 The rendered `FluxInstance` pins its sync source to the remote `main` branch.
