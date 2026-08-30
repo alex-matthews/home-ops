@@ -28,6 +28,11 @@ structure — a section narrating a wrong call is itself the problem.
 Keep operational lessons; drop the chronology. "What we learned that changes
 future behaviour" survives. "Step 4 completed successfully" does not.
 
+A follow-up that should outlive its issue must exist as its own open issue,
+or a row in an open umbrella, before the issue that spawned it closes.
+Handing it to another issue's scope ties its survival to that issue; closed
+issues are an archive, not a queue.
+
 A findings report from audit-shaped work goes where the driving issue directs —
 an issue comment, or a note under `docs/operations/` when it is long enough to
 outlive the issue. Include an at-a-glance table (finding, severity, fix,
@@ -46,7 +51,10 @@ body. Larger work starts from a template in `.github/ISSUE_TEMPLATE/`:
   goals, non-goals, and trade-offs.
 - **Umbrella**: independently deliverable children where no single child owns
   the shared scope, sequencing, and cross-child decisions. The umbrella
-  coordinates; it never implements.
+  coordinates; it never implements. Link each child issue to the umbrella as
+  a native GitHub sub-issue when it opens — links work only for issues,
+  never pull requests — while the children table stays the record of status
+  and dependencies.
 
 Templates are starting shapes: delete sections that do not apply, and rename a
 heading when that makes its contents more accurate.
