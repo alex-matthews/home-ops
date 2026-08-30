@@ -11,6 +11,10 @@ spec:
   interval: 1h
   values:
     kind: Deployment
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
     deschedulerPolicyAPIVersion: descheduler/v1alpha2
     deschedulerPolicy:
       profiles:
