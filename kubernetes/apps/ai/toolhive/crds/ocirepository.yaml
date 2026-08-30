@@ -12,3 +12,8 @@ spec:
   ref:
     tag: 0.46.0
   url: oci://ghcr.io/stacklok/toolhive/toolhive-operator-crds
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/stacklok/toolhive/\\.github/workflows/helm-publish\\.yml@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$"
