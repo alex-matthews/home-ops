@@ -56,7 +56,8 @@ spec:
                   periodSeconds: 10
             resources:
               requests:
-                cpu: 10m
+                cpu: 50m
+                memory: 512Mi
               limits:
                 memory: 1Gi
             securityContext:
