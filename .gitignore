@@ -11,4 +11,5 @@
 Thumbs.db
 backlog.md
 kubeconfig
+kubeconfig-readonly
 talosconfig*
