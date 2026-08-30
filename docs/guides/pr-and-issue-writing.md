@@ -146,6 +146,10 @@ pull request. A retrospective comment on a merged pull request is acceptable
 and better than the alternative; write it as if it had always been there, with
 no trace of the recovery.
 
+While the guidance programme (#1768) runs, append a row to
+`.private/prose-evidence-log.md` when an artifact is signed off; the log's
+header carries the format.
+
 ## Public safety
 
 This repository is public. `AGENTS.md` lists what must never appear in public

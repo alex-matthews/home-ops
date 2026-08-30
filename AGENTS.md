@@ -9,7 +9,9 @@ This file is the canonical agent entrypoint and, among this repository's own
 documents, the authority on change control: where it and another document here
 disagree, this file wins. It adds to the global agent rules in
 `~/.config/agents/AGENTS.md` and does not relax them — those set a floor this
-file can raise and not lower.
+file can raise and not lower. Harness-specific enforcement — permission
+allowlists and hooks — is managed in the dotfiles layer, not here. A machine
+without that layer runs sessions on prose alone.
 
 `CLAUDE.md` beside it is a compatibility symlink to this file, because Claude
 Code reads that name and not `AGENTS.md`. Edit this file, never the link.
@@ -25,12 +27,13 @@ line; read only those whose triggers match the task at hand.
   boundaries, bypass merges.
 - `peers.md`: reference repository catalog and how to use it.
 - `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
-  comments. Read it before posting or editing any GitHub prose.
+  comments. Read it before drafting, reviewing, or posting any GitHub prose.
 
-`.agents/skills/` holds task recipes such as `add-app`. Load a skill only when
-performing that task. Load `maintenance-window` before planning or executing
-any window that stops workloads, deletes or recreates PVCs, or holds imperative
-cluster state across a merge.
+`.agents/skills/` holds harness-agnostic task recipes such as `add-app`;
+anything specific to a particular harness lives in the dotfiles layer, not
+here. Load a skill only when performing that task. Load `maintenance-window`
+before planning or executing any window that stops workloads, deletes or
+recreates PVCs, or holds imperative cluster state across a merge.
 
 ## Before Editing
 
@@ -146,10 +149,15 @@ so the rule is not "never use it" but "never let it be the only copy": other
 agents and other clients cannot read it, and guidance held by one assistant is
 guidance every other one ignores.
 
+Place content by who must act on it: authoring → guides, operating →
+operations notes, deciding → ADRs.
+
 - A prose, review, or issue-hygiene convention →
   `docs/guides/pr-and-issue-writing.md`.
 - A cluster, secret, or storage fact → `docs/guides/cluster-model.md`, or the
   relevant note under `docs/operations/`.
+- A decision among alternatives, with trade-offs accepted → an ADR under
+  `docs/adr/`.
 - A caveat about what a check does or does not prove →
   `docs/guides/validation.md`.
 - A peer-comparison scoping rule → `docs/guides/peers.md`.
