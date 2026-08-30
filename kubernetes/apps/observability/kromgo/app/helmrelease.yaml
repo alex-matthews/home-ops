@@ -16,6 +16,9 @@ spec:
       prometheus: http://prometheus-operated.{{ .Release.Namespace }}.svc.cluster.local:9090
       gallery:
         enabled: false
+      # Queries must aggregate to label-free samples (single version labels
+      # aside): the json format serializes the first sample's complete label
+      # set to the public route (ADR-0004).
       badges:
         - title: Talos
           id: talos_version
@@ -72,7 +75,7 @@ spec:
 
         - title: Alerts
           id: cluster_alert_count
-          query: alertmanager_alerts{state="active"} - 1 # Ignore Watchdog
+          query: max(alertmanager_alerts{state="active"}) - 1 # Ignore Watchdog
           colorExpr: 'colorScale(result, [1.0], ["green", "red"])'
     httpRoute:
       enabled: true
