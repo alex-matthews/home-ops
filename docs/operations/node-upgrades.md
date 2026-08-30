@@ -1,8 +1,11 @@
 # Node Upgrades
 
 How Talos and Kubernetes version bumps roll through the nodes, what a healthy
-rollout looks like, and which side effects are expected rather than incidents.
-Baseline observations are from the 2026-08-06 Talos 1.13.7 → 1.13.8 rollout.
+rollout looks like, which side effects are expected rather than incidents,
+how workloads respread afterwards (scheduling, descheduler policy), and what
+persists when a rollout fails mid-way. Baseline observations are from the
+2026-08-06 Talos 1.13.7 → 1.13.8 rollout and the 1.13.8 → 1.13.9 rollout
+(2026-08-21 to 08-27), which a node firmware hang split across six days.
 
 ## How a rollout runs
 
@@ -38,20 +41,66 @@ time.
 The last node upgraded ends the rollout nearly empty — everything drained off
 it has been rescheduled onto the earlier nodes, and nothing moves back on its
 own. The descheduler's `LowNodeUtilization` profile
-(`kubernetes/apps/kube-system/descheduler/`) is what restores balance: it
-compares actual usage from metrics against per-dimension thresholds and
-evicts up to five pods per node per five-minute cycle from overutilized
-nodes. In this cluster CPU and memory sit far below the 50% targets, so the
-pod-count dimension (target 45% of pod capacity) is what actually drives
-rebalancing after a rollout.
+(`kubernetes/apps/kube-system/descheduler/`) restores balance on the same
+signal the scheduler places by: requested CPU and memory, as deviation bands
+of ±10 points around the fleet mean. A node below the lower band on every
+resource is a target; each node above the upper band on any resource sheds up
+to five pods per five-minute cycle. Because eviction and replacement
+placement optimise the same quantity, the post-rollout burst converges
+rather than looping: a workload may hop more than once while the fleet
+re-levels, but each eviction hits a fresh replacement pod, and the burst
+ends once every node is inside the bands.
+
+Rebalancing toward a returning node cannot begin while tuppr's cordon holds:
+the descheduler never targets an unschedulable node, and tuppr uncordons
+only once the node's health checks pass. Its
+`tuppr.home-operations.com/outdated` taint is `PreferNoSchedule` — invisible
+to the descheduler, but scored against by the scheduler, which biases
+replacement placement away from not-yet-upgraded nodes. An "underutilized
+node, zero evictions" reading mid-rollout is sequencing, not a fault.
 
 Convergence is deliberately gradual — expect balance within a few cycles, not
-immediately. Verify with pods-per-node counts rather than assuming:
+immediately. Verify with the descheduler's own log (node classifications and
+`totalEvicted`), not pods-per-node counts: pod count is not part of the
+policy, so uneven counts with every node inside the request bands is the
+policy working, not failing.
 
-```sh
-kubectl get pods -A -o wide --field-selector=status.phase=Running
-```
+The policy balances on requests deliberately. Its predecessor balanced on
+actual utilisation and pod count — signals the scheduler does not place by —
+and evicted the same pods from the same node every five minutes for over a
+day while the scheduler put every replacement straight back (#1805). A future
+policy change should keep eviction and placement on one signal or expect the
+same loop.
 
-Balanced per the stated thresholds does not mean numerically equal: the
-descheduler stops evicting once no node exceeds the target thresholds, so a
-residual skew inside the target band is the policy working, not failing.
+## When a node stays down
+
+A node that hangs at its upgrade reboot leaves the rollout in a stable but
+non-obvious state. Observed across the six-day 2026-08-21 outage:
+
+- tuppr retries the node's upgrade job, marks the `TalosUpgrade` `Failed`,
+  and stops; the remaining nodes are not touched. The dead node keeps its
+  cordon and `outdated` taint — Node objects are not Flux-managed, so both
+  persist until removed. Recovery order: power-cycle the node (the installer
+  finishes before the reboot, so it boots the target version), uncordon it,
+  wait for Ceph `HEALTH_OK`, then annotate the CR with
+  `tuppr.home-operations.com/reset="$(date)"`. tuppr re-evaluates, skips
+  already-upgraded nodes, clears their taints, and finishes the rollout.
+- The cluster runs without failure tolerance meanwhile (etcd 2/3, Ceph
+  `min_size` 2 with one OSD down): hold storage changes and anything that
+  drains a node until recovery.
+- Any HelmRelease whose chart ships a DaemonSet wedges if upgraded during
+  the outage: the DaemonSet counts the dead node in its desired set, helm's
+  health wait cannot complete, and the release lands in `pending-rollback`
+  with Flux retrying. Harmless and self-resolving on node return; merging
+  bumps to DaemonSet-shipping charts during a known outage queues them
+  behind the wedge.
+- Rook probes mon failover (recurring short-lived `mon-canary` pods that
+  find no placement and are cleaned up) and refuses `ok-to-stop` while
+  redundancy is degraded. Both end on node return, after which deferred OSD
+  deployment updates roll one at a time — expected churn, not a fault.
+- A drain that evicts the kopiur controller mid-operation produces a burst
+  of retried snapshots and UUID-named `snapdel` jobs. The cockpit
+  failed-jobs panel counts pod-level retries; judge backup health by
+  Snapshot phases, not that panel.
+- The descheduler idles with no under-band target available — correct
+  behaviour, not a stuck controller.
