@@ -9,6 +9,10 @@ writing.
 The test for any sentence: would it exist if the work had been done right the
 first time, and does it help a later reader? If neither, cut it.
 
+The `github-prose` skill in `.agents/skills/` carries the drafting-to-posting
+process — artifact choice, shape catalogs, and the review contract. This
+guide stays canonical for the rules.
+
 ## Issues
 
 The body is the record. Keep it true as work lands — tick checkboxes, correct
