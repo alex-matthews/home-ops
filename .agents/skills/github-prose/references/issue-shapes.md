@@ -1,9 +1,9 @@
 # Issue shapes
 
 Maps recurring issue shapes to their template in `.github/ISSUE_TEMPLATE/`
-and a merged exemplar. Templates are starting shapes: delete sections that
-do not apply, rename a heading when that makes its contents more accurate.
-Every exemplar below is local; read it before drafting the same shape.
+and a merged exemplar; the guide's Choosing a shape section owns the
+template descriptions. Every exemplar below is local; read it before
+drafting the same shape.
 
 | Shape                      | Template                  | Exemplar    | Notes                                                                                 |
 | -------------------------- | ------------------------- | ----------- | ------------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ Every exemplar below is local; read it before drafting the same shape.
 | Programme tracking         | tracking                  | #1872       | Doctrine and state for multi-PR work; principles as summary + pointer.                |
 | Decision-tracking stub     | tracking                  | #1233       | Principles and current-state sections deleted; adoption boxes tied to merges.         |
 | Audit findings             | audit-findings            | #1906       | Categories public, identities in `.private/`; findings feed named successors.         |
-| Small capture or follow-up | none                      | #1899–#1902 | One paragraph of prose with a closing condition; check for an existing tracker first. |
+| Small capture or follow-up | none                      | #1900–#1902 | One paragraph of prose with a closing condition; check for an existing tracker first. |
 | Decision checkpoint        | none                      | #1899       | Verdict-first, per-trigger bullets, dated next checkpoint carried in the title.       |
 
 Shape selection failures worth knowing: the #1233 body took four shape

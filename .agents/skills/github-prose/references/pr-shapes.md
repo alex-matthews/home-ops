@@ -16,8 +16,7 @@ merged local pull request; read it before drafting the same shape.
 4. Live-effect or follow-up closer, only when the change has one.
 
 Properties and invariants live in one durable document or nowhere; the
-body states what changed and what was checked. When review falsifies a
-claim, fix it by removing or shortening it, never by fencing it.
+body states what changed and what was checked.
 
 ## Shapes
 

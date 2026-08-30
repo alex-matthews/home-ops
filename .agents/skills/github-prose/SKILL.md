@@ -37,8 +37,8 @@ request bodies see [references/pr-shapes.md](references/pr-shapes.md).
 - Enumerate the open decisions and put them to the owner before drafting.
   Each decided question deletes more prose than any wording round, and
   hedging in a draft is usually an undecided question wearing a sentence.
-- Freeze the template and section structure with the owner. Contract
-  silence is a reportable gap, never implicit permission.
+- Freeze the template and section structure with the owner. A question the
+  contract does not answer is a gap to report, never permission to guess.
 - For a set of artifacts that reference each other, state the posting
   order in the draft header. Placeholders resolve by posting order: post
   for a number, substitute it, back-fill the referrer.
@@ -67,16 +67,12 @@ than hiding it.
   once. Corrections afterwards are edits in place.
 - Umbrella children get native sub-issue links at open time, and the
   children table stays the record.
-- Append a row to `.private/prose-evidence-log.md` at sign-off, per its
-  header rules.
 - Rename a generated branch to a descriptive slug before opening the
   pull request.
 
 ## 6. Maintain
 
-- The body is the record: tick boxes as work lands, correct wording that
-  has become false, fold conclusions in rather than appending them.
-- A follow-up that outlives its issue gets its own open issue or umbrella
-  row before the parent closes.
-- Corrections and retrospective additions read as if they had always been
-  there.
+Per the guide's body-is-the-record and re-homing rules: tick boxes as work
+lands, correct in place, re-home surviving follow-ups before the parent
+closes, and write retrospective additions as if they had always been
+there.

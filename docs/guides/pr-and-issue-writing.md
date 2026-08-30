@@ -59,6 +59,10 @@ body. Larger work starts from a template in `.github/ISSUE_TEMPLATE/`:
   a native GitHub sub-issue when it opens — links work only for issues,
   never pull requests — while the children table stays the record of status
   and dependencies.
+- **Tracking**: a programme or a decision's delivery, where the work lands
+  elsewhere and this issue holds the mandate, state, and open decisions.
+- **Audit findings**: what an audit or inventory found — method, findings,
+  conclusions — with identities kept to private notes.
 
 Templates are starting shapes: delete sections that do not apply, and rename a
 heading when that makes its contents more accurate.

@@ -14,7 +14,7 @@ Two passes catch disjoint defects; run both.
 - **Cold reader**: read as an uninitiated human operator. A readability
   finding counts when that reader would misread a fact or a decision.
   The verdict names the audience it certifies; five expert passes once
-  certified prose the owner found unreadable.
+  certified prose the owner found unreadable (#1233).
 
 ## Findings
 
@@ -42,5 +42,5 @@ Two passes catch disjoint defects; run both.
 - Probe classifications and counts ("is N the right number?", "are these
   obvious?") — owner probing is the most effective lens on record, and a
   reviewer should apply it before the owner has to.
-- Sentence-level patchwork collapses readability within two rounds; after
-  two, the fix is a holistic rewrite that preserves the agreed facts.
+- Sentence-level patchwork collapses readability; once it accumulates,
+  the fix is a holistic rewrite that preserves the agreed facts.

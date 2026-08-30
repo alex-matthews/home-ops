@@ -1,6 +1,6 @@
 ---
 name: Tracking
-about: Track a programme or standing decision while the work lands elsewhere.
+about: Track a programme or a decision's delivery while the work lands elsewhere.
 ---
 
 <!--
