@@ -5,7 +5,8 @@ kind: MCPServerEntry
 metadata:
   name: konflate
 spec:
-  remoteUrl: https://konflate.${SECRET_DOMAIN}/mcp
+  remoteUrl: http://konflate.flux-system.svc.cluster.local:8080/mcp
+  allowPrivateEndpoint: true
   transport: streamable-http
   groupRef:
     name: mcp-tools

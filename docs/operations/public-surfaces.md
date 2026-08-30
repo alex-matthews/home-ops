@@ -17,15 +17,16 @@ that exposes it.
 | Seerr                       | Household members, plus probe and API clients                      | Yes                                                                          | Yes — approvals drive the download stack                                   | Its own sign-in, which is delegated to Plex accounts                    |
 | Konflate — read APIs and UI | People and CI                                                      | Analysis of an already-public repository; its value is as CI review evidence | No                                                                         | None                                                                    |
 | Konflate — webhook          | GitHub's webhook delivery                                          | Nothing in its responses                                                     | Yes — a valid call triggers work                                           | Cryptographic signature check on every request                          |
-| Konflate — MCP              | One in-cluster client                                              | Same data as the read APIs                                                   | No                                                                         | None                                                                    |
 | Flux webhook receiver       | GitHub's webhook delivery                                          | Nothing in its responses                                                     | Yes — a valid call makes the cluster pull and apply the repo's main branch | Cryptographic signature check, limited to specific events and resources |
 | Gatus status page           | People, plus the page's own scripts and a metrics endpoint         | The list of monitored services and their uptime history                      | No                                                                         | None                                                                    |
 | Kromgo badges               | GitHub's image proxy and other fetchers                            | Cluster version and count metadata                                           | No                                                                         | Only pre-defined queries run, and only the badge path is routed         |
 | echo                        | An automated reachability monitor                                  | Pod and node identifiers                                                     | No                                                                         | Command execution disabled                                              |
 | qBittorrent peer port       | BitTorrent peers                                                   | None served; the pod can write to download storage                           | Yes                                                                        | The protocol implementation itself                                      |
 
-Konflate is listed three times deliberately: its paths have different
-consumers and different tolerable controls, and treating the hostname as one
-surface is what produces controls that break CI. "Surface" and "route" are
-different units — Konflate is one route and three surfaces — so this
-register counts neither.
+Konflate is listed twice deliberately: its paths have different consumers
+and different tolerable controls, and treating the hostname as one surface
+is what produces controls that break CI. "Surface" and "route" are different
+units — Konflate is one route and two public surfaces — so this register
+counts neither. Its MCP endpoint is no longer a public surface: the external
+route answers 404 on that path, and its one client consumes the in-cluster
+service directly.
