@@ -24,6 +24,12 @@ spec:
       existingSecret: konflate-webhook-token-secret
     httpRoute:
       enabled: true
+      # The gatus sidecar probes the route's first Exact/PathPrefix match,
+      # which is the /mcp deny rule below — pin the probe to the site root.
+      annotations:
+        gatus.home-operations.com/endpoint: |-
+          url: https://{{ .Release.Name }}.${SECRET_DOMAIN}/
+          conditions: ["[STATUS] == 200"]
       parentRefs:
         - name: envoy-external
           namespace: network
