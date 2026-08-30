@@ -20,7 +20,7 @@ just = "1.58.0"
 # bump it with the kopiur chart, not independently. mise exposes it as
 # `kopiur`, not `kubectl-kopiur`, so invoke it directly rather than as a
 # kubectl plugin.
-"github:home-operations/kopiur" = "0.10.4"
+"github:home-operations/kopiur" = "0.10.5"
 kubectl = "1.36.4"
 kustomize = "5.8.1"
 lefthook = "2.1.12"
