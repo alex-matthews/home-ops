@@ -3,7 +3,9 @@
 **When to use:** What to run before merging, render, flate, Konflate, kubeconform, image diff, bypass merge, CI boundaries, `just` versus `mise`, release notes, Renovate PR Review bot, firing alerts, Alertmanager, silences.
 
 Use the smallest validation set that matches the change. What to run, what each
-check actually proves, and where the tooling boundaries sit.
+check actually proves, and where the tooling boundaries sit. For querying
+logs, metrics, and dashboards while investigating live behaviour, see
+[`../operations/observability.md`](../operations/observability.md).
 
 ## Commands
 
