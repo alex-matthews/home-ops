@@ -85,6 +85,25 @@ spec:
           namespace: network
       hostnames:
         - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+      # kromgo's json format serializes the sample's Prometheus labels
+      # (ADR-0004); the shields format stays, for shields.io endpoint
+      # compatibility — it exposes nothing beyond the badge itself. The
+      # dispatch is an exact, case-sensitive match, so the exact query-param
+      # deny covers the json format completely.
+      additionalRules:
+        - filters:
+            - type: ExtensionRef
+              extensionRef:
+                group: gateway.envoyproxy.io
+                kind: HTTPRouteFilter
+                name: kromgo-format-not-found
+          matches:
+            - path:
+                type: PathPrefix
+                value: /badges/
+              queryParams:
+                - name: format
+                  value: json
       matches:
         - path:
             type: PathPrefix
