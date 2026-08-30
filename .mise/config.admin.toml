@@ -1,0 +1,8 @@
+# Operator profile: `export MISE_ENV=admin` restores the administrative
+# credentials for an interactive sitting (and the just recipes run in it).
+# Agent sessions never set it; their explicit path stays the per-command
+# --kubeconfig/--talosconfig flag, and the ask rules gate mutating verbs
+# under either identity.
+[env]
+KUBECONFIG = "{{config_root}}/kubeconfig"
+TALOSCONFIG = "{{config_root}}/talosconfig"

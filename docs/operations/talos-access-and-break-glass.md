@@ -17,8 +17,10 @@ short and factual; update it whenever API identities or access paths change.
 ## Session identities (two per plane)
 
 Since #1921 the mise environment injects read-only credentials by default;
-the administrative files remain beside them and are selected explicitly by
-flag, never ambiently.
+the administrative files remain beside them. An interactive operator
+sitting selects them wholesale with `export MISE_ENV=admin` (profile in
+`.mise/config.admin.toml`, covering the just recipes too); agent sessions
+never set the profile and use the per-command flags below.
 
 - Kubernetes: `kubeconfig-readonly` authenticates the
   `kube-system/agent-readonly` ServiceAccount — get/list/watch everywhere,
