@@ -89,7 +89,7 @@ spec:
         existingClaim: "{{ .Release.Name }}-cache"
         globalMounts:
           - path: /app/config/cache
-      tmpfs:
+      tmp:
         type: emptyDir
         advancedMounts:
           seerr:

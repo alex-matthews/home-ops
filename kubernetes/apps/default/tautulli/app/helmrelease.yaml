@@ -83,7 +83,7 @@ spec:
         existingClaim: "{{ .Release.Name }}-cache"
         globalMounts:
           - path: /config/cache
-      tmpfs:
+      tmp:
         type: emptyDir
         advancedMounts:
           tautulli:

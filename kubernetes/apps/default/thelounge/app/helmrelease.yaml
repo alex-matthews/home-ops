@@ -79,7 +79,7 @@ spec:
     persistence:
       config:
         existingClaim: "{{ .Release.Name }}"
-      tmpfs:
+      tmp:
         type: emptyDir
         sizeLimit: 1Gi
         advancedMounts:

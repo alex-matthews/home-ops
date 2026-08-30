@@ -94,7 +94,7 @@ spec:
         globalMounts:
           - path: /data/usenet
             subPath: usenet
-      tmpfs:
+      tmp:
         type: emptyDir
         advancedMounts:
           sabnzbd:
