@@ -50,6 +50,13 @@
       matchUpdateTypes: ["minor", "patch"],
       automerge: false,
     },
+    // Hold rules
+    {
+      description: "Hold coredns chart at 1.46.2: CoreDNS >=1.14.3 breaks autopath during cache prefetch, https://www.github.com/coredns/coredns/issues/8390",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/coredns/"],
+      allowedVersions: "<=1.46.2",
+    },
     // Grouping rules
     {
       description: "Actions Runner Controller Group",
