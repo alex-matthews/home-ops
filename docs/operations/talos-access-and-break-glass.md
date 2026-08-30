@@ -14,6 +14,29 @@ short and factual; update it whenever API identities or access paths change.
 - The Talos API is addressed per node. The repo `talosconfig` lists the node
   hostnames as both endpoints and nodes; no VIP or proxy sits in the path.
 
+## Session identities (two per plane)
+
+Since #1921 the mise environment injects read-only credentials by default;
+the administrative files remain beside them and are selected explicitly by
+flag, never ambiently.
+
+- Kubernetes: `kubeconfig-readonly` authenticates the
+  `kube-system/agent-readonly` ServiceAccount — get/list/watch everywhere,
+  core-group Secrets excluded, no mutations. The identity's objects live in
+  `kubernetes/apps/kube-system/agent-access/`; revoke by deleting the token
+  Secret, re-mint by re-extracting it. Administrative path:
+  `mise exec -- kubectl --kubeconfig ./kubeconfig ...` (a flag, because the
+  mise environment overrides an exported variable).
+- Talos: `talosconfig-readonly` carries `os:reader` — reads work, sensitive
+  resources (machine config among them) and all mutations are denied.
+  Re-mint from the admin credential:
+  `talosctl config new talosconfig-readonly --roles os:reader -n m1 -e m1`
+  (a single node must be pinned). Administrative path:
+  `mise exec -- talosctl --talosconfig ./talosconfig ...`.
+- When an operator introduces a new API group, the PR that introduces it
+  adds the group to the `agent-readonly-extra` ClusterRole (or the operator
+  ships an aggregate-to-view label); re-run the capability listing after.
+
 ## Break-glass paths
 
 If the stable DNS name is unavailable (router or DNS failure):
