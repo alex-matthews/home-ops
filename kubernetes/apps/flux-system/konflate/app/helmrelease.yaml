@@ -29,6 +29,21 @@ spec:
           namespace: network
       hostnames:
         - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+      # The MCP endpoint's only consumer is in-cluster (ADR-0004); answer it
+      # with 404 externally instead of forwarding to the backend. Prepended
+      # before the default catch-all rule, and /mcp is the longer path prefix,
+      # so it takes precedence for GET, POST, and DELETE alike.
+      additionalRules:
+        - filters:
+            - type: ExtensionRef
+              extensionRef:
+                group: gateway.envoyproxy.io
+                kind: HTTPRouteFilter
+                name: konflate-mcp-not-found
+          matches:
+            - path:
+                type: PathPrefix
+                value: /mcp
     monitoring:
       serviceMonitor:
         enabled: true
