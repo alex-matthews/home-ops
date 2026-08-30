@@ -139,6 +139,12 @@ environment variables, project-specific tool installation, and reproducible
 tool activation. When a required repo tool might not be on `PATH`, prefer
 `mise exec -- <tool> <args>`.
 
+Worktree caveat: mise's `[env]` resolves paths like `KUBECONFIG` against
+`config_root`, which in a git worktree is the worktree itself — where
+untracked credential files such as `kubeconfig` do not exist. Cluster reads
+from a worktree need the path spelled out (`--kubeconfig` or an explicit
+`KUBECONFIG` pointing at the main checkout).
+
 Keep personal workstation preferences, shell/editor configuration, auth state,
 and user-specific tools in dotfiles rather than this repo. Do not store
 secrets, session state, kubeconfig, talosconfig, or 1Password material in mise
