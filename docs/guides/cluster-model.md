@@ -36,7 +36,9 @@ never on taste.
 The rule, in one sentence: a Kustomization whose product is instances of an
 operator's API depends on the Kustomization that ships the operator (a
 separate CRD chart sits one rung below its operator); everything else gets
-no edge. Supporting defaults:
+no edge unless it meets the evidence-based exception below. A component's
+product means its declared purpose, not whichever resource kind is most
+numerous. Supporting defaults:
 
 - No `dependsOn` by default. A runtime dependency does not require a
   reconciliation dependency: PVCs wait for provisioning, pods pend on
@@ -72,8 +74,8 @@ CRDs):
 - `silence-operator-silences → silence-operator` — Silences.
 - `actions-runner-controller-runners → actions-runner-controller` —
   AutoscalingRunnerSet.
-- `grafana-instance → grafana` — the Grafana CR.
-- `grafana-dashboards → grafana` — dashboards, folders, datasources.
+- `grafana-instance → grafana` — the Grafana CR and datasources.
+- `grafana-dashboards → grafana` — dashboards and their folder.
 - `flux-instance → flux-operator` — the FluxInstance CR.
 
 Operator → CRD chart:
