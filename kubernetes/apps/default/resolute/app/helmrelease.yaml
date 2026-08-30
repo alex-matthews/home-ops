@@ -145,7 +145,7 @@ spec:
               - path: /config/policy.yaml
                 subPath: policy.yaml
                 readOnly: true
-      tmpfs:
+      tmp:
         type: emptyDir
         globalMounts:
           - path: /tmp

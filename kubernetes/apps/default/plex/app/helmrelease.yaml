@@ -119,7 +119,7 @@ spec:
           - path: /data/media
             subPath: media
             readOnly: true
-      tmpfs:
+      tmp:
         type: emptyDir
         advancedMounts:
           plex:
