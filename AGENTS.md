@@ -33,7 +33,8 @@ line; read only those whose triggers match the task at hand.
 anything specific to a particular harness lives in the dotfiles layer, not
 here. Load a skill only when performing that task. Load `maintenance-window`
 before planning or executing any window that stops workloads, deletes or
-recreates PVCs, or holds imperative cluster state across a merge.
+recreates PVCs, or holds imperative cluster state across a merge. Load
+`github-prose` when drafting an issue, pull request body, or ADR.
 
 ## Before Editing
 

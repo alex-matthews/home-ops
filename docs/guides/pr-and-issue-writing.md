@@ -9,6 +9,10 @@ writing.
 The test for any sentence: would it exist if the work had been done right the
 first time, and does it help a later reader? If neither, cut it.
 
+The `github-prose` skill in `.agents/skills/` carries the drafting-to-posting
+process — artifact choice, shape catalogs, and the review contract. This
+guide stays canonical for the rules.
+
 ## Issues
 
 The body is the record. Keep it true as work lands — tick checkboxes, correct
@@ -55,6 +59,10 @@ body. Larger work starts from a template in `.github/ISSUE_TEMPLATE/`:
   a native GitHub sub-issue when it opens — links work only for issues,
   never pull requests — while the children table stays the record of status
   and dependencies.
+- **Tracking**: a programme or a decision's delivery, where the work lands
+  elsewhere and this issue holds the mandate, state, and open decisions.
+- **Audit findings**: what an audit or inventory found — method, findings,
+  conclusions — with identities kept to private notes.
 
 Templates are starting shapes: delete sections that do not apply, and rename a
 heading when that makes its contents more accurate.
