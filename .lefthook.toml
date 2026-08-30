@@ -3,9 +3,6 @@ git_url = "https://github.com/home-operations/.github"
 ref = "main"
 configs = ["lefthook.common.toml"]
 
-[pre-commit.commands.mise-lock]
-skip = true
-
 [pre-commit.commands.format-yaml]
 exclude = ["?*.sops.yaml", "?*.sops.yml"]
 
