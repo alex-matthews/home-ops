@@ -50,7 +50,8 @@ one.
 The namespace-level `kustomization.yaml` includes each app `ks.yaml`. The app
 `ks.yaml` points Flux at the `app/` directory, usually sets `targetNamespace`,
 adds `postBuild.substituteFrom` for `cluster-secrets`, and declares
-dependencies such as Rook-Ceph when needed.
+`dependsOn` only where the doctrine in
+[`cluster-model.md`](cluster-model.md) requires it — rare for ordinary apps.
 
 Prefer existing bjw-s app-template values for app workloads:
 

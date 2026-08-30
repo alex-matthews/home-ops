@@ -185,7 +185,8 @@ workflow checks above. In the pull request or merge note, record why the bypass
 was needed and which local commands passed. After merging, watch the
 GitHub-hosted `Render` alarm and Flux reconciliation for the merged revision.
 
-Docs-only direct-to-main commits (allowed for low-risk changes with explicit
-approval, per `AGENTS.md`) also bypass the required checks. They need only
+Docs-only direct-to-main commits require the repo-admin ruleset bypass — they
+skip both the pull-request requirement and the required checks — and are for
+low-risk changes with explicit approval. They need only
 `oxfmt --check` locally and no cluster validation, matching the docs-only
 change heuristic; note the bypass in the commit or the session record.
