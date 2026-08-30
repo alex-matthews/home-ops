@@ -7,9 +7,9 @@ surfaces are high-risk to touch. For repository layout and app file shape see
 [`app-pattern.md`](app-pattern.md); for validation commands see
 [`validation.md`](validation.md); for scheduling, descheduler policy, node
 placement and rebalancing, and rolling upgrades see
-[`../operations/node-upgrades.md`](../operations/node-upgrades.md). Node
-firmware, boot, and hang-at-reboot recovery notes are local and untracked:
-`.private/node-firmware-and-boot.md`.
+[`../operations/node-upgrades.md`](../operations/node-upgrades.md); for node
+firmware, boot, and hang-at-reboot recovery see
+[`../operations/node-firmware-and-boot.md`](../operations/node-firmware-and-boot.md).
 
 ## How a merged change reaches the cluster
 

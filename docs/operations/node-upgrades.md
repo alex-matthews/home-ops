@@ -74,8 +74,10 @@ same loop.
 
 ## When a node stays down
 
-A node that hangs at its upgrade reboot leaves the rollout in a stable but
-non-obvious state. Observed across the six-day 2026-08-21 outage:
+A node that hangs at its upgrade reboot (firmware signature, diagnostics,
+and BIOS notes: [`node-firmware-and-boot.md`](node-firmware-and-boot.md))
+leaves the rollout in a stable but non-obvious state. Observed across the
+six-day 2026-08-21 outage:
 
 - tuppr retries the node's upgrade job, marks the `TalosUpgrade` `Failed`,
   and stops; the remaining nodes are not touched. The dead node keeps its
