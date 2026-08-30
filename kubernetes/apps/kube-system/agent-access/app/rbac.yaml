@@ -1,0 +1,149 @@
+---
+# Read-only identity for agent sessions (#1921, per the #1912 layering
+# design). The ambient session kubeconfig authenticates as this
+# ServiceAccount; the admin kubeconfig stays for explicitly approved
+# mutations. Deliberately excluded: core-group secrets — reading them
+# would make the frictionless diagnostic path an exfiltration path.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-readonly
+---
+# Long-lived token for the identity. The server populates the data;
+# nothing sensitive lives in Git. Revoke by deleting this Secret.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agent-readonly-token
+  annotations:
+    kubernetes.io/service-account.name: agent-readonly
+type: kubernetes.io/service-account-token
+---
+# Aggregated role: everything labelled aggregate-to-view (the built-in
+# view fragments — namespaced resources, secrets excluded — plus any
+# operator-shipped view fragments), and the local fragment below.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent-readonly
+aggregationRule:
+  clusterRoleSelectors:
+    - matchLabels:
+        rbac.authorization.k8s.io/aggregate-to-view: "true"
+    - matchLabels:
+        home-operations.com/aggregate-to-agent-readonly: "true"
+---
+# Local fragment: cluster-scoped core resources and every non-core API
+# group the cluster serves, read verbs only. Core-group secrets are the
+# one deliberate omission from the whole identity. When a new operator
+# introduces an API group, add it here (or ship an aggregate-to-view
+# label) — the capability listing in #1921 is re-run to confirm.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent-readonly-extra
+  labels:
+    home-operations.com/aggregate-to-agent-readonly: "true"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - componentstatuses
+      - limitranges
+      - namespaces
+      - nodes
+      - persistentvolumes
+      - podtemplates
+      - replicationcontrollers
+      - resourcequotas
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - acme.cert-manager.io
+      - actions.github.com
+      - admissionregistration.k8s.io
+      - apiextensions.k8s.io
+      - apiregistration.k8s.io
+      - apps
+      - authorization.k8s.io
+      - autoscaling
+      - batch
+      - ceph.rook.io
+      - cert-manager.io
+      - certificates.k8s.io
+      - cilium.io
+      - coordination.k8s.io
+      - csi.ceph.io
+      - deviceplugin.intel.com
+      - discovery.k8s.io
+      - dragonflydb.io
+      - events.k8s.io
+      - external-secrets.io
+      - externaldns.k8s.io
+      - flowcontrol.apiserver.k8s.io
+      - fluxcd.controlplane.io
+      - fpga.intel.com
+      - gateway.envoyproxy.io
+      - gateway.networking.k8s.io
+      - gateway.networking.x-k8s.io
+      - generators.external-secrets.io
+      - grafana.integreatly.org
+      - groupsnapshot.storage.k8s.io
+      - helm.toolkit.fluxcd.io
+      - kopiur.home-operations.com
+      - kustomize.toolkit.fluxcd.io
+      - metrics.k8s.io
+      - monitoring.coreos.com
+      - monitoring.giantswarm.io
+      - networking.k8s.io
+      - node.k8s.io
+      - notification.toolkit.fluxcd.io
+      - objectbucket.io
+      - observability.giantswarm.io
+      - onepassword.com
+      - policy
+      - rbac.authorization.k8s.io
+      - resource.k8s.io
+      - scheduling.k8s.io
+      - snapshot.storage.k8s.io
+      - source.toolkit.fluxcd.io
+      - storage.k8s.io
+      - talos.dev
+      - toolhive.stacklok.dev
+      - tuppr.home-operations.com
+    resources:
+      - "*"
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - /api
+      - /api/*
+      - /apis
+      - /apis/*
+      - /healthz
+      - /livez
+      - /metrics
+      - /openapi
+      - /openapi/*
+      - /readyz
+      - /version
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: agent-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agent-readonly
+subjects:
+  - kind: ServiceAccount
+    name: agent-readonly
+    namespace: kube-system
