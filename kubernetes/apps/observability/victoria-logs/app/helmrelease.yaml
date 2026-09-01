@@ -19,6 +19,10 @@ spec:
         enabled: true
     server:
       fullnameOverride: victoria-logs
+      resources:
+        requests:
+          cpu: 25m
+          memory: 1Gi
       persistentVolume:
         enabled: true
         storageClassName: ceph-block
