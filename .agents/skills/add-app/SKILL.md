@@ -45,7 +45,7 @@ Confirm with the user anything not already given:
 4. **Persistence**: choose backup posture from the app's value and recovery
    requirements, not from the presence of a PVC. Protected application state
    (the norm in the `default` namespace) uses the Kopiur component, which
-   supplies the PVC and its backups and requires the Rook-Ceph dependency.
+   supplies the PVC and its backups.
    Some persistent workloads — observability data especially — intentionally
    use plain PVCs with no backup coverage; do not add coverage just because
    the app is stateful.
@@ -58,7 +58,8 @@ Confirm with the user anything not already given:
    instead (see resolute's `secret.sops.yaml`) — that is an exception, not
    the default. Ordinary credentials always go through
    1Password/ExternalSecret; never encrypt them directly into Git.
-7. **Dependencies**: other Flux Kustomizations this app needs (`dependsOn`).
+7. **Dependencies**: almost never — `dependsOn` follows the doctrine in
+   `docs/guides/cluster-model.md`; the default is none.
 
 ## Step 2: Create the files
 
@@ -77,7 +78,7 @@ kubernetes/apps/<namespace>/<app>/
 
 Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
 
-- `components` + `dependsOn` (rook-ceph-cluster): only with a Kopiur PVC.
+- `components` (kopiur): only with a Kopiur PVC.
 - `postBuild.substitute.APP` is required by the Kopiur component; add
   `PVC_CAPACITY` when the component default (5Gi) is wrong.
 - `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
@@ -97,7 +98,10 @@ recyclarr's `configMapGenerator` block (name `<app>-configmap`, one entry per
 ### app/ocirepository.yaml
 
 Copy atuin's. The chart is `oci://ghcr.io/bjw-s-labs/helm/app-template`; use
-the same chart tag as nearby apps (Renovate bumps it).
+the same chart tag as nearby apps (Renovate bumps it). Keep atuin's `verify`
+block verbatim — it pins the app-template signing identity. For any other
+chart, derive the identity per ADR-0003 (or omit `verify` and record the
+source as unverified); never copy another chart's identity.
 
 ### app/helmrelease.yaml
 
@@ -120,7 +124,9 @@ Copy atuin's and adapt. Invariants to keep:
   readiness probe when the app has a health endpoint.
 - `resources`: start at `requests.cpu: 10m` with a memory limit sized to the
   app; heavier apps in this repo run `100m`, so match a comparable app rather
-  than the minimum.
+  than the minimum. Apps with a meaningful memory footprint also set an
+  explicit `requests.memory` below the limit (see the arr stack); match a
+  comparable app.
 - Route hostnames use `"{{ .Release.Name }}.${SECRET_DOMAIN}"`; never hardcode
   the domain. Public routes get a Gatus endpoint annotation (see plex).
 - Kopiur-backed persistence mounts `existingClaim: "{{ .Release.Name }}"`.

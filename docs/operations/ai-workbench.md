@@ -166,8 +166,8 @@ Promotion criteria:
 ## Hermes Skills And Memory
 
 Hermes UI skills are runtime state unless this repo adopts them. Repo-local
-skills live under `.agents/skills/<name>/SKILL.md` — `add-app` and
-`maintenance-window`. Narrow reusable conventions live in
+skills live under `.agents/skills/<name>/SKILL.md` — `add-app`,
+`github-prose`, and `maintenance-window`. Narrow reusable conventions live in
 `docs/guides/`.
 
 Before relying on generated skills, confirm this guardrail posture in the

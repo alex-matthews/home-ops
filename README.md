@@ -102,8 +102,8 @@ the applications under `kubernetes/apps`.
 ## Automation / CI
 
 Renovate manages dependency updates for charts, containers, GitHub Actions, and
-other versioned references. Most updates use pull requests; selected low-risk
-classes may branch-automerge.
+other versioned references. All updates use pull requests; selected low-risk
+classes auto-merge once the required checks pass.
 
 Pull request checks and reviewers are:
 
