@@ -109,7 +109,6 @@ Separately declared cache PVCs are runtime-only and are not backup sources.
 | `radarr`      | 5Gi     | yes         | yes        | `radarr-cache` 10Gi runtime PVC    |
 | `radarr-se`   | 5Gi     | yes         | yes        | `radarr-se-cache` 10Gi runtime PVC |
 | `recyclarr`   | 5Gi     | no          | no         | CronJob                            |
-| `resolute`    | 5Gi     | no          | no         | Single-writer SQLite API           |
 | `sabnzbd`     | 5Gi     | yes         | yes        | —                                  |
 | `seerr`       | 5Gi     | no          | no         | `seerr-cache` 15Gi runtime PVC     |
 | `sonarr`      | 5Gi     | yes         | yes        | `sonarr-cache` 10Gi runtime PVC    |

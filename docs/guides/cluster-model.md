@@ -130,9 +130,9 @@ Secrets reach workloads through three mechanisms; pick by data shape:
 - Exception for indivisible structured files: a config file that mixes
   sensitive and non-sensitive content and cannot cleanly split into
   ExternalSecret fields may be committed as a directly SOPS-encrypted Secret
-  in the app directory and mounted as a file (resolute's `secret.sops.yaml`
-  household policy is the one current example). Do not use this path for
-  ordinary credentials; those belong in 1Password.
+  in the app directory and mounted as a file. No current app uses this path
+  (resolute's household policy was the last example; see Git history). Do
+  not use it for ordinary credentials; those belong in 1Password.
 
 ## Backups and persistent state
 
@@ -158,10 +158,11 @@ set no explicit `replicas` or `strategy`). Their `ReadWriteOnce` PVCs bind
 read/write mounting to a single node, which constrains scheduling and rolling
 updates across nodes — but RWO does not prevent multiple pods on that node
 from sharing the volume and is not a single-writer guarantee (Kubernetes has
-`ReadWriteOncePod` for that). resolute's stricter rule is application-level:
-its SQLite database allows one writer, so it pins `replicas: 1` with
-`strategy: Recreate`, routes writes through the one API pod, and must never
-be scaled. That constraint comes from the app, not from RWO or any
+`ReadWriteOncePod` for that). A single-writer application constraint is
+application-level: an app whose SQLite database allows one writer pins
+`replicas: 1` with `strategy: Recreate`, routes writes through the one pod,
+and must never be scaled. That constraint comes from the app, not from RWO
+or any
 cluster-wide rule.
 
 ## Service networking
