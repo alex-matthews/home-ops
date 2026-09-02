@@ -29,7 +29,9 @@ firmware, boot, and hang-at-reboot recovery see
    directory into the target namespace.
 
 Nothing reaches the cluster except through this path. Imperative changes are
-diagnostics-only; Flux overwrites drift on the next reconcile.
+diagnostics-only; Flux overwrites drift on the next reconcile of the owning
+Kustomization. A suspend blocks that reconcile and persists until resumed —
+imperative state is a lease, not a lock.
 
 ## Reconciliation ordering and `dependsOn`
 
@@ -38,8 +40,9 @@ only on new evidence — a controller behaviour change or an actual incident —
 never on taste.
 
 The rule, in one sentence: a Kustomization whose product is instances of an
-operator's API depends on the Kustomization that ships the operator (a
-separate CRD chart sits one rung below its operator); everything else gets
+operator's API depends on the Kustomization that ships the operator (and an
+operator whose CRDs ship in a separate CRD chart depends on that chart);
+everything else gets
 no edge unless it meets the evidence-based exception below. A component's
 product means its declared purpose, not whichever resource kind is most
 numerous. Supporting defaults:
@@ -50,8 +53,8 @@ numerous. Supporting defaults:
   component's CRs incidentally is a consumer, not an instance component,
   and gets no edge — availability edges cost real blocking, as the
   2026-08-28 Ceph maintenance showed for 22 apps (PR #1877).
-- Cross-family APIs are present before Flux through one of three bootstrap
-  mechanisms: `bootstrap/helmfile/crds.yaml`, a whole-product install in
+- APIs one component family consumes from another (cross-family APIs) are
+  present before Flux through one of three bootstrap mechanisms: `bootstrap/helmfile/crds.yaml`, a whole-product install in
   the bootstrap apps phase, or platform/machine bootstrap (currently
   `talos.dev`, installed by Talos machine configuration). Flux/Helm keep
   CRD upgrade ownership. Coverage was manually verified at #1887; no

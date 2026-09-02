@@ -114,9 +114,11 @@ Pull request checks and reviewers are:
 | `Konflate`           | Required | Renders manifests, posts diffs, and verifies images. |
 | `Renovate PR Review` | Advisory | Reviews eligible Renovate PRs with Claude.           |
 
-`Render` is a GitHub-hosted post-merge alarm that runs Flate against `main`
-after changes under `kubernetes/`. It does not replace Konflate as the pull
-request render and diff gate.
+`Render` is a GitHub-hosted post-merge check that runs Flate (the local
+render tool) against `main` after changes under `kubernetes/`. Its failures
+surface only when watched — post-merge breakage otherwise reaches
+Alertmanager through Flux. It does not replace Konflate as the pull request
+render and diff gate.
 
 `Label Sync` keeps repository labels consistent.
 
@@ -126,8 +128,11 @@ repository conventions.
 ## Local Workflow
 
 Local environment variables and repo toolchain activation are defined in
-`.mise/config.toml`; local secrets and auth state such as `age.key`,
-`kubeconfig`, `talosconfig`, and `.secrets.env` are ignored by Git.
+`.mise/config.toml`; tools install pinned and checksum-verified against the
+committed `.mise/mise.lock`. The default environment carries the read-only
+cluster identities; `MISE_ENV=admin` selects the administrative credentials.
+Local secrets and auth state such as `age.key`, `kubeconfig`, `talosconfig`,
+and `.secrets.env` are ignored by Git.
 
 Useful entry points:
 

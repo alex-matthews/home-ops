@@ -14,7 +14,9 @@ cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
 - `.github/labels.yaml`: label definitions synced by CI.
 - `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
   Renovate, Renovate PR Review, and Label Sync.
-- `.mise/config.toml`: repo-pinned tool versions and local environment.
+- `.mise/`: repo-pinned tools and local environment — `config.toml` (tools
+  plus the default read-only identities), `config.admin.toml` (administrative
+  profile), and `mise.lock` (committed checksum lockfile).
 - `.renovaterc.json5`: Renovate configuration.
 - `bootstrap/`: one-time cluster bootstrap helpers.
 - `docs/`: durable documentation, including ADRs, guides, and operations docs.

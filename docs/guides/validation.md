@@ -36,9 +36,9 @@ directory when possible:
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 ```
 
-`kubectl apply --dry-run=server` runs admission with the caller's own
-permissions, and the ambient kubeconfig is read-only, so a server dry-run
-needs the administrative identity named explicitly:
+`kubectl apply --dry-run=server` needs the same RBAC verbs as a real apply
+even though nothing is persisted, and the ambient kubeconfig is read-only, so
+a server dry-run needs the administrative identity named explicitly:
 `mise exec -- kubectl --kubeconfig ./kubeconfig apply --dry-run=server ...`
 (the flag, not the environment — mise overrides an exported `KUBECONFIG`).
 
@@ -46,8 +46,9 @@ needs the administrative identity named explicitly:
 
 The rendered `FluxInstance` pins its sync source to the remote `main` branch.
 Flate follows that source when resolving child Kustomization content, so a
-successful local run proves the committed baseline is renderable but can miss
-branch-only changes beneath those child paths. Do not cite it as branch-diff
+successful local run proves the baseline on the remote `main` branch is
+renderable — not your branch's commits — and can miss branch-only changes
+beneath those child paths. Do not cite it as branch-diff
 evidence without first proving the changed objects appear in its output. Use
 the Konflate pull-request render, or an explicitly branch-aware disposable
 render, as the authority for those changes.
@@ -161,10 +162,13 @@ tasks may be useful later for small, non-mutating validation aliases, but add
 them only when they reduce duplication and do not blur the operator safety
 boundary.
 
-If this repo adopts a committed `mise.lock`, treat it as a reproducibility and
-supply-chain decision. Renovate can update mise config and lockfiles, but
-lockfile refresh requires running `mise lock`, so enable that only after the
-Renovate execution model has been reviewed.
+The committed `.mise/mise.lock` pins per-platform checksums, URLs, and
+provenance for every tool; `mise install` verifies against it locally and in
+CI. The shared lefthook `mise-lock` hook refreshes it on any local commit
+touching the mise config. Renovate updates the lock alongside tool bumps on
+freshly rebased branches; a mise PR created before the lockfile landed
+updates only the config, leaving the lock behind until the next refresh —
+rebase such PRs rather than merging them stale.
 
 ## Bypass merges
 

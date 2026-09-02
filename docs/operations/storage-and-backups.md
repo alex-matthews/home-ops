@@ -227,7 +227,7 @@ the repository phase and breaker metrics instead.
 
 ## Known Quirks
 
-Rechecked on 2026-08-11 against 0.10.0 source. The live rollout verified
+Rechecked on 2026-09-02 against 0.10.6 source. The live rollout verified
 repository, policy, schedule and backup paths; maintenance and restore quirks
 below remain source-verified rather than re-exercised. Re-test runtime
 observations after upgrades and file upstream if one still bites.
@@ -249,18 +249,12 @@ observations after upgrades and file upstream if one still bites.
 - `Restore` exposes `status.progress`, but the mover deliberately does not
   populate it as of 0.10.0, and terminal status carries no stats. Verify a
   restore from the target PVC's contents, not from CR counters.
-- Restore movers warn `status.resolved read failed` on every `fromPolicy`
-  restore: the mover GETs the parent `Restore` main resource, but its RBAC
-  grants only the `/status` subresource. Restores still succeed, but a retried
-  restore pod re-resolves latest instead of reusing the pinned snapshot. Do not
-  widen mover RBAC locally; the read belongs on the status subresource — an
-  upstream fix.
 - A repository whose `<repo>-discovery` Job exhausted `backoffLimit` on a
   terminal-class failure (bad credentials, locked repository) parks
   `Failed`/`Stalled`. From 0.10.0, a spec edit changes the repository generation
   and immediately recycles a stale generation-stamped Job. A Secret-only
   credential fix does not change the generation and still waits for the
-  finished Job's TTL, two hours by default; deleting the Job retries
+  finished Job's TTL, one hour by default; deleting the Job retries
   immediately. One terminal Job created before the 0.10.0 upgrade has no
   generation stamp and can behave the old way once. From 0.9.3, outage-class
   failures instead recycle automatically into the `Degraded` retry loop and
