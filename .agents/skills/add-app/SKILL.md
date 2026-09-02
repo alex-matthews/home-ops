@@ -10,12 +10,11 @@ HelmRelease (chart chosen in Step 0). Every value below comes from current
 repo conventions. When in doubt, mirror a real app instead of inventing
 structure:
 
-| Reference app                       | Shows                                                                                       |
-| ----------------------------------- | ------------------------------------------------------------------------------------------- |
-| `kubernetes/apps/default/atuin`     | Small app: internal route, Kopiur-backed PVC, no secrets                                    |
-| `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                                        |
-| `kubernetes/apps/default/resolute`  | ExternalSecret, SOPS-encrypted config Secret, ServiceMonitor, CronJob, single-writer SQLite |
-| `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service           |
+| Reference app                       | Shows                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `kubernetes/apps/default/atuin`     | Small app: internal route, Kopiur-backed PVC, no secrets                          |
+| `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                              |
+| `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service |
 
 ## Step 0: Pick the chart
 
@@ -55,7 +54,8 @@ Confirm with the user anything not already given:
    `resources/` directory (see recyclarr). A structured config file that
    mixes sensitive and non-sensitive content and cannot cleanly split into
    ExternalSecret fields may be committed as a directly SOPS-encrypted Secret
-   instead (see resolute's `secret.sops.yaml`) — that is an exception, not
+   instead (no current app does; resolute did, see Git history) — that is
+   an exception, not
    the default. Ordinary credentials always go through
    1Password/ExternalSecret; never encrypt them directly into Git.
 7. **Dependencies**: almost never — `dependsOn` follows the doctrine in
@@ -119,7 +119,7 @@ Copy atuin's and adapt. Invariants to keep:
   `runAsNonRoot: true` where the image allows it.
 - Container `securityContext`: `allowPrivilegeEscalation: false`,
   `readOnlyRootFilesystem: true`, `capabilities: { drop: ["ALL"] }`. Add an
-  `emptyDir` at `/tmp` if the app needs scratch space (see resolute).
+  `emptyDir` at `/tmp` if the app needs scratch space (see sabnzbd).
 - Liveness, readiness, and startup probes like atuin; use a custom `httpGet`
   readiness probe when the app has a health endpoint.
 - `resources`: start at `requests.cpu: 10m` with a memory limit sized to the
@@ -132,19 +132,17 @@ Copy atuin's and adapt. Invariants to keep:
 - Kopiur-backed persistence mounts `existingClaim: "{{ .Release.Name }}"`.
 - Config files mount as `type: configMap` with
   `name: "{{ .Release.Name }}-configmap"` (see recyclarr); SOPS-encrypted
-  config mounts as `type: secret` (see resolute).
+  config mounts as `type: secret` (see resolute in Git history).
 - Secrets arrive via `envFrom` from `"{{ .Release.Name }}-secret"`, with
   `reloader.stakater.com/auto: "true"` on the controller.
 - SQLite or other single-writer apps: `replicas: 1` with
-  `strategy: Recreate`, and a comment saying not to scale (see resolute).
+  `strategy: Recreate`, and a comment saying not to scale.
 
 ### app/externalsecret.yaml
 
-Copy the first document in resolute's `externalsecret.yaml` (the file holds a
-second, scoped ExternalSecret for its CronJob — most apps need only one):
-`ClusterSecretStore` `onepassword-connect`, a `target.template.data` map from
-1Password fields to the env names the app expects, and `dataFrom.extract` per
-1Password item.
+Copy autobrr's `externalsecret.yaml`: `ClusterSecretStore`
+`onepassword-connect`, a `target.template.data` map from 1Password fields to
+the env names the app expects, and `dataFrom.extract` per 1Password item.
 
 ## Step 3: Register the app
 
