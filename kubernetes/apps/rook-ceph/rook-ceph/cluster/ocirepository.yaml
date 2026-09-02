@@ -12,3 +12,8 @@ spec:
   ref:
     tag: v1.20.6
   url: oci://ghcr.io/rook/rook-ceph-cluster
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token\\.actions\\.githubusercontent\\.com$"
+        subject: "^https://github\\.com/rook/rook/\\.github/workflows/push-build\\.yaml@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$"
