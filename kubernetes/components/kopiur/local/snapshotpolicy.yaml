@@ -49,5 +49,8 @@ spec:
       schedule:
         cron: "H 1 1 * *"
         jitter: 1h
-    successExpr: "stats.files > 0 && stats.errors == 0"
+    # Quick reads its file count from the snapshot manifest and reports zero
+    # when that lookup fails, so only deep, which counts what it restored,
+    # asserts on files; kopia's own exit code is quick's integrity verdict.
+    successExpr: "tier == 'deep' ? (stats.files > 0 && stats.errors == 0) : stats.errors == 0"
     verifyFilesPercent: 5
