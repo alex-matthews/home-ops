@@ -32,3 +32,12 @@ spec:
       capacity: "${KOPIUR_CACHE_CAPACITY:=5Gi}"
       mode: Persistent
       storageClassName: ceph-block
+  # Quick tier only, weekly, on the default blob check (no file reads): the
+  # cost is the household download, and deep verification of the same data
+  # runs against the local repository (#1985).
+  verification:
+    quick:
+      schedule:
+        cron: "H 7 * * 0"
+        jitter: 1h
+    successExpr: "stats.files > 0 && stats.errors == 0"

@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kopiur-verification
+spec:
+  groups:
+    - name: kopiur-verification.rules
+      rules:
+        # The chart ships no verification alert (checked at 0.10.7). The
+        # verified-timestamp gauge is store-backed: its series exists only once
+        # a policy's first verify has succeeded, so a policy whose verification
+        # never runs is invisible to a plain staleness check. Each cadence
+        # therefore has two rules: age of the last success, and a successful
+        # backup with no verified series at all. The remote policies are the
+        # `-remote` names the kopiur component assigns; their quick tier is
+        # weekly, so their thresholds are a week plus a day.
+        - alert: KopiurVerificationStaleLocal
+          annotations:
+            summary: "Local backup verification for {{ $labels.namespace }}/{{ $labels.name }} last passed over 2 days ago"
+          expr: time() - kopiur_snapshot_verified_timestamp_seconds{name!~".*-remote"} > 172800
+          for: 1h
+          labels:
+            severity: warning
+        - alert: KopiurVerificationStaleRemote
+          annotations:
+            summary: "Remote backup verification for {{ $labels.namespace }}/{{ $labels.name }} last passed over 8 days ago"
+          expr: time() - kopiur_snapshot_verified_timestamp_seconds{name=~".*-remote"} > 691200
+          for: 1h
+          labels:
+            severity: warning
+        - alert: KopiurNeverVerifiedLocal
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.policy }} has succeeded backups but no verification has ever passed"
+          expr: >-
+            kopiur_policy_last_backup_success_timestamp_seconds{policy!~".*-remote"}
+            unless on (namespace, policy)
+            label_replace(kopiur_snapshot_verified_timestamp_seconds, "policy", "$1", "name", "(.*)")
+          for: 2d
+          labels:
+            severity: warning
+        - alert: KopiurNeverVerifiedRemote
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.policy }} has succeeded backups but no verification has ever passed"
+          expr: >-
+            kopiur_policy_last_backup_success_timestamp_seconds{policy=~".*-remote"}
+            unless on (namespace, policy)
+            label_replace(kopiur_snapshot_verified_timestamp_seconds, "policy", "$1", "name", "(.*)")
+          for: 8d
+          labels:
+            severity: warning
