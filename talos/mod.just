@@ -62,8 +62,13 @@ render-config node:
         -p @<(just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2")
 
 [confirm('Reset all nodes (--force for full wipe) [y|N] ?')]
-[doc('Reset all nodes (--force for full wipe)')]
+[doc('Reset all nodes (--force for full wipe); refuses while any node still maps an RBD volume')]
 reset-cluster *args:
+    for node in $(talosctl config info -o yaml | yq -r '.nodes[]'); do
+        if talosctl -n "$node" mounts 2>/dev/null | grep -q '/dev/rbd'; then
+            just log fatal "Node still maps Ceph RBD volumes; drain all nodes first so no reset wipes the monitors under another node's mounts" node "$node"
+        fi
+    done
     mode="maintenance"; pass=()
     wipe=(--system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL)
     for arg in {{ args }}; do
