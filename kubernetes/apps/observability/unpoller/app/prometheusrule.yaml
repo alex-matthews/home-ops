@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: unpoller
+spec:
+  groups:
+    - name: unpoller.rules
+      rules:
+        - alert: UnifiGatewayLoadHigh
+          annotations:
+            summary: '{{ $labels.name }} 5-minute load average is {{ $value | printf "%.1f" }} — the gateway''s software state is grinding; an attended restart or the pending updates are the levers'
+          expr: unpoller_device_load_average_5{type="udm"} > 8
+          for: 15m
+          labels:
+            severity: warning
+        - alert: UnifiGatewayMemoryHigh
+          annotations:
+            summary: "{{ $labels.name }} memory utilisation is {{ $value | humanizePercentage }} — the last management-plane wedge was preceded by weeks of memory grind"
+          expr: unpoller_device_memory_utilization_ratio{type="udm"} > 0.85
+          for: 30m
+          labels:
+            severity: warning
