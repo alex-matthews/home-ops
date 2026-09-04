@@ -4,8 +4,9 @@ How Talos and Kubernetes version bumps roll through the nodes, what a healthy
 rollout looks like, which side effects are expected rather than incidents,
 how workloads respread afterwards (scheduling, descheduler policy), and what
 persists when a rollout fails mid-way. Baseline observations are from the
-2026-08-06 Talos 1.13.7 → 1.13.8 rollout and the 1.13.8 → 1.13.9 rollout
-(2026-08-21 to 08-27), which a node firmware hang split across six days.
+2026-08-06 Talos 1.13.7 → 1.13.8 rollout, the 1.13.8 → 1.13.9 rollout
+(2026-08-21 to 08-27), which a node firmware hang split across six days, and
+the 2026-09-04 1.13.9 → 1.14.0 rollout, which ran unattended in 20 minutes.
 
 ## How a rollout runs
 
@@ -20,9 +21,45 @@ nodes is usually a gate doing its job — check those three before suspecting
 tuppr.
 
 The 1.13.8 rollout took roughly ten minutes per node including the Ceph
-recovery window, and the Renovate group PR pre-pulls changed images through
-Image Pull before merge, so the reboot window does not include image download
-time.
+recovery window; the 1.14.0 rollout took about seven, with each node
+`NotReady` for roughly two minutes. tuppr pre-pulls the installer image
+before cordoning the first node, so the reboot window does not include image
+download time. On a release day the Image Factory builds the installer for a
+given schematic on first request, and the first pre-pull attempt can time out
+with "no pull progress ... registry may be failing requests" while that build
+runs; tuppr retries on its own and the second attempt pulls normally
+(observed 2026-09-04, about a minute apart).
+
+## Before merging a Talos minor
+
+The tuppr gates cover Ceph and backups, not the version-specific facts, so
+read the release notes for these before merging the Renovate group PR:
+
+- A bundled etcd major (1.14 moved 3.6 to 3.7) makes the Talos minor a
+  one-way door: once the first member has written the new format there is no
+  downgrade, and recovery is an etcd snapshot restore. Take and verify one
+  first (`talosctl etcd snapshot`, kept under the gitignored `.private/`).
+  The cluster runs mixed member versions until the last node completes and
+  then advances the storage version on its own.
+- Resolver and time-sync defaults can change. 1.14 started applying the DHCP
+  lease's domain (`internal` here) to the host resolver, which the kubelet
+  appends to every pod's search list, and turned on NTS for the default time
+  server, which needs TCP 4460 egress. Both were verified harmless here; check
+  a pod's `resolv.conf` and `talosctl get timestatus` on the first node.
+- Machine-configuration deprecations do not block an upgrade, but new
+  document kinds are rejected by nodes still on the old minor, so config
+  migrations follow the rollout rather than accompanying it.
+
+## Kubernetes upgrades
+
+A `KubernetesUpgrade` bump is a separate merge from the Talos one and needs
+no reboots: tuppr replaces the static control-plane pods one component at a
+time across the nodes, apiserver first, then controller-manager, then
+scheduler, then restarts the kubelets. The 2026-09-04 v1.36.4 → v1.37.0
+upgrade took six minutes end to end with every Flux object Ready throughout
+and Ceph untouched. Upstream notes an API blip while apiservers roll
+(siderolabs/talos#14227); none was observed here. Merge it only once every
+node runs a Talos release whose support matrix includes the target minor.
 
 ## Expected side effects per node
 

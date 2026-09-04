@@ -52,7 +52,7 @@ download-image version:
 [confirm('Reboot node ' + node + ' [y|N] ?')]
 [doc('Reboot a node')]
 reboot-node node:
-    talosctl -n {{ node }} reboot -m powercycle
+    talosctl -n {{ node }} reboot
 
 [doc('Render Talos config for a node')]
 render-config node:
@@ -111,7 +111,7 @@ upgrade-k8s version:
 [confirm('Upgrade node ' + node + ' [y|N] ?')]
 [doc('Upgrade Talos version on a node')]
 upgrade-node node *args:
-    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" -m powercycle --timeout=10m {{ args }}
+    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" --timeout=10m {{ args }}
 
 [private]
 cert-days-left:

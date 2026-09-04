@@ -293,6 +293,15 @@ observations after upgrades and file upstream if one still bites.
 - From 0.8.1 the chart's `ServiceMonitor` sets `honorLabels: true`, so
   `kopiur_*` series carry the CR's namespace. Write queries against
   `namespace`, not `exported_namespace`.
+- A rook chart bump does not by itself roll the CSI plugins. Rook writes the
+  ceph-csi image into the `rook-csi-operator-image-set-configmap` ConfigMap
+  that the CSI operator reads, but ceph-csi-operator (1.0.4) does not watch
+  that ConfigMap: Driver reconciles run on Driver or OperatorConfig changes,
+  on owned objects, or on the controller's periodic resync. On 2026-09-04
+  rook v1.20.7 wrote cephcsi v3.17.1 and the plugins stayed on v3.17.0 for
+  hours. Check the plugin image before relying on a new CSI capability such
+  as aes256k keys; restarting the `ceph-csi-controller-manager` Deployment
+  forces the roll.
 - Suspending an app's Flux Kustomization does not stop Kopiur acting on live
   CRs, and per-object holds do not survive the next successful apply. See the
   `maintenance-window` skill before any window that depends on one.

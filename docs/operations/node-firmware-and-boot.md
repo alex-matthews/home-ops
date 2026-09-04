@@ -19,16 +19,29 @@ OS code runs. The install itself is not the suspect: the installer completes
 and logs `installation of vX complete` before the reboot is issued, so the
 node boots the target version once power-cycled.
 
-The predictive marker is the `LoaderEntrySelected` EFI variable, which the
-upgrade job logs in its sd-boot probe before every reboot:
+The upgrade job logs an sd-boot probe before every reboot: `LoaderEntrySelected`,
+`LoaderEntryOneShot`, and the UKI files present on the boot partition. Read
+the three together:
 
-- Healthy: the variable names the currently running version, or one version
-  behind it. Warm upgrade reboots leave it one behind (observed on every
-  node so far), and a cold boot refreshes it to current (observed on m3).
-- Investigate: more than one cycle stale. m3 entered its hang with the
-  variable frozen at a v1.13.5-era entry that no longer existed on the boot
-  partition — firmware NVRAM writes had been silently failing for months
-  before the hang.
+- `LoaderEntrySelected` only changes when the machine actually boots through
+  sd-boot. The probe on every node at the 2026-09-04 v1.14.0 rollout read
+  `LoaderEntryOneShot: kexec reboot`: when a Talos upgrade reboot kexecs into
+  the new kernel, firmware and sd-boot never run and the variable stays where
+  the last firmware boot left it. Staleness therefore counts kexec cycles,
+  not failed writes. m1 and m3 read one version behind and m2 read two
+  behind (v1.13.8 while running v1.13.9, after two consecutive kexec upgrade
+  boots); all three booted v1.14.0 normally.
+- The state that still deserves attention: the variable naming a UKI the
+  installer has since removed. sd-boot keeps two UKIs, so a variable two or
+  more behind points at a file that no longer exists. m3 entered its
+  2026-08-21 hang in that state (a v1.13.5-era entry, long gone), and m2 has
+  been in it since the 2026-09-04 install removed `Talos-v1.13.8.efi`. Whether
+  that state alone causes a hang, or whether the trigger is a kexec that
+  falls back to a firmware reboot, is not established.
+- A cold boot refreshes the variable to the running entry (observed on m3
+  on 2026-08-27). A node carrying a removed-entry reference gets the cold
+  boot and the hardening below at the next visit, before its next
+  non-kexec reboot.
 
 Read it live (UTF-16LE content behind a 4-byte attribute header):
 
@@ -56,7 +69,13 @@ plug per node, that converts a firmware hang from an on-site visit into a
 30-second remote power cycle — the only insurance that works at this failure
 stage.
 
-On a unit that has shown the stale-variable marker or hung: check the vendor
+Do not reach for `talosctl reboot -m powercycle` or `talosctl upgrade -m
+powercycle` on these nodes as a workaround: powercycle mode has left them
+stuck at the Talos boot-loader screen before, which needs the same on-site
+visit as a firmware hang. The manual recipes in `talos/mod.just` use the
+default reboot mode for that reason.
+
+On a unit that has shown the removed-entry marker or hung: check the vendor
 for a newer BIOS build (a flash typically rebuilds the NVRAM store), load
 setup defaults to clear accumulated variable state, delete stale boot
 entries, and disable Fast Boot, UEFI PXE, and CSM. Secure Boot stays off —
