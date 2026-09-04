@@ -37,6 +37,9 @@ spec:
             port: http-webhook
           initialDelaySeconds: 10
           timeoutSeconds: 5
+    extraArgs:
+      - --webhook-provider-read-timeout=30s
+      - --webhook-provider-write-timeout=30s
     triggerLoopOnEvent: true
     policy: sync
     sources:
