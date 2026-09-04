@@ -165,11 +165,12 @@ timestamp and on a policy with backups but no verification at all. Kopiur
 runs the first due slot as soon as verification is added to a policy that
 already has a backup, so a merge that adds a tier starts Jobs immediately.
 
-Every mover shares a 5 Gi cache claim, and kopia's default content and
-metadata cache budgets are 5000 MiB each, more than the claim holds; both
-policies cap them at 2048 MiB and 1024 MiB. Without the cap a deep verify
-or restore of plex fills the claim and fails with no space left on device
-(observed 2026-09-05).
+Every policy mover, backup and verify, shares a 5 Gi cache claim, and
+kopia's default content and metadata cache budgets are 5000 MiB each, more
+than the claim holds; both policies cap them at 2048 MiB and 1024 MiB.
+Without the cap a deep verify of plex fills the claim and fails with no
+space left on device (observed 2026-09-05). Restore movers set no cache and
+run on a node emptyDir, so they are unaffected either way.
 
 `kubernetes/components/kopiur/secrets` holds the repository credentials and is
 included at namespace level in both `default` and `kopiur-system`, not per app.

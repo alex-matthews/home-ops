@@ -24,7 +24,12 @@ never set the profile and use the per-command flags below.
 
 - Kubernetes: `kubeconfig-readonly` authenticates the
   `kube-system/agent-readonly` ServiceAccount — get/list/watch everywhere,
-  core-group Secrets excluded, no mutations. The identity's objects live in
+  core-group Secrets excluded, no mutations. Port-forward and exec are
+  subresource creates, so they are denied too: a read that needs either
+  (an Alertmanager or Prometheus query, a read-only command in a pod)
+  takes the administrative kubeconfig as a flag. A denied port-forward
+  prints its error to stderr and leaves the pipeline reading nothing, so
+  check the connection before trusting an empty result. The identity's objects live in
   `kubernetes/apps/kube-system/agent-access/`; revoke by deleting the token
   Secret, re-mint by re-extracting it. Administrative path:
   `mise exec -- kubectl --kubeconfig ./kubeconfig ...` (a flag, because the
