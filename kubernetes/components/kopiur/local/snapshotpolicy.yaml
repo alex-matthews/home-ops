@@ -31,3 +31,19 @@ spec:
       capacity: "${KOPIUR_CACHE_CAPACITY:=5Gi}"
       mode: Persistent
       storageClassName: ceph-block
+  # Two tiers, decided in #1985. Quick reads repository blobs and a small
+  # share of file content daily; deep restores the latest snapshot into
+  # node-ephemeral scratch monthly (no capacity, so an emptyDir). Both land
+  # after the H 3 remote snapshot and the H 4 / H 5 full maintenance runs;
+  # timezone inherits from the repository.
+  verification:
+    quick:
+      schedule:
+        cron: "H 7 * * *"
+        jitter: 30m
+    deep:
+      schedule:
+        cron: "H 1 1 * *"
+        jitter: 1h
+    successExpr: "stats.files > 0 && stats.errors == 0"
+    verifyFilesPercent: 5
