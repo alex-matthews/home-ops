@@ -167,6 +167,15 @@ are formatted by Lefthook. Image Pull currently filters on `kubernetes/**/*`,
 so changes under `kubernetes/` can trigger it even when the touched file is
 local/operator tooling rather than rendered cluster state.
 
+The `Chart Verify` workflow runs on pull requests that touch an
+`ocirepository.yaml`: it re-runs cosign at the new pinned tag under each
+changed manifest's own identity regexes, and fails when a `verify` block is
+removed or its identity changed unless the pull request carries the
+`verify/declared` label. It is advisory, not a required check, and it
+reads only public registries and Sigstore. Read its annotations before
+merging a chart bump it flags; a signer that changed is a policy decision
+under ADR-0003, never a regex to loosen.
+
 The `Render` workflow is a GitHub-hosted post-merge alarm, not a required pull
 request check. It runs Flate on `main` after changes under `kubernetes/` so
 merge trains can stay lightweight while the applied branch still gets rendered.
