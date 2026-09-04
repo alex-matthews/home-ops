@@ -30,6 +30,10 @@ spec:
       runAsGroup: ${KOPIUR_PGID:=100}
     cache:
       capacity: "${KOPIUR_CACHE_CAPACITY:=5Gi}"
+      # kopia's default budgets are 5000 MiB each, more than the claim holds;
+      # a deep verify of plex filled it. Capped so both fit with room for logs.
+      contentCacheSizeMb: 2048
+      metadataCacheSizeMb: 1024
       mode: Persistent
       storageClassName: ceph-block
   # Quick tier only, weekly, on the default blob check (no file reads): the
