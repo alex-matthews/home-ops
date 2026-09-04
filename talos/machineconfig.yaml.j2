@@ -49,21 +49,6 @@ cluster:
   aggregatorCA:
     crt: op://kubernetes/talos/CLUSTER_AGGREGATORCA_CRT
     key: op://kubernetes/talos/CLUSTER_AGGREGATORCA_KEY
-  apiServer:
-    auditPolicy:
-      apiVersion: audit.k8s.io/v1
-      kind: Policy
-      rules:
-        - level: Metadata
-    # Only the stable DNS identity is configured; Talos adds node/localhost
-    # SANs by default. Direct VIP-by-IP TLS is intentionally unsupported.
-    certSANs:
-      - k8s.internal
-    disablePodSecurityPolicy: true
-    extraArgs:
-      enable-aggregator-routing: "true"
-      feature-gates: HPAScaleToZero=true
-    image: registry.k8s.io/kube-apiserver:v1.37.0
   etcd:
     advertisedSubnets:
       - 192.168.1.0/24
@@ -86,10 +71,45 @@ serviceSubnets:
 {% if ENV.CONTROLPLANE %}
 ---
 apiVersion: v1alpha1
+kind: KubeAPIServerConfig
+# Only the stable DNS identity is configured; Talos adds node/localhost
+# SANs by default. Direct VIP-by-IP TLS is intentionally unsupported.
+certExtraSANs:
+  - k8s.internal
+extraArgs:
+  enable-aggregator-routing: "true"
+image: registry.k8s.io/kube-apiserver:v1.37.0
+startupProbes: false
+---
+apiVersion: v1alpha1
+kind: KubeAuditPolicyConfig
+configuration:
+  apiVersion: audit.k8s.io/v1
+  kind: Policy
+  rules:
+    - level: Metadata
+---
+apiVersion: v1alpha1
+kind: KubeAuthenticationConfig
+configuration:
+  anonymous:
+    enabled: false
+  jwt: []
+---
+apiVersion: v1alpha1
+kind: KubeAuthorizerConfig
+name: node
+type: Node
+---
+apiVersion: v1alpha1
+kind: KubeAuthorizerConfig
+name: rbac
+type: RBAC
+---
+apiVersion: v1alpha1
 kind: KubeControllerManagerConfig
 extraArgs:
   bind-address: 0.0.0.0
-  feature-gates: HPAScaleToZero=true
 image: registry.k8s.io/kube-controller-manager:v1.37.0
 ---
 apiVersion: v1alpha1
