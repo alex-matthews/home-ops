@@ -41,5 +41,9 @@ spec:
         jitter: 30m
       full:
         cron: "H 5 * * *"
+  # Finished mover Jobs and their pods self-delete after 15 minutes instead
+  # of the one-hour default; VictoriaLogs keeps the mover logs.
+  moverDefaults:
+    ttlSecondsAfterFinished: 900
   scheduleDefaults:
     timezone: Pacific/Auckland
