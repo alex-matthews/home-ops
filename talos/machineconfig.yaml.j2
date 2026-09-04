@@ -19,11 +19,6 @@ machine:
       enabled: true
     {% endif %}
     rbac: true
-  install:
-    diskSelector:
-      model: Samsung SSD 870
-    image: factory.talos.dev/metal-installer/{{ ENV.SCHEMATIC }}:v1.14.0
-    wipe: false
   kubelet:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
@@ -64,14 +59,6 @@ cluster:
   controlPlane:
     # k8s.internal is manually maintained on the router.
     endpoint: https://k8s.internal:6443
-  discovery:
-    enabled: true
-    registries:
-      kubernetes:
-        disabled: true
-      service:
-        disabled: false
-  id: op://kubernetes/talos/CLUSTER_ID
   network:
     cni:
       name: none
@@ -80,7 +67,6 @@ cluster:
       - 10.69.0.0/16
     serviceSubnets:
       - 10.96.0.0/16
-  secret: op://kubernetes/talos/CLUSTER_SECRET
   token: op://kubernetes/talos/CLUSTER_TOKEN
   {% if ENV.CONTROLPLANE %}
   aggregatorCA:
@@ -145,6 +131,25 @@ cluster:
   serviceAccount:
     key: op://kubernetes/talos/CLUSTER_SERVICEACCOUNT_KEY
   {% endif %}
+---
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: factory.talos.dev/metal-installer/{{ ENV.SCHEMATIC }}:v1.14.0
+provisioning:
+  diskSelector:
+    match: disk.model == "Samsung SSD 870"
+  wipe: false
+---
+apiVersion: v1alpha1
+kind: DiscoveryServiceConfig
+name: default
+endpoint: https://discovery.talos.dev/
+---
+apiVersion: v1alpha1
+kind: DiscoveryIdentityConfig
+clusterID: op://kubernetes/talos/CLUSTER_ID
+clusterSecret: op://kubernetes/talos/CLUSTER_SECRET
 ---
 apiVersion: v1alpha1
 kind: ResolverConfig
