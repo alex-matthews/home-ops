@@ -9,13 +9,6 @@ machine:
   features:
     apidCheckExtKeyUsage: true
     diskQuotaSupport: true
-    hostDNS:
-      enabled: true
-      forwardKubeDNSToHost: true # Requires Cilium socketLB features
-      resolveMemberNames: true
-    kubePrism:
-      enabled: true
-      port: 7445
     {% if ENV.CONTROLPLANE %}
     kubernetesTalosAPIAccess:
       allowedKubernetesNamespaces:
@@ -26,32 +19,11 @@ machine:
       enabled: true
     {% endif %}
     rbac: true
-  files:
-    - op: create
-      path: /etc/cri/conf.d/20-customization.part
-      content: |
-        [plugins."io.containerd.cri.v1.images"]
-          discard_unpacked_layers = false
-        [plugins."io.containerd.cri.v1.runtime"]
-          cdi_spec_dirs = ["/var/cdi/static", "/var/cdi/dynamic"]
-          device_ownership_from_security_context = true
-    - op: overwrite
-      path: /etc/nfsmount.conf
-      permissions: 0o644
-      content: |
-        [ NFSMount_Global_Options ]
-        nfsvers=4.1
-        hard=True
-        nconnect=16
-        noatime=True
   install:
     diskSelector:
       model: Samsung SSD 870
     image: factory.talos.dev/metal-installer/{{ ENV.SCHEMATIC }}:v1.14.0
     wipe: false
-  kernel:
-    modules:
-      - name: nbd
   kubelet:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
@@ -81,25 +53,6 @@ machine:
   nodeLabels:
     node.kubernetes.io/gpu: "true"
     topology.kubernetes.io/region: main
-  sysctls:
-    fs.inotify.max_user_instances: "8192"
-    fs.inotify.max_user_watches: "1048576"
-    net.core.default_qdisc: fq
-    net.core.rmem_max: "67108864"
-    net.core.wmem_max: "67108864"
-    net.ipv4.neigh.default.gc_thresh1: "4096"
-    net.ipv4.neigh.default.gc_thresh2: "8192"
-    net.ipv4.neigh.default.gc_thresh3: "16384"
-    net.ipv4.ping_group_range: 0 2147483647
-    net.ipv4.tcp_mtu_probing: "1"
-    net.ipv4.tcp_congestion_control: bbr
-    net.ipv4.tcp_fastopen: "3"
-    net.ipv4.tcp_notsent_lowat: "131072"
-    net.ipv4.tcp_rmem: 4096 131072 67108864
-    net.ipv4.tcp_slow_start_after_idle: "0"
-    net.ipv4.tcp_window_scaling: "1"
-    net.ipv4.tcp_wmem: 4096 65536 67108864
-    user.max_user_namespaces: "11255"
   token: op://kubernetes/talos/MACHINE_TOKEN
 cluster:
   ca:
@@ -192,6 +145,64 @@ cluster:
   serviceAccount:
     key: op://kubernetes/talos/CLUSTER_SERVICEACCOUNT_KEY
   {% endif %}
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: true # Requires Cilium socketLB features
+  resolveMemberNames: true
+---
+apiVersion: v1alpha1
+kind: KubePrismConfig
+port: 7445
+---
+apiVersion: v1alpha1
+kind: KernelModuleConfig
+name: nbd
+---
+apiVersion: v1alpha1
+kind: SysctlConfig
+params:
+  fs.inotify.max_user_instances: "8192"
+  fs.inotify.max_user_watches: "1048576"
+  net.core.default_qdisc: fq
+  net.core.rmem_max: "67108864"
+  net.core.wmem_max: "67108864"
+  net.ipv4.neigh.default.gc_thresh1: "4096"
+  net.ipv4.neigh.default.gc_thresh2: "8192"
+  net.ipv4.neigh.default.gc_thresh3: "16384"
+  net.ipv4.ping_group_range: 0 2147483647
+  net.ipv4.tcp_mtu_probing: "1"
+  net.ipv4.tcp_congestion_control: bbr
+  net.ipv4.tcp_fastopen: "3"
+  net.ipv4.tcp_notsent_lowat: "131072"
+  net.ipv4.tcp_rmem: 4096 131072 67108864
+  net.ipv4.tcp_slow_start_after_idle: "0"
+  net.ipv4.tcp_window_scaling: "1"
+  net.ipv4.tcp_wmem: 4096 65536 67108864
+  user.max_user_namespaces: "11255"
+---
+apiVersion: v1alpha1
+kind: EtcFileConfig
+name: nfsmount.conf
+mode: 0o644
+contents: |
+  [ NFSMount_Global_Options ]
+  nfsvers=4.1
+  hard=True
+  nconnect=16
+  noatime=True
+---
+apiVersion: v1alpha1
+kind: CRICustomizationConfig
+name: containerd
+content: |
+  [plugins."io.containerd.cri.v1.images"]
+    discard_unpacked_layers = false
+  [plugins."io.containerd.cri.v1.runtime"]
+    cdi_spec_dirs = ["/var/cdi/static", "/var/cdi/dynamic"]
+    device_ownership_from_security_context = true
 ---
 apiVersion: v1alpha1
 kind: WatchdogTimerConfig
