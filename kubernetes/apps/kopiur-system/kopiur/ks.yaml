@@ -23,6 +23,8 @@ metadata:
 spec:
   dependsOn:
     - name: kopiur
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
   interval: 1h
   path: ./kubernetes/apps/kopiur-system/kopiur/repository
   postBuild:
