@@ -85,7 +85,10 @@ spec:
             keyRotationPolicy: KeyGeneration
             keyGeneration: 2 # must exceed the current generation in status.cephx
           csi:
-            keyType: aes # aes256k mounts need kernel support; Talos 1.14 backports it
+            keyType: aes256k # needs the aes256k kernel backport (Talos 1.13.10+) and ceph-csi 3.17.1+, both live since 2026-09-04
+            keyRotationPolicy: KeyGeneration
+            keyGeneration: 2 # must exceed the csi generation in status.cephx (1 before this change)
+            keepPriorKeyCountMax: 1 # existing mounts keep the prior key until every node has been drained (#1870)
       storage:
         useAllNodes: true
         useAllDevices: false
