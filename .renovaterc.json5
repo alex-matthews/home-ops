@@ -85,20 +85,20 @@
       minimumGroupSize: 2,
     },
     {
-      description: "Kubernetes Group",
+      description: "Kubernetes Group: control-plane and kubelet images plus the kubectl mise pin, as the Talos group unites talosctl with its images",
       groupName: "kubernetes",
-      matchDatasources: ["docker"],
       matchPackageNames: [
         "/kube-apiserver/",
         "/kube-controller-manager/",
         "/kube-proxy/",
         "/kube-scheduler/",
         "/kubelet/",
+        "kubernetes/kubernetes",
       ],
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
-      minimumGroupSize: 5,
+      minimumGroupSize: 6,
     },
     {
       description: "Rook-Ceph Group",
