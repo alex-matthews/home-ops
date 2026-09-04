@@ -61,10 +61,12 @@ certificate before swapping it in.
 
 ## Full rebuild
 
-Cluster rebuild follows the existing bootstrap workflow (`bootstrap/` helm and
-kustomize helpers plus the Talos justfile recipes). Machine identity and
-secrets are injected from 1Password at render time; nothing in the rebuild
-path depends on the removed SAN entries.
+Sequence, guards, and cold-start behaviour are in
+[`cluster-rebuild.md`](cluster-rebuild.md); the operator-side commands are in
+[`../../bootstrap/README.md`](../../bootstrap/README.md). Machine identity
+and secrets are injected from the password manager at render time, so both
+Talos identities survive a rebuild; the read-only Kubernetes identity does
+not, because its token Secret is recreated, and needs re-extracting.
 
 ## Verification record
 

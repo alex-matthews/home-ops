@@ -1,6 +1,6 @@
 # Cluster Model
 
-**When to use:** Flux reconcile path, dependsOn, reconciliation ordering, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, service networking, LoadBalancer addresses, BGP, L2 announcements, high-risk surfaces.
+**When to use:** Flux reconcile path, dependsOn, reconciliation ordering, secrets, ExternalSecret, SOPS, `cluster-secrets`, substitution, backups, Kopiur, PVC, UID/GID, mover identity, RWO, replicas, service networking, LoadBalancer addresses, BGP, L2 announcements, high-risk surfaces, cold start, rebuild.
 
 How a change reaches the cluster, how secrets and state get there, and which
 surfaces are high-risk to touch. For repository layout and app file shape see
@@ -9,7 +9,9 @@ surfaces are high-risk to touch. For repository layout and app file shape see
 placement and rebalancing, and rolling upgrades see
 [`../operations/node-upgrades.md`](../operations/node-upgrades.md); for node
 firmware, boot, and hang-at-reboot recovery see
-[`../operations/node-firmware-and-boot.md`](../operations/node-firmware-and-boot.md).
+[`../operations/node-firmware-and-boot.md`](../operations/node-firmware-and-boot.md);
+for a full teardown and rebuild, and what the control loop does on a cold
+start, see [`../operations/cluster-rebuild.md`](../operations/cluster-rebuild.md).
 
 ## How a merged change reaches the cluster
 

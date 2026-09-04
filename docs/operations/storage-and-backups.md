@@ -9,7 +9,9 @@ Persistent application data lives on Rook-Ceph `ceph-block` PVCs. Some
 media-adjacent workloads also mount Synology NAS storage over NFS at runtime.
 
 Kopiur is the only backup system. It provides both the snapshot path and the
-passive `Restore` population path for every protected application PVC:
+passive `Restore` population path for every protected application PVC (what
+a cold cluster does with them is in
+[`cluster-rebuild.md`](cluster-rebuild.md)):
 
 - hourly snapshots to a local Garage S3 repository on the NAS;
 - daily snapshots to an independent Cloudflare R2 repository, with its own
@@ -235,16 +237,16 @@ observations after upgrades and file upstream if one still bites.
   `spec.moverDefaults.securityContext`, not from any `SnapshotPolicy`. Left
   unset they run as UID 65532.
 - `Maintenance` CR status is incomplete even though maintenance runs correctly.
-  The mover writes `lastRunAt` only on a real successful run, so that field is
-  the success authority. `lastHandledAt` is a yield marker: a successful run
-  advances `lastRunAt` first, which un-dues the slot before the controller can
-  record it, so it stays absent on a healthy repository (unchanged in 0.10.0 —
-  do not wait for it to appear). `nextScheduledAt` and
-  `consecutiveFailures` have no writers, and `lastContentReclaimedBytes` is
-  hard-coded to zero, as is the gauge mirroring it. There are no maintenance
-  success or duration metrics, and mover metrics are OTLP-push-only and not
-  exported here. Verify from `lastRunAt` plus Job history, noting maintenance
-  Jobs self-reap one hour after finishing.
+  `lastRunAt` is not a reliable success authority either: on 0.10.6 both
+  repositories' full maintenance Jobs succeeded on the 2026-09-03 rebuild and
+  the field stayed absent on both fresh CRs. `lastHandledAt` is a yield
+  marker and stays absent on a healthy repository (unchanged in 0.10.0 — do
+  not wait for it to appear). `nextScheduledAt` and `consecutiveFailures`
+  have no writers, and `lastContentReclaimedBytes` is hard-coded to zero, as
+  is the gauge mirroring it. There are no maintenance success or duration
+  metrics, and mover metrics are OTLP-push-only and not exported here. Verify
+  from Job history — `kube_job_status_succeeded` keeps it after the Job
+  self-reaps one hour after finishing.
 - `Restore` exposes `status.progress`, but the mover deliberately does not
   populate it as of 0.10.0, and terminal status carries no stats. Verify a
   restore from the target PVC's contents, not from CR counters.
@@ -269,6 +271,25 @@ observations after upgrades and file upstream if one still bites.
   unacknowledged external deletions hold the snapshots with `DeletionHeld=True`
   and surface `MassDeletionHeld=True` on the repository until it is annotated
   `kopiur.home-operations.com/allow-mass-deletion=<RFC3339>`.
+- A mover pod that cannot start within
+  `spec.failurePolicy.podStartupDeadlineSeconds` (300 by default) fails its
+  run, and a failed `Restore` is never retried. On a cold cluster the
+  populate pods launch as soon as the repositories are Ready, so a
+  StorageClass that arrives later than the deadline parks every restore
+  `Stalled`. The restore component sets 900 and the repositories depend on
+  the Ceph cluster since #1983; recovery from a parked restore is deleting
+  the `Restore` so Flux recreates it without status.
+- On a cold cluster a repository adopts its existing snapshots as
+  `origin=adopted` Snapshot CRs (policy reference and identity labels set,
+  no schedule ownership), applies GFS retention to them immediately, and
+  starts full maintenance on both repositories while restores are in
+  flight. All of it is safe — kopia maintenance only reclaims content nothing
+  references — and all of it is noise to expect, not a fault.
+- `kubectl kopiur ls`, `cat`, `download`, and `browse` derive the credential
+  Secret's namespace from the repository's `secretRef`, and refuse a session
+  pod in any other namespace even when the secrets component projects the
+  same-named Secret there. Their suggested workarounds move credentials; a
+  scratch restore into a throwaway PVC is the credential-free alternative.
 - From 0.8.1 the chart's `ServiceMonitor` sets `honorLabels: true`, so
   `kopiur_*` series carry the CR's namespace. Write queries against
   `namespace`, not `exported_namespace`.
@@ -291,6 +312,28 @@ database needs. Mount the throwaway clone writable. Python's standard library
 
 An unreadable database is not a passing result — change the method until it
 reads.
+
+An in-pod `du` smaller than the snapshot is not by itself a failed restore.
+An `emptyDir` mounted over a directory of the volume hides that directory,
+and a WAL-mode SQLite application checkpoints and truncates its write-ahead
+log on first start. Compare against the application's own artefacts (its
+periodic backup archives, if it keeps them) or the first scheduled snapshot
+kopia takes of the restored volume before concluding data is missing.
+
+## Restore Drill Record
+
+- **2026-09-03**, full production rebuild, all protected apps at once,
+  populated from the local repository. Every Restore resolved the newest
+  snapshot the repository held for its identity — matched against the
+  pre-teardown snapshot record by name, time, and size, and the resolved
+  kopia IDs — and the first post-restore scheduled snapshot of each volume
+  matched its pre-teardown size within normal churn. First pass failed for
+  every app on the mover startup deadline because storage arrived late
+  (fixed by #1983); second pass completed in 8 minutes from the local
+  repository. Content spot-checked through the application UIs for the
+  media apps. Two on-disk shrinks investigated and explained (an `emptyDir`
+  over a log directory; a SQLite WAL checkpoint). Method and evidence:
+  [`cluster-rebuild.md`](cluster-rebuild.md).
 
 ## Validation Commands
 

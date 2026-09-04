@@ -25,6 +25,10 @@ Knowing this is not enough. It has been written down, correctly, by an agent
 who then relied on an imperative hold an hour later. Use the timeline below
 so the question is forced rather than remembered.
 
+A full teardown and rebuild is the largest window of all; its sequence,
+guards, and the cold-start behaviour to expect are in
+`docs/operations/cluster-rebuild.md`. Read it before planning one.
+
 ## Before the window: build the control-loop timeline
 
 Required artifact. One row per step, no vague entries:
