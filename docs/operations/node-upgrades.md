@@ -50,6 +50,22 @@ read the release notes for these before merging the Renovate group PR:
   document kinds are rejected by nodes still on the old minor, so config
   migrations follow the rollout rather than accompanying it.
 
+## Manual reboots
+
+`talosctl reboot` does not cordon the node. The kubelet's graceful shutdown
+terminates each pod with `NodeShutdown`, the ReplicaSet creates a
+replacement, and the scheduler puts it straight back on the node because
+nothing has marked it unschedulable, so a Deployment whose pods tolerate the
+node's taints churns until the kubelet is gone. On 2026-09-04 a plain reboot
+of m1 left about a hundred Failed `cilium-operator` pod records from one
+minute of this, with no service impact. Cordon and drain first; the
+`reboot-node` recipe does, and tuppr always has.
+
+A kexec reboot can be fast enough that the Node object never reports
+`NotReady`: m1's Ready condition flipped and returned within the
+node-monitor grace period. Confirm a reboot from the kernel log timestamp
+(`talosctl dmesg | head -1`), not from the node condition.
+
 ## Kubernetes upgrades
 
 A `KubernetesUpgrade` bump is a separate merge from the Talos one and needs
