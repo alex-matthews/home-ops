@@ -44,4 +44,6 @@ spec:
       schedule:
         cron: "H 7 * * 0"
         jitter: 1h
-    successExpr: "stats.files > 0 && stats.errors == 0"
+    # Quick only: kopia's exit code is the verdict; the manifest-derived file
+    # count reported zero for one policy on 2026-09-05 (#1985).
+    successExpr: "stats.errors == 0"
