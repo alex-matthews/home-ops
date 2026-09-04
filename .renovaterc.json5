@@ -11,42 +11,35 @@
     schedule: ["before 6am on the first day of the month"],
   },
   packageRules: [
-    // Auto-merge rules
+    // Automerge
     {
       description: "Auto-merge trusted OCI digests",
       matchDatasources: ["docker"],
-      matchUpdateTypes: ["digest"],
       matchPackageNames: ["/home-operations/"],
+      matchUpdateTypes: ["digest"],
       automerge: true,
-      automergeType: "pr",
-      ignoreTests: false,
     },
     {
       description: "Auto-merge high-cadence OCI packages weekly",
       matchDatasources: ["docker"],
-      matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: ["/kube-prometheus-stack/"],
+      matchUpdateTypes: ["minor", "patch"],
       automerge: true,
-      automergeType: "pr",
-      ignoreTests: false,
       schedule: ["before 6am on Monday"],
     },
     {
-      description: "Auto-merge GitHub Actions",
+      description: "Auto-merge GitHub Actions; 0.x minors are treated as major by the preset and stay manual",
       matchManagers: ["github-actions"],
       matchUpdateTypes: ["minor", "patch", "digest"],
+      matchCurrentVersion: "!/^v?0\\./",
       automerge: true,
-      automergeType: "pr",
       minimumReleaseAge: "3 days",
-      ignoreTests: false,
     },
     {
       description: "Auto-merge Grafana dashboards",
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
       automerge: true,
-      automergeType: "pr",
-      ignoreTests: false,
     },
     {
       description: "Require review for Renovate presets",
@@ -54,14 +47,14 @@
       matchUpdateTypes: ["minor", "patch"],
       automerge: false,
     },
-    // Hold rules
+    // Version holds
     {
       description: "Hold coredns chart at 1.46.2: CoreDNS >=1.14.3 breaks autopath during cache prefetch, https://www.github.com/coredns/coredns/issues/8390",
       matchDatasources: ["docker"],
       matchPackageNames: ["/coredns/"],
       allowedVersions: "<=1.46.2",
     },
-    // Grouping rules
+    // Groups
     {
       description: "Actions Runner Controller Group",
       groupName: "actions-runner-controller",
@@ -90,13 +83,6 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
-    },
-    {
-      description: "Normalise Flux Operator Group version titles",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["/flux-operator/", "/flux-instance/"],
-      matchUpdateTypes: ["major", "minor", "patch"],
-      commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
     },
     {
       description: "Kubernetes Group",
@@ -134,12 +120,6 @@
       minimumGroupSize: 2,
     },
     {
-      description: "Normalise Talos Group version titles",
-      matchPackageNames: ["siderolabs/talos"],
-      matchUpdateTypes: ["major", "minor", "patch"],
-      commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
-    },
-    {
       description: "ToolHive Group",
       groupName: "toolhive",
       matchDatasources: ["docker"],
@@ -149,7 +129,13 @@
       },
       minimumGroupSize: 2,
     },
-    // Labeling rules
+    {
+      description: "Strip the v prefix from group titles whose members disagree on it",
+      matchPackageNames: ["/flux-operator/", "/flux-instance/", "siderolabs/talos"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
+    },
+    // Labels: update type
     {
       matchUpdateTypes: ["major"],
       addLabels: ["type/major"],
@@ -166,13 +152,14 @@
       matchUpdateTypes: ["digest"],
       addLabels: ["type/digest"],
     },
+    // Labels: source
     {
       matchDatasources: ["docker"],
       addLabels: ["renovate/container"],
     },
     {
-      matchDatasources: ["helm"],
-      addLabels: ["renovate/helm"],
+      matchDatasources: ["custom.grafana-dashboards"],
+      addLabels: ["renovate/grafana-dashboard"],
     },
     {
       matchManagers: ["github-actions"],
@@ -183,8 +170,16 @@
       addLabels: ["renovate/github-release"],
     },
     {
+      matchDatasources: ["helm"],
+      addLabels: ["renovate/helm"],
+    },
+    {
       matchManagers: ["mise"],
       addLabels: ["renovate/mise"],
+    },
+    {
+      matchDatasources: ["custom.talos-factory"],
+      addLabels: ["renovate/talos"],
     },
   ],
 }
