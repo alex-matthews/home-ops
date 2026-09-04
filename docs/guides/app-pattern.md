@@ -12,8 +12,8 @@ cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
   `maintenance-window`.
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
-- `.github/workflows/`: Lint, Image Pull, the post-merge Render alarm,
-  Renovate, Renovate PR Review, and Label Sync.
+- `.github/workflows/`: Lint, Image Pull, Chart Verify, the post-merge
+  Render alarm, Renovate, Renovate PR Review, and Label Sync.
 - `.mise/`: repo-pinned tools and local environment — `config.toml` (tools
   plus the default read-only identities), `config.admin.toml` (administrative
   profile), and `mise.lock` (committed checksum lockfile).

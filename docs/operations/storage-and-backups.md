@@ -154,6 +154,23 @@ weekly 4 / monthly 3`;
   `onMissingSnapshot: Fail`) plus the application PVC whose `dataSourceRef`
   consumes it.
 
+Both policies carry kopiur's built-in verification (#1985): the local
+policy runs a quick blob check daily with 5% of file content read in full
+and a deep scratch restore of the latest snapshot monthly into
+node-ephemeral storage; the remote policy runs the quick check weekly on
+the default blob check only. A tier passes when the verified snapshot has
+files and no errors. The chart ships no verification alert, so
+`kopiur-verification` in `kopiur-system` alerts on a stale verified
+timestamp and on a policy with backups but no verification at all. Kopiur
+runs the first due slot as soon as verification is added to a policy that
+already has a backup, so a merge that adds a tier starts Jobs immediately.
+
+Every mover shares a 5 Gi cache claim, and kopia's default content and
+metadata cache budgets are 5000 MiB each, more than the claim holds; both
+policies cap them at 2048 MiB and 1024 MiB. Without the cap a deep verify
+or restore of plex fills the claim and fails with no space left on device
+(observed 2026-09-05).
+
 `kubernetes/components/kopiur/secrets` holds the repository credentials and is
 included at namespace level in both `default` and `kopiur-system`, not per app.
 
