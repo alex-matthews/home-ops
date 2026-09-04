@@ -82,6 +82,39 @@ as changes that will reach the cluster. Verify the repo-wide patch in
 `kubernetes/flux/cluster/ks.yaml`; do not infer the effective policy from the
 leaf HelmRelease alone or from Helm's default CRD behavior.
 
+## What a chart verification failure does
+
+Every eligible `OCIRepository` carries a `verify` block (ADR-0003). When
+source-controller cannot match the artifact's signature to the pinned
+identity, the source reports `SourceVerified=False` with the cosign error
+in its message and `Ready=False`, and nothing else moves: the previously
+stored artifact stays in storage, the HelmRelease that consumes it keeps
+running its current revision, and every other source and release
+reconciles as before. The failure freezes that one chart at its last
+verified revision; it never uninstalls or degrades anything. Verification
+runs only when the fetched digest or the source spec changes, so a source
+that verified once is not re-verified on its interval.
+
+Two things produce the state, and each has one fix:
+
+- A tag bump that Renovate merged is signed by an identity the manifest's
+  regex no longer matches (signer drift). Re-observe the certificate on
+  the new artifact with `cosign verify` and update the regex in a pull
+  request that cites it, or revert the bump. Do not loosen the regex to
+  make the error go away.
+- An edit to the `verify` block itself is wrong. Correct it; the next
+  reconcile re-verifies and stores the artifact.
+
+A source with `SourceVerified=False` and no `status.artifact` has never
+verified since it was created; a source with both has a stored artifact
+from before the failure, and `ArtifactInStorage` stays `True`. Read both
+before deciding whether anything is at risk. Observed live on
+source-controller v1.9.5 on 2026-09-05 with a scratch source: a wrong
+identity on a fresh source stored nothing; the corrected identity verified
+and stored the artifact; the wrong identity applied again left that
+artifact in place and flipped only the verification and readiness
+conditions. The record is in #1894.
+
 ## What a firing alert does not prove
 
 Prometheus reports an alert as firing whether or not it is silenced — silencing
