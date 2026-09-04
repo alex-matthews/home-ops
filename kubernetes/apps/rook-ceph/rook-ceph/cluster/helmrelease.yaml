@@ -88,7 +88,11 @@ spec:
             keyType: aes256k # needs the aes256k kernel backport (Talos 1.13.10+) and ceph-csi 3.17.1+, both live since 2026-09-04
             keyRotationPolicy: KeyGeneration
             keyGeneration: 2 # must exceed the csi generation in status.cephx (1 before this change)
-            keepPriorKeyCountMax: 1 # existing mounts keep the prior key until every node has been drained (#1870)
+            keepPriorKeyCountMax: 0 # every node was drained after the rotation on 2026-09-04, so no mount still uses generation 1
+          rbdMirrorPeer:
+            keyType: aes256k
+            keyRotationPolicy: KeyGeneration
+            keyGeneration: 2 # generation 1 was the last legacy aes entity
       storage:
         useAllNodes: true
         useAllDevices: false
