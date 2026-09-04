@@ -42,5 +42,8 @@ spec:
         jitter: 30m
       full:
         cron: "H 4 * * *"
+  parameters:
+    epoch:
+      minDuration: 6h
   scheduleDefaults:
     timezone: Pacific/Auckland
