@@ -26,3 +26,5 @@
 # Uncategorized
 - name: hold
   color: "ee0701"
+- name: verify/declared
+  color: "0e8a16"

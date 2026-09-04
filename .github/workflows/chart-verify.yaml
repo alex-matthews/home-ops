@@ -1,0 +1,156 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Chart Verify
+
+# Pre-merge guard for chart source verification (#1967, ADR-0003). Signer
+# drift on a tag bump would freeze reconciliation at merge; a dropped or
+# changed verify block would freeze nothing, which is the problem. Both are
+# caught here, read-only against public registries and the public Sigstore
+# infrastructure. Advisory: not in the ruleset's required checks.
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+      - unlabeled
+    paths:
+      - kubernetes/**/ocirepository.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  signatures:
+    name: Chart Verify - Signatures
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get changed sources
+        id: changed-files
+        uses: bjw-s-labs/action-changed-files@a9a36fb08ce06db9b02fbd8026cc2c0945eb9841 # v0.6.0
+        with:
+          patterns: kubernetes/**/ocirepository.yaml
+
+      - name: Checkout
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache: false
+          install_args: cosign yq
+
+      - name: Verify changed sources at their pinned tag
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.changed_files }}
+        run: |
+          failed=0
+          for file in $(jq -r '.[]' <<< "$CHANGED_FILES"); do
+            [ -f "$file" ] || continue
+            provider="$(mise exec -- yq -r '.spec.verify.provider // ""' "$file")"
+            if [ -z "$provider" ]; then
+              echo "::notice file=$file::no verify block; unverified source (see the exclusions inventory in ADR-0003)"
+              continue
+            fi
+            if [ "$provider" != "cosign" ]; then
+              echo "::warning file=$file::verify provider '$provider' is not checked here"
+              continue
+            fi
+            url="$(mise exec -- yq -r '.spec.url' "$file" | sed 's#^oci://##')"
+            tag="$(mise exec -- yq -r '.spec.ref.tag // ""' "$file")"
+            if [ -z "$tag" ]; then
+              echo "::warning file=$file::no spec.ref.tag; only tag pins are checked"
+              continue
+            fi
+            count="$(mise exec -- yq -r '.spec.verify.matchOIDCIdentity | length' "$file")"
+            ok=0
+            for i in $(seq 0 $((count - 1))); do
+              issuer="$(mise exec -- yq -r ".spec.verify.matchOIDCIdentity[$i].issuer" "$file")"
+              subject="$(mise exec -- yq -r ".spec.verify.matchOIDCIdentity[$i].subject" "$file")"
+              if mise exec -- cosign verify \
+                  --certificate-oidc-issuer-regexp "$issuer" \
+                  --certificate-identity-regexp "$subject" \
+                  "$url:$tag" > /dev/null 2> cosign.err; then
+                ok=1
+                break
+              fi
+            done
+            if [ "$ok" = 1 ]; then
+              echo "verified $url:$tag ($file)"
+            else
+              echo "::error file=$file::$url:$tag does not verify under the manifest's identity: $(tail -1 cosign.err)"
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+  coverage:
+    name: Chart Verify - Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          cache: false
+          install_args: yq
+
+      - name: Diff verify blocks against the base branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DECLARED: ${{ contains(github.event.pull_request.labels.*.name, 'verify/declared') }}
+        run: |
+          block() { # ref path -> canonical verify block, or empty
+            git show "$1:$2" 2> /dev/null | mise exec -- yq -o=json -I=0 '.spec.verify // ""'
+          }
+          undeclared=0
+          while IFS=$'\t' read -r status file _; do
+            case "$status" in
+              M) before="$(block "$BASE_SHA" "$file")"; after="$(block "$HEAD_SHA" "$file")" ;;
+              A) before=""; after="$(block "$HEAD_SHA" "$file")" ;;
+              D) before="$(block "$BASE_SHA" "$file")"; after="" ;;
+              *) continue ;;
+            esac
+            if [ "$status" = A ] && [ "$after" = '""' ]; then
+              echo "::notice file=$file::new source without a verify block; record it in the exclusions inventory or add one"
+              continue
+            fi
+            if [ "$status" = D ]; then
+              echo "source removed: $file"
+              continue
+            fi
+            [ "$before" = "$after" ] && continue
+            if [ "$after" = '""' ] && [ "$before" != '""' ]; then
+              msg="verify block removed"
+            elif [ "$before" = '""' ]; then
+              echo "verify block added: $file"
+              continue
+            else
+              msg="verify identity changed"
+            fi
+            if [ "$DECLARED" = "true" ]; then
+              echo "::warning file=$file::$msg (declared with the verify/declared label)"
+            else
+              echo "::error file=$file::$msg without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request"
+              undeclared=1
+            fi
+          done < <(git diff --name-status "$BASE_SHA" "$HEAD_SHA" -- 'kubernetes/**/ocirepository.yaml')
+          exit "$undeclared"
