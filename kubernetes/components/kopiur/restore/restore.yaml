@@ -13,6 +13,8 @@ spec:
     populator: {}
   policy:
     onMissingSnapshot: Fail
+  failurePolicy:
+    podStartupDeadlineSeconds: 900
   mover:
     securityContext:
       runAsNonRoot: true

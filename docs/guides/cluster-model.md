@@ -92,6 +92,14 @@ Operator → CRD chart:
 
 Exceptions, by evidence:
 
+- `kopiur-repositories → rook-ceph-cluster` — the passive Restores launch
+  their populate pods the moment the repositories are Ready; if the
+  StorageClass does not exist yet, kopiur's mover startup deadline parks
+  every Restore as Stalled with no retry (17 of 17 on the 2026-09-03
+  production rebuild, 13 minutes after Flux began applying). The edge
+  costs nothing at runtime: `rook-ceph-cluster` reports current on
+  `HEALTH_OK` and `HEALTH_WARN`, so only a `HEALTH_ERR` blocks repository
+  spec changes, never running repositories, snapshots, or restores.
 - `plex → intel-gpu-resource-driver` and
   `drm-exporter → intel-gpu-resource-driver` — DRA resource claims make
   the pods unschedulable without the driver; Helm stores the release,
