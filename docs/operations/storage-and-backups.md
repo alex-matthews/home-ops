@@ -31,6 +31,13 @@ feeding R2 from Garage would make the off-site path depend on the local
 repository, while running replication alongside the direct R2 policies would
 create overlapping writers for the same kopia identities.
 
+Ceph authentication runs on aes256k keys only. Every cephx entity was rotated
+to generation 2 after the Talos 1.14.0 rollout supplied the kernel support,
+the CSI keys with a rolling drain of each node so that no mount kept the
+prior key, and `allowedCiphers` is restricted to `aes256k` in the rook
+cluster HelmRelease. A future entity on a legacy key surfaces as a Ceph
+health warning; nothing mutes it.
+
 ## The Retired VolSync Archive
 
 The fleet cut over to Kopiur on 2026-07-25; VolSync itself was removed on

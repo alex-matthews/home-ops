@@ -50,6 +50,30 @@ read the release notes for these before merging the Renovate group PR:
   document kinds are rejected by nodes still on the old minor, so config
   migrations follow the rollout rather than accompanying it.
 
+## Machine configuration changes
+
+Machine configuration reaches a node through `just talos apply-node <node>`,
+which renders the templates and hands the result to `talosctl apply-config`.
+Run it with `--dry-run` first: Talos prints the exact diff it will apply and
+whether it needs a reboot, which is the only honest answer to "what does this
+change", since `talosctl validate` checks shape, not effect. Apply to one node,
+read the affected resources back (`talosctl get kernelparamstatuses`,
+`etcfilestatuses`, `kubeprismconfig`, `hostdnsconfig`, and so on), and only
+then the rest. A second dry-run should report "No changes".
+
+Two consequences observed on the 2026-09-04 move to 1.14 multi-document
+kinds (#1871):
+
+- A `CRICustomizationConfig` document regenerates the containerd
+  configuration and restarts containerd on the node, which cycles its pods.
+  Treat a slice that touches it like a drain window even without a reboot.
+- Retiring a legacy `machine.files` entry needs a reboot to finish. The
+  legacy handler bind-mounts the file over its `/etc` path; the
+  `EtcFileConfig` controller replaces files by atomic rename, which fails
+  with "device or resource busy" on a mount point and keeps retrying. The
+  file content stays correct meanwhile. Cordon, drain, apply, reboot,
+  verify, uncordon, one node at a time.
+
 ## Manual reboots
 
 `talosctl reboot` does not cordon the node. The kubelet's graceful shutdown
