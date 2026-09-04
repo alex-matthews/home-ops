@@ -26,7 +26,7 @@ just = "1.58.0"
 # `kopiur`, not `kubectl-kopiur`, so invoke it directly rather than as a
 # kubectl plugin.
 "github:home-operations/kopiur" = "0.10.7"
-kubectl = "1.36.4"
+kubectl = "1.37.0"
 kustomize = "5.8.1"
 lefthook = "2.1.12"
 oxfmt = "0.66.0"
