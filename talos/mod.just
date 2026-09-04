@@ -50,9 +50,12 @@ download-image version:
     just log info "Downloaded Talos" version "{{ version }}" schematic "${SCHEMATIC}"
 
 [confirm('Reboot node ' + node + ' [y|N] ?')]
-[doc('Reboot a node')]
+[doc('Reboot a node; cordons and drains first so the kubelet shutdown does not reschedule onto it')]
 reboot-node node:
-    talosctl -n {{ node }} reboot -m powercycle
+    kubectl cordon "{{ node }}"
+    kubectl drain "{{ node }}" --ignore-daemonsets --delete-emptydir-data --timeout=10m
+    talosctl -n "{{ node }}" reboot
+    kubectl uncordon "{{ node }}"
 
 [doc('Render Talos config for a node')]
 render-config node:
@@ -111,7 +114,7 @@ upgrade-k8s version:
 [confirm('Upgrade node ' + node + ' [y|N] ?')]
 [doc('Upgrade Talos version on a node')]
 upgrade-node node *args:
-    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" -m powercycle --timeout=10m {{ args }}
+    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" --timeout=10m {{ args }}
 
 [private]
 cert-days-left:

@@ -4,8 +4,9 @@ How Talos and Kubernetes version bumps roll through the nodes, what a healthy
 rollout looks like, which side effects are expected rather than incidents,
 how workloads respread afterwards (scheduling, descheduler policy), and what
 persists when a rollout fails mid-way. Baseline observations are from the
-2026-08-06 Talos 1.13.7 → 1.13.8 rollout and the 1.13.8 → 1.13.9 rollout
-(2026-08-21 to 08-27), which a node firmware hang split across six days.
+2026-08-06 Talos 1.13.7 → 1.13.8 rollout, the 1.13.8 → 1.13.9 rollout
+(2026-08-21 to 08-27), which a node firmware hang split across six days, and
+the 2026-09-04 1.13.9 → 1.14.0 rollout, which ran unattended in 20 minutes.
 
 ## How a rollout runs
 
@@ -20,9 +21,85 @@ nodes is usually a gate doing its job — check those three before suspecting
 tuppr.
 
 The 1.13.8 rollout took roughly ten minutes per node including the Ceph
-recovery window, and the Renovate group PR pre-pulls changed images through
-Image Pull before merge, so the reboot window does not include image download
-time.
+recovery window; the 1.14.0 rollout took about seven, with each node
+`NotReady` for roughly two minutes. tuppr pre-pulls the installer image
+before cordoning the first node, so the reboot window does not include image
+download time. On a release day the Image Factory builds the installer for a
+given schematic on first request, and the first pre-pull attempt can time out
+with "no pull progress ... registry may be failing requests" while that build
+runs; tuppr retries on its own and the second attempt pulls normally
+(observed 2026-09-04, about a minute apart).
+
+## Before merging a Talos minor
+
+The tuppr gates cover Ceph and backups, not the version-specific facts, so
+read the release notes for these before merging the Renovate group PR:
+
+- A bundled etcd major (1.14 moved 3.6 to 3.7) makes the Talos minor a
+  one-way door: once the first member has written the new format there is no
+  downgrade, and recovery is an etcd snapshot restore. Take and verify one
+  first (`talosctl etcd snapshot`, kept under the gitignored `.private/`).
+  The cluster runs mixed member versions until the last node completes and
+  then advances the storage version on its own.
+- Resolver and time-sync defaults can change. 1.14 started applying the DHCP
+  lease's domain (`internal` here) to the host resolver, which the kubelet
+  appends to every pod's search list, and turned on NTS for the default time
+  server, which needs TCP 4460 egress. Both were verified harmless here; check
+  a pod's `resolv.conf` and `talosctl get timestatus` on the first node.
+- Machine-configuration deprecations do not block an upgrade, but new
+  document kinds are rejected by nodes still on the old minor, so config
+  migrations follow the rollout rather than accompanying it.
+
+## Machine configuration changes
+
+Machine configuration reaches a node through `just talos apply-node <node>`,
+which renders the templates and hands the result to `talosctl apply-config`.
+Run it with `--dry-run` first: Talos prints the exact diff it will apply and
+whether it needs a reboot, which is the only honest answer to "what does this
+change", since `talosctl validate` checks shape, not effect. Apply to one node,
+read the affected resources back (`talosctl get kernelparamstatuses`,
+`etcfilestatuses`, `kubeprismconfig`, `hostdnsconfig`, and so on), and only
+then the rest. A second dry-run should report "No changes".
+
+Two consequences observed on the 2026-09-04 move to 1.14 multi-document
+kinds (#1871):
+
+- A `CRICustomizationConfig` document regenerates the containerd
+  configuration and restarts containerd on the node, which cycles its pods.
+  Treat a slice that touches it like a drain window even without a reboot.
+- Retiring a legacy `machine.files` entry needs a reboot to finish. The
+  legacy handler bind-mounts the file over its `/etc` path; the
+  `EtcFileConfig` controller replaces files by atomic rename, which fails
+  with "device or resource busy" on a mount point and keeps retrying. The
+  file content stays correct meanwhile. Cordon, drain, apply, reboot,
+  verify, uncordon, one node at a time.
+
+## Manual reboots
+
+`talosctl reboot` does not cordon the node. The kubelet's graceful shutdown
+terminates each pod with `NodeShutdown`, the ReplicaSet creates a
+replacement, and the scheduler puts it straight back on the node because
+nothing has marked it unschedulable, so a Deployment whose pods tolerate the
+node's taints churns until the kubelet is gone. On 2026-09-04 a plain reboot
+of m1 left about a hundred Failed `cilium-operator` pod records from one
+minute of this, with no service impact. Cordon and drain first; the
+`reboot-node` recipe does, and tuppr always has.
+
+A kexec reboot can be fast enough that the Node object never reports
+`NotReady`: m1's Ready condition flipped and returned within the
+node-monitor grace period. Confirm a reboot from the kernel log timestamp
+(`talosctl dmesg | head -1`), not from the node condition.
+
+## Kubernetes upgrades
+
+A `KubernetesUpgrade` bump is a separate merge from the Talos one and needs
+no reboots: tuppr replaces the static control-plane pods one component at a
+time across the nodes, apiserver first, then controller-manager, then
+scheduler, then restarts the kubelets. The 2026-09-04 v1.36.4 → v1.37.0
+upgrade took six minutes end to end with every Flux object Ready throughout
+and Ceph untouched. Upstream notes an API blip while apiservers roll
+(siderolabs/talos#14227); none was observed here. Merge it only once every
+node runs a Talos release whose support matrix includes the target minor.
 
 ## Expected side effects per node
 
