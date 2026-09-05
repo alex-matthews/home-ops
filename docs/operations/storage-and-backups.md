@@ -199,6 +199,41 @@ explicit operator action — see the `maintenance-window` skill.
 `ceph-block` is `reclaimPolicy: Delete`. Deleting a PVC destroys the underlying
 volume; recovery is from the repositories only.
 
+## Retiring An App
+
+Retirement is two separate acts ([ADR-0005](../adr/0005-backup-lifecycle-on-app-retirement.md)).
+
+Removing an app from Git keeps its backups. Flux prunes the policy and
+schedule, kopiur keeps every snapshot and re-materialises them as
+`discovered` rows forced to `Retain`, and nothing in the cluster can delete
+them. That is the default and it costs nothing; there is no decision to make
+at removal time.
+
+Deleting a retired app's backups is one operator command, run under the
+administrative profile:
+
+```sh
+just kube retire-backups <app>              # report: rows per repository
+just kube retire-backups <app> delete=true  # delete, after a confirmation
+```
+
+The recipe refuses while the app's Kustomization or any policy claiming its
+identities exists. It then gives kopiur ownership back for the duration of
+the deletion: one throwaway policy per repository with the identity pinned,
+no schedule, and no retention block, because an absent block never prunes
+while a present one would prune through kopiur's own path and bypass the
+mass-deletion breaker. Once every row is adopted, deleting the policies is
+the deletion. A wave of ten or more is held by the breaker; the recipe prints
+the acknowledgement command from the held snapshot's condition and waits. It
+ends by listing the delete batch Jobs. Space comes back at the next nightly
+full maintenance, and the catalog re-scans within a day, so
+`discoveredBackupCount` on the repository lags the rows.
+
+The fallback, when the recipe cannot run, is kopia from a workstation
+holding both repositories' credentials: delete the identity's snapshots per
+repository, then delete the discovered rows by label. It records nothing and
+is not the routine path.
+
 ## Kopia Maintenance
 
 Maintenance is required operational work, not cleanup polish. Quick maintenance

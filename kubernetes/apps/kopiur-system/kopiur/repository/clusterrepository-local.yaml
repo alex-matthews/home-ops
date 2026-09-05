@@ -26,6 +26,12 @@ spec:
         disableTls: true
   create:
     enabled: true
+  # Re-scan daily so rows whose snapshot was deleted repository-side expire
+  # on their own; a retired app's cleanup leaves no policy to request a scan
+  # (ADR-0005). Each scan is one short-lived bootstrap Job.
+  catalog:
+    periodicRefresh: true
+    refreshInterval: 24h
   deletionProtection:
     threshold: 10
   encryption:
