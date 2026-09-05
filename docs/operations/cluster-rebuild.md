@@ -85,8 +85,13 @@ they apply.
   requeue a Stalled release at its interval; each needed
   `flux reconcile hr <name> --reset`. A release whose Kustomization was held
   back by a `dependsOn` edge until storage existed, plex, kept budget and
-  recovered unaided. Since #1982 the budget is five retries on install and
-  upgrade.
+  recovered unaided. The budget that applies on a cold start is the upgrade
+  one: installs run under `RetryOnFailure`, so a failed install is retried
+  as an upgrade with no uninstall in between, and every attempt after that
+  draws on `upgrade.remediation.retries`. With no successful revision to
+  roll back to, the release parks with `MissingRollbackTarget` once those
+  are spent. Since #1982 that is five upgrade retries, about 30 minutes at
+  the Helm timeout; #2020 made the install strategy explicit.
 - **Kustomizations that fail early wait a full interval.** One dry-run hit
   the kopiur mutating webhook before it had endpoints and waited an hour.
   Since #1982 every child Kustomization retries after two minutes.
