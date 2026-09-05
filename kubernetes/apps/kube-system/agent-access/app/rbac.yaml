@@ -1,23 +1,15 @@
 ---
 # Read-only identity for agent sessions (#1921, per the #1912 layering
 # design). The ambient session kubeconfig authenticates as this
-# ServiceAccount; the admin kubeconfig stays for explicitly approved
-# mutations. Deliberately excluded: core-group secrets — reading them
-# would make the frictionless diagnostic path an exfiltration path.
+# ServiceAccount with a bounded token minted per sitting through the
+# TokenRequest API (#2021); no long-lived token exists. The admin
+# kubeconfig stays for explicitly approved mutations. Deliberately
+# excluded: core-group secrets — reading them would make the frictionless
+# diagnostic path an exfiltration path.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: agent-readonly
----
-# Long-lived token for the identity. The server populates the data;
-# nothing sensitive lives in Git. Revoke by deleting this Secret.
-apiVersion: v1
-kind: Secret
-metadata:
-  name: agent-readonly-token
-  annotations:
-    kubernetes.io/service-account.name: agent-readonly
-type: kubernetes.io/service-account-token
 ---
 # Aggregated role: everything labelled aggregate-to-view (the built-in
 # view fragments — namespaced resources, secrets excluded — plus any
