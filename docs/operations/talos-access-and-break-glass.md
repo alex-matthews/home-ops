@@ -30,10 +30,15 @@ never set the profile and use the per-command flags below.
   takes the administrative kubeconfig as a flag. A denied port-forward
   prints its error to stderr and leaves the pipeline reading nothing, so
   check the connection before trusting an empty result. The identity's objects live in
-  `kubernetes/apps/kube-system/agent-access/`; revoke by deleting the token
-  Secret, re-mint by re-extracting it. Administrative path:
-  `mise exec -- kubectl --kubeconfig ./kubeconfig ...` (a flag, because the
-  mise environment overrides an exported variable).
+  `kubernetes/apps/kube-system/agent-access/`. Its token is minted per
+  sitting: `just kube readonly-token` requests an 8-hour token through the
+  TokenRequest API with the administrative kubeconfig and writes
+  `kubeconfig-readonly`; the mise `enter` hook runs it, and it is a no-op
+  while the current token has more than an hour left. No long-lived token
+  exists. Revoke early by deleting the ServiceAccount, which Flux recreates
+  with a new UID so every token issued to the old one stops validating.
+  Administrative path: `mise exec -- kubectl --kubeconfig ./kubeconfig ...`
+  (a flag, because the mise environment overrides an exported variable).
 - Talos: `talosconfig-readonly` carries `os:reader` — reads work, sensitive
   resources (machine config among them) and all mutations are denied.
   Re-mint from the admin credential:
@@ -70,8 +75,9 @@ Sequence, guards, and cold-start behaviour are in
 [`cluster-rebuild.md`](cluster-rebuild.md); the operator-side commands are in
 [`../../bootstrap/README.md`](../../bootstrap/README.md). Machine identity
 and secrets are injected from the password manager at render time, so both
-Talos identities survive a rebuild; the read-only Kubernetes identity does
-not, because its token Secret is recreated, and needs re-extracting.
+Talos identities survive a rebuild; the read-only Kubernetes identity's
+tokens do not, because the ServiceAccount is recreated, and one is minted
+again with `just kube readonly-token` once the API answers.
 
 ## Verification record
 

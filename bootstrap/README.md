@@ -56,8 +56,8 @@ read-only checks in the rebuild note rather than by watching pods.
 
 Two things stay manual today:
 
-- the read-only agent kubeconfig needs its ServiceAccount token
-  re-extracted, because Flux recreates the token Secret with new data;
+- the read-only agent kubeconfig needs a fresh token
+  (`just kube readonly-token`), because Flux recreates the ServiceAccount;
 - if the Actions runner listener crash-loops against a runner set that no
   longer exists, delete the AutoscalingListener object and the controller
   recreates it.
