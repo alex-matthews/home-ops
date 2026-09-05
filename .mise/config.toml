@@ -26,6 +26,9 @@ just = "1.58.0"
 # `kopiur`, not `kubectl-kopiur`, so invoke it directly rather than as a
 # kubectl plugin.
 "github:home-operations/kopiur" = "0.10.7"
+# Direct repository access for `just kube retire-backups` (ADR-0005); pinned so
+# a run uses a known kopia, never whatever the workstation has.
+kopia = "0.23.1"
 kubectl = "1.37.0"
 kustomize = "5.8.1"
 lefthook = "2.1.12"
