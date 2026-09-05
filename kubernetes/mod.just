@@ -23,6 +23,26 @@ debug-node node:
 delete-ks ns ks:
     just kube render-local-ks "{{ ns }}" "{{ ks }}" | kubectl delete -f -
 
+[doc('Mint the read-only session kubeconfig from a bounded ServiceAccount token (#2021)')]
+readonly-token duration="8h":
+    root="{{ justfile_dir() }}"; admin="$root/kubeconfig"; out="$root/kubeconfig-readonly"
+    [ -f "$admin" ] || { echo "refusing: $admin not found; the administrative kubeconfig mints the token, and credential files live in the main checkout, not a worktree" >&2; exit 1; }
+    # No-op while the current token has more than an hour left; the expiry is read from the JWT, no network needed.
+    now=$(date +%s); exp=0
+    if [ -f "$out" ]; then
+        exp=$(yq -r '.users[0].user.token // ""' "$out" | jq -R 'split(".")[1] // "" | . + "=" * ((4 - length % 4) % 4) | @base64d | fromjson | .exp // 0' 2>/dev/null || echo 0)
+    fi
+    if [ "$exp" -gt $((now + 3600)) ]; then echo "read-only token valid for another $(( (exp - now) / 60 )) minutes; nothing to do"; exit 0; fi
+    token=$(kubectl --kubeconfig "$admin" create token agent-readonly -n kube-system --duration "{{ duration }}")
+    server=$(yq -r '.clusters[0].cluster.server' "$admin"); ca=$(yq -r '.clusters[0].cluster."certificate-authority-data"' "$admin")
+    umask 077
+    TOKEN="$token" SERVER="$server" CA="$ca" yq -n '{"apiVersion": "v1", "kind": "Config", "current-context": "main-readonly",
+        "clusters": [{"name": "main", "cluster": {"server": env(SERVER), "certificate-authority-data": env(CA)}}],
+        "users": [{"name": "agent-readonly", "user": {"token": env(TOKEN)}}],
+        "contexts": [{"name": "main-readonly", "context": {"cluster": "main", "user": "agent-readonly"}}]}' > "$out.tmp"
+    mv "$out.tmp" "$out"
+    echo "read-only token minted for {{ duration }}; $out written"
+
 [doc('Prune pods in Failed, Pending, or Succeeded state')]
 prune-pods:
     for phase in Failed Pending Succeeded; do

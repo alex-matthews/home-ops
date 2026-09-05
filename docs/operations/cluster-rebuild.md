@@ -104,10 +104,11 @@ they apply.
 - **Objects that only ever existed live are gone.** Resource requests on the
   Ceph CSI plugin pods were residue of an earlier deployment path and are not
   declared in Git; the rebuild reproduced Git exactly.
-- **The read-only agent identity's token is reissued.** Flux recreates the
-  ServiceAccount token Secret with new data, so the read-only kubeconfig is
-  Unauthorized until the operator re-extracts the token. The read-only Talos
-  identity, signed by the persistent machine CA, keeps working.
+- **The read-only agent identity's tokens stop validating.** Flux recreates
+  the ServiceAccount with a new UID, so the read-only kubeconfig is
+  Unauthorized until `just kube readonly-token` mints a new one. The
+  read-only Talos identity, signed by the persistent machine CA, keeps
+  working.
 
 ## Verifying the restores
 
