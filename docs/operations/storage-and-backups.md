@@ -199,6 +199,39 @@ explicit operator action — see the `maintenance-window` skill.
 `ceph-block` is `reclaimPolicy: Delete`. Deleting a PVC destroys the underlying
 volume; recovery is from the repositories only.
 
+## Retiring An App
+
+Retirement is two separate acts ([ADR-0005](../adr/0005-backup-lifecycle-on-app-retirement.md)).
+
+Removing an app from Git keeps its backups. Flux prunes the policy and
+schedule; kopiur keeps every snapshot and shows them as `discovered` rows
+forced to `Retain`. Nothing in the cluster can delete them and nothing needs
+deciding at removal time. Kept snapshots still occupy repository space.
+
+Deleting a retired app's backups is one recipe, run under the administrative
+profile with 1Password available:
+
+```sh
+just kube retire-backups <app>              # report: rows per repository
+just kube retire-backups <app> delete=true  # delete, after a confirmation
+```
+
+The recipe refuses while the app's Kustomization or PVC exists, or while any
+policy resolves to the app's identity. Report mode reads only Kubernetes. In
+delete mode it works one repository at a time, re-running the guards first:
+kopia connects from the workstation with credentials injected for that one
+command, the repository's own listing for the identity must equal the rows or
+nothing is deleted, the snapshots are deleted by source, a second listing
+proves they are gone, and a catalog scan is requested and waited for so the
+rows expire. Each step is written to a ledger under the local state
+directory. Kopia's config file holds the keys while it runs, so it lives in a
+temporary directory removed on exit.
+
+Kopiur is not driven and its breaker is not involved: deletion happens in the
+repository and kopiur only observes it. Once a repository's deletion has run
+there is no rollback; the confirmation is the authorisation. Space returns at
+that repository's next full maintenance.
+
 ## Kopia Maintenance
 
 Maintenance is required operational work, not cleanup polish. Quick maintenance
