@@ -41,6 +41,11 @@ even though nothing is persisted, and the ambient kubeconfig is read-only, so
 a server dry-run needs the administrative identity named explicitly:
 `mise exec -- kubectl --kubeconfig ./kubeconfig apply --dry-run=server ...`
 (the flag, not the environment — mise overrides an exported `KUBECONFIG`).
+The same applies to port-forward and exec, which are subresource creates the
+read-only identity cannot make; a Prometheus or Alertmanager query through a
+denied port-forward reads as empty, not as an error, so confirm the tunnel
+before trusting a zero. Details in
+[`../operations/talos-access-and-break-glass.md`](../operations/talos-access-and-break-glass.md).
 
 ## What a local render does not prove
 
@@ -81,6 +86,12 @@ When reviewing a chart upgrade, treat shipped CRD schema changes and new CRDs
 as changes that will reach the cluster. Verify the repo-wide patch in
 `kubernetes/flux/cluster/ks.yaml`; do not infer the effective policy from the
 leaf HelmRelease alone or from Helm's default CRD behavior.
+
+A Renovate bump of a chart that ships CRDs is free evidence for both halves
+of that claim. Diff `helm show crds` between the pinned and proposed versions
+to see what schema will change, and after the merge check that the live CRD's
+generation moved under helm-controller's field manager. The kopiur 0.10.7 bump
+on 2026-09-05 proved the replace path this way (#1872).
 
 ## What a chart verification failure does
 
@@ -186,7 +197,10 @@ alerts to Alertmanager.
 `mise` owns the repo-local environment and toolchain contract. Use it for
 environment variables, project-specific tool installation, and reproducible
 tool activation. When a required repo tool might not be on `PATH`, prefer
-`mise exec -- <tool> <args>`.
+`mise exec -- <tool> <args>`. Wrap a repeated invocation in a shell function,
+never a string variable: zsh does not word-split `$K` in command position, so
+`K="mise exec -- kubectl"; $K get pods` fails there and only works in bash by
+accident.
 
 Worktree caveat: mise's `[env]` resolves paths like `KUBECONFIG` against
 `config_root`, which in a git worktree is the worktree itself — where
