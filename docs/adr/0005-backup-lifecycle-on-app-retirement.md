@@ -16,105 +16,124 @@ and it has no notion of a deadline. Resolute, retired on 2026-09-02, left 41
 such snapshots, 31 on the local repository and 10 on the remote.
 
 The owner's requirement is an explicit choice per retirement: keep the
-backups, or delete them, with deletion guarded and keeping free. Three
-designs were tried before this one and rejected, one by an external
-adversarial review whose findings are recorded on #1986:
+backups, or delete them, with deletion guarded and keeping free of operator
+work. Four designs were tried before this one. Three were rejected by the
+owner and an external review recorded on #1986; the fourth was the first
+draft of this ADR and was rejected by a second review:
 
 - A fleet-wide delete cascade made keeping expressible only by never
   acknowledging a parked deletion.
 - A per-app switch in the retiring app's Kustomization needed two pull
   requests in a fixed order, vanished with the app, and leaned on the
   mass-deletion breaker as an acknowledgement; the breaker is count-based,
-  and Kopiur's own retention prunes bypass it, so an adopting policy with
-  retention would have deleted before anyone acknowledged anything.
+  and Kopiur's own retention prunes bypass it.
 - A standing retirement ledger of tombstone policies recorded decisions
   durably but added a maintenance surface nobody wanted.
+- A recipe that lent ownership back to Kopiur through a temporary policy,
+  then deleted the policy so its cascade deleted the snapshots. Adoption is
+  a control loop the operator cannot gate; the breaker's acknowledgement is
+  repository-scoped and would release deletions that are not this app's; a
+  held wave leaves finalizers active until someone acts; and the premise
+  that direct kopia use would put credentials on a workstation was false,
+  because this repository already injects credentials at run time.
 
 ## Decision Drivers
 
-- Keeping backups after removal must cost nothing and need no step; it is
-  today's behaviour and the safe one.
-- Deleting must be a deliberate act with fresh-state guards, per repository,
-  and must never be reachable by accident from an ordinary app removal.
+- Keeping backups after removal must need no step and no configuration; it
+  is today's behaviour and the safe one.
+- Deleting must be a deliberate act with fresh-state guards, one repository
+  at a time, never reachable by accident from an ordinary app removal.
 - Kopiur's design principle is respected: it deletes only what a live policy
-  of its own owns; nothing bypasses its breaker or its finalizers.
-- No repository credentials on a workstation and no second backup tool.
+  of its own owns. This decision does not drive Kopiur; it deletes in the
+  repository and lets Kopiur observe.
+- Repository credentials never rest on a workstation: injected for one
+  command and gone with it. No second backup format.
 - No standing configuration in every app for an operation that happens a
   few times a year.
 - Git stays the source of truth for standing state; a one-off deletion is an
-  operator action, like a restore drill, and is recorded on the issue that
+  operator action, like a restore drill, recorded on the issue that
   authorised it.
 
 ## Considered Options
 
-| Option                                  | Verdict                                                                                                                                                                                                                                |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Kopia directly from a workstation       | **Rejected as the default.** Two commands per repository, but needs the repository credentials and a binary on the workstation, records nothing, and stays manual forever. Kept as the documented fallback when the recipe cannot run. |
-| Fleet-wide delete cascade               | **Rejected.** Keeping becomes never acknowledging a parked deletion, which is control-loop debt, not retention.                                                                                                                        |
-| Per-app switch, two pull requests       | **Rejected.** Order-dependent across reconciles, lost with the app, and guarded only by a count the breaker may never reach.                                                                                                           |
-| Retirement ledger of tombstone policies | **Rejected.** Durable, but a standing surface to maintain for a rare operation.                                                                                                                                                        |
-| One-command recipe driving Kopiur       | **Chosen.** A verb Kopiur does not have, implemented as an operator recipe until it does.                                                                                                                                              |
-| An upstream retirement verb or object   | **Desired, not available.** The door this decision leaves open; see Consequences.                                                                                                                                                      |
+| Option                                  | Verdict                                                                                                                                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Kopia from a workstation, in a recipe   | **Chosen.** Pinned binary, credentials injected per command, the repository's own listing as the guard before and after, one repository at a time. Feasibility proven read-only on 2026-09-05 against both repositories. |
+| Kopia by hand                           | **Rejected.** The same two commands without the guards or the record; kept only as what the recipe does, written down.                                                                                                   |
+| Fleet-wide delete cascade               | **Rejected.** Keeping becomes never acknowledging a parked deletion, which is control-loop debt, not retention.                                                                                                          |
+| Per-app switch, two pull requests       | **Rejected.** Order-dependent across reconciles, lost with the app, and guarded only by a count the breaker may never reach.                                                                                             |
+| Retirement ledger of tombstone policies | **Rejected.** Durable, but a standing surface to maintain for a rare operation.                                                                                                                                          |
+| A recipe driving Kopiur                 | **Rejected after review.** Adoption cannot be gated, the acknowledgement is repository-wide, a held wave is debt, and its reason to exist was a false premise.                                                           |
+| An upstream retirement verb or object   | **Desired, not available.** The door this decision leaves open; see Consequences.                                                                                                                                        |
 
 ## Decision
 
 Retirement is two separate acts. Removing an app keeps its backups; nothing
 in the component changes and nothing needs deciding at removal time.
-Deleting a retired app's backups is one operator command:
+Deleting a retired app's backups is one operator recipe:
 
 ```sh
-just kube retire-backups <app>
+just kube retire-backups <app>              # report
+just kube retire-backups <app> delete=true  # delete, after a confirmation
 ```
 
-The recipe drives Kopiur through its own ownership model and refuses to
-proceed on any stale precondition:
+The recipe runs kopia from the workstation and never drives Kopiur:
 
-1. Refuses unless the app's Flux Kustomization is gone and no live policy
-   claims the app's identities.
-2. Reads the discovered rows for the app's identity on each repository and
-   prints the counts, sizes, and newest snapshot; without `delete=true` it
-   stops here.
-3. Applies, per repository, a throwaway `SnapshotPolicy` with the identity
-   pinned, no schedule, no retention block, `defaultDeletionPolicy: Delete`,
-   and `onPolicyDelete: Delete`. These objects are not Flux-managed, so no
-   reconcile can clear or fight them.
-4. Waits until the adopted count equals the discovered count and no
-   discovered rows for the identity remain, per repository, then deletes the
-   policies. The cascade issues the deletions as external, so the
-   mass-deletion breaker applies as a backstop.
-5. Prints the acknowledgement command when a repository holds the wave, waits
-   for the hold to clear, verifies the delete batch Jobs succeeded and the
-   rows are gone, and requests a catalog rescan.
-6. Reports per repository; the nightly full maintenance reclaims the space,
-   and the recipe says so rather than claiming it.
+1. Refuses unless the app's Flux Kustomization and PVC are gone and no live
+   policy resolves to the app's identity. Every read that a guard depends on
+   fails closed; the app name is validated as a DNS label and never
+   interpolated into shell source.
+2. Requires every `ClusterRepository` to be Ready on an S3 backend, reads the
+   discovered rows for the identity, groups them by repository, and refuses
+   on a repository UID no `ClusterRepository` has or on two usernames for one
+   repository. Report mode stops here; it reads only Kubernetes.
+3. In delete mode, preflights the one write it makes to the cluster and the
+   credential read for each repository, prints the plan, and takes one
+   confirmation naming the app and the counts. The confirmation is the
+   authorisation; no count-based mechanism stands in for it.
+4. One repository at a time: re-runs the guards, re-reads the rows and
+   requires them unchanged, connects kopia with credentials injected for that
+   command only, requires the repository's listing for the identity to equal
+   the rows or aborts with nothing deleted, deletes by source, lists again
+   and requires nothing left, then requests a catalog scan and waits for
+   Kopiur to honour it so the rows expire. Every step lands in a ledger; on
+   any failure the ledger is printed, and nothing claims a rollback.
+5. Reports per repository; each repository's next full maintenance reclaims
+   the space, and the recipe says so rather than claiming it.
 
-The retention block is omitted on purpose: retention prunes bypass the
-breaker, so a cleanup policy must never prune. Both repositories converge
-independently; success on one says nothing about the other. A grace period
-is not a mechanism: keeping is free, and deletion happens when the operator
-runs the command. The `maintenance-window` skill governs the run, as it does
-any window that deletes data.
+Kopia's config file holds the storage keys while it runs, so the recipe
+creates it in a temporary directory removed by an exit trap. The kopia binary
+is pinned in the repository's tool set. A grace period is not a mechanism:
+keeping needs nothing, and deletion happens when the operator runs the
+command. The `maintenance-window` skill governs the run, as it does any
+window that deletes data.
 
-The Storage and Backups note documents the two acts and the fallback, and
-#1986 records the first run against resolute as the acceptance case.
+The Storage and Backups note documents the two acts, and #1986 records the
+first run against resolute as the acceptance case.
 
 ## Consequences
 
-- Retiring an app is one pull request; deleting its backups is one command
-  later, with no Git dance and no kopia binary.
-- The repository carries one more operator recipe, roughly eighty lines,
-  with the review's guards built in: identity enumeration from the rows, no
-  retention, both cascades explicit, fresh counts before every destructive
-  step, per-repository verification, a rescan after deletion.
-- The recipe is a stand-in for a verb Kopiur deliberately lacks. Its
-  read-only CLI is a design principle, so an upstream request is unlikely to
-  succeed as stated; if Kopiur gains identity-scoped deletion of discovered
-  snapshots, or a retirement object with a deadline, this ADR is superseded
-  and the recipe deleted.
-- Two secondary decisions ride along and are recorded where they land:
-  periodic catalog refresh at a daily interval so stale rows expire on their
-  own, and the treatment of the retired VolSync archive (#2019), which is
-  outside Kopiur and unchanged by this decision.
-- What this does not solve: a true automatic expiry after a grace period,
-  and a durable record of "kept on purpose" beyond the retirement pull
-  request itself. Both are accepted as gaps for a household cluster.
+- Retiring an app is one pull request; deleting its backups is one recipe
+  run later, with no Git dance.
+- The repository carries one more operator recipe, about 120 lines, and one
+  more pinned tool. The recipe's guards are the review's: fail-closed reads,
+  validated input, exact identity and repository matching, the repository's
+  own listing before and after, one repository at a time, a ledger on every
+  exit.
+- Kopiur's breaker is not involved, so there is no held wave and no
+  acknowledgement; the price is that once a repository's deletion has run
+  there is no rollback. The per-repository order and the ledger are what
+  bound a partial run.
+- Keeping costs no operator work but still costs repository space; this
+  decision accepts that a retired app's history is paid for until someone
+  runs the recipe.
+- The recipe is a stand-in for a verb Kopiur deliberately lacks. If Kopiur
+  gains identity-scoped deletion of discovered snapshots, or a retirement
+  object with a deadline, this ADR is superseded and the recipe deleted.
+- Two secondary decisions ride along: daily catalog refresh on both
+  repositories so rows expire on their own even when no scan is requested,
+  and the retired VolSync archive (#2019), which is outside Kopiur and
+  decided separately.
+- What this does not solve: automatic expiry after a grace period, and a
+  durable record of "kept on purpose" beyond the retirement pull request.
+  Both are accepted as gaps for a household cluster.
