@@ -35,16 +35,20 @@ spec:
       key: KOPIA_PASSWORD
   maintenance:
     schedule:
-      # Both blocks are required once schedule is set; quick reproduces the
-      # operator default, full moves out of the H 3 remote-snapshot window.
+      # Both blocks are required once schedule is set. Quick runs hourly so
+      # each one-hour index epoch closes and compacts on time; full moves out
+      # of the H 3 remote-snapshot window.
       quick:
-        cron: "0 */6 * * *"
-        jitter: 30m
+        cron: "0 * * * *"
+        jitter: 10m
       full:
         cron: "H 4 * * *"
   parameters:
     epoch:
-      minDuration: 6h
+      # Hourly snapshots from 19 apps write about 77 index blobs an hour. An
+      # epoch closes only when a maintenance run finds it older than this, so
+      # the epoch and the quick schedule are sized together.
+      minDuration: 1h
   # Finished mover Jobs and their pods self-delete after 15 minutes instead
   # of the one-hour default; VictoriaLogs keeps the mover logs.
   moverDefaults:
