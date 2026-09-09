@@ -44,6 +44,18 @@ Two conventions keep the layers honest:
 - Secrets never live in this repository. Every sensitive value is a 1Password
   reference, which `op inject` resolves at render time.
 
+## Schematic
+
+`schematic.yaml.j2` declares the Image Factory build: the system extensions and
+kernel arguments baked into the installer image and the ISO. `just talos
+schematic-id` posts the rendered file to the factory and receives a
+content-addressed ID, which nothing in the repository stores, because the same
+content always yields the same ID. `render-config` passes that ID into the
+`UnattendedInstallConfig` installer image, `upgrade-node` reads that image from
+a fresh render, and `download-image` fetches the ID itself for the ISO URL, so
+a schematic edit needs no other step to reach the next render, upgrade, or
+download.
+
 ## Applying
 
 Run `just talos apply-node <node> --dry-run` first. Talos prints the exact
