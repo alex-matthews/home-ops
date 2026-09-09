@@ -41,7 +41,7 @@ conventions rather than sources of them.
 
 ## Beyond the catalog
 
-The catalog is the short list, not the field. When a question is "has anyone
+The catalog is the short list, not the field. If the question is "has anyone
 solved this", also sweep the home-ops repositories onedr0p keeps starred
 (`gh api users/onedr0p/starred --paginate`, filtered to cluster repositories):
 that list is curated by the author of the pattern most of this repo follows,

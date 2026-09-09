@@ -42,7 +42,7 @@ a server dry-run needs the administrative identity named explicitly:
 `mise exec -- kubectl --kubeconfig ./kubeconfig apply --dry-run=server ...`
 (the flag, not the environment — mise overrides an exported `KUBECONFIG`).
 The same applies to port-forward and exec, which are subresource creates the
-read-only identity cannot make; a Prometheus or Alertmanager query through a
+read-only identity cannot make. A Prometheus or Alertmanager query through a
 denied port-forward reads as empty, not as an error, so confirm the tunnel
 before trusting a zero. Details in
 [`../operations/talos-access-and-break-glass.md`](../operations/talos-access-and-break-glass.md).
@@ -198,9 +198,9 @@ alerts to Alertmanager.
 environment variables, project-specific tool installation, and reproducible
 tool activation. When a required repo tool might not be on `PATH`, prefer
 `mise exec -- <tool> <args>`. Wrap a repeated invocation in a shell function,
-never a string variable: zsh does not word-split `$K` in command position, so
-`K="mise exec -- kubectl"; $K get pods` fails there and only works in bash by
-accident.
+never a string variable, because zsh does not word-split `$K` in command
+position. `K="mise exec -- kubectl"; $K get pods` fails there and works in
+bash only by accident.
 
 Worktree caveat: mise's `[env]` resolves paths like `KUBECONFIG` against
 `config_root`, which in a git worktree is the worktree itself — where
