@@ -53,7 +53,8 @@ request bodies see [references/pr-shapes.md](references/pr-shapes.md).
 - Define coined terms in place; every noun phrase must resolve within the
   document.
 - The destination decides wrapping and style — see the guide, including
-  its public-safety checklist, before presenting anything.
+  its public-safety checklist, before presenting anything. Craft rules
+  are in `docs/guides/writing-style.md`.
 
 ## 4. Review
 
