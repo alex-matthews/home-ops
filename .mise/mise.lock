@@ -321,9 +321,9 @@ url_api = "https://api.github.com/repos/evilmartians/lefthook/releases/assets/53
 provenance = "github-attestations"
 
 [[tools.oxfmt]]
-version = "0.66.0"
+version = "0.67.0"
 backend = "npm:oxfmt"
-specifiers = ["0.66.0"]
+specifiers = ["0.67.0"]
 
 [[tools.sops]]
 version = "3.13.3"
