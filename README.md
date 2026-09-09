@@ -65,8 +65,7 @@ traffic to services goes through the gateway.
 Internet traffic reaches the external Gateway only through a Cloudflare tunnel,
 and every service exposed that way has a row in the
 [public surfaces register](docs/operations/public-surfaces.md), which records
-who consumes it, whether it changes state, and what stands in front of it. The
-pull request that exposes a service is the one that adds the row.
+who consumes it, whether it changes state, and what stands in front of it.
 
 ### DNS
 
@@ -79,20 +78,21 @@ Two ExternalDNS instances keep records in sync:
 The result is split-horizon DNS: at home, public hostnames resolve to LAN
 addresses, so traffic to my own services never leaves the network.
 
-## Key Paths
+## Repository layout
 
 ```text
 .
-├── bootstrap/          # One-time cluster bootstrap helpers
-├── docs/               # ADRs, repo guidance, and operational notes
+├── bootstrap/          # Helmfile and recipes for a cold start
+├── docs/               # Guides, operations notes, and ADRs
 ├── kubernetes/
-│   ├── apps/           # Flux-managed applications, grouped by namespace
-│   ├── components/     # Shared Kustomize components, SOPS, alerts, Kopiur
-│   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
-└── talos/              # Talos config templates and operator commands
+│   ├── apps/           # Flux-managed applications, one directory per namespace
+│   ├── components/     # Kustomize components an app opts into: backups and
+│   │                   # restore, scale-to-zero, a cache, alert routing, secrets
+│   └── flux/cluster/   # The root Kustomization Flux applies from main
+└── talos/              # Machine config templates and node recipes
 ```
 
-## Automation / CI
+## Automation and CI
 
 Renovate opens dependency updates for charts, containers, GitHub Actions, and
 the pinned toolchain, and a few low-risk classes merge on their own once the
@@ -115,14 +115,17 @@ Konflate remains the pull request render and diff gate. See
 [Validation and Tooling](docs/guides/validation.md) for what each check proves
 and what it cannot.
 
-## Local Workflow
+## Local workflow
 
 `.mise/config.toml` pins the toolchain, checksum-verified against the committed
-`.mise/mise.lock`. The default environment carries read-only Kubernetes and
-Talos identities, and a mise hook mints the Kubernetes token fresh each sitting.
-`MISE_ENV=admin` selects the administrative ones, so writing to the cluster is a
-deliberate step. Credential files such as `age.key`, `kubeconfig`, and
+`.mise/mise.lock`, and credential files such as `age.key`, `kubeconfig`, and
 `talosconfig` are ignored by Git.
+
+> [!IMPORTANT]
+> The default environment carries read-only Kubernetes and Talos identities,
+> and a mise hook mints the Kubernetes token fresh each sitting.
+> `MISE_ENV=admin` selects the administrative ones, so writing to the cluster
+> is a deliberate step.
 
 ```sh
 mise install
@@ -138,11 +141,11 @@ The next stretch of work is on trust and access: one identity across the
 services, the operator tooling, and the AI clients; network policy that
 contains traffic inside the cluster as well as at its edges; and carrying the
 artifact-trust model from chart signatures through to image provenance. Behind
-that sit power and cold-recovery hardening on the nodes, and a node for local
-inference. The hardware I keep circling is a 10 GbE core, encryption at rest,
-Secure Boot, and enterprise disks in the NUCs.
+that sit encryption at rest, Secure Boot, power and cold-recovery hardening on
+the nodes, and a node for local inference. The hardware I keep circling is a
+10 GbE core and enterprise disks in the NUCs.
 
-## Reading Further
+## Reading further
 
 The documentation is indexed in [docs/README.md](docs/README.md). Most
 visitors want one of these first:
