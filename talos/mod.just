@@ -59,10 +59,14 @@ reboot-node node:
 
 [doc('Render Talos config for a node')]
 render-config node:
-    export CONTROLPLANE="$(just talos machine-controller {{ node }})"
-    export SCHEMATIC="$(just talos schematic-id)"
-    talosctl machineconfig patch <(just template "{{ source_directory() }}/machineconfig.yaml.j2") \
-        -p @<(just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2")
+    schematic="$(just talos schematic-id)"
+    role="controlplane"
+    if [[ -f "{{ source_directory() }}/nodes/workers/{{ node }}.yaml.j2" ]]; then
+        role="workers"
+    fi
+    talosctl machineconfig patch <(just template "{{ source_directory() }}/cluster.yaml.j2" -D "schematic=${schematic}") \
+        -p @<(just template "{{ source_directory() }}/${role}.yaml.j2") \
+        -p @<(just template "{{ source_directory() }}/nodes/${role}/{{ node }}.yaml.j2")
 
 [confirm('Reset all nodes (--force for full wipe) [y|N] ?')]
 [doc('Reset all nodes (--force for full wipe); refuses while any node still maps an RBD volume')]
@@ -122,13 +126,8 @@ cert-days-left:
     jq -nr --arg d "$not_after" '(($d + "T00:00:00Z" | fromdateiso8601) - now) / 86400 | floor'
 
 [private]
-machine-controller node:
-    just template "{{ source_directory() }}/nodes/{{ node }}.yaml.j2" | yq -r -e 'select(.machine) | (.machine.type == "controlplane") // ""'
-
-[private]
 machine-image:
-    export SCHEMATIC="$(just talos schematic-id)"
-    just template "{{ source_directory() }}/machineconfig.yaml.j2" | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
+    just template "{{ source_directory() }}/cluster.yaml.j2" -D "schematic=$(just talos schematic-id)" | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
 
 [private]
 schematic-id:
