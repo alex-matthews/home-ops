@@ -15,8 +15,6 @@ on:
       - opened
       - synchronize
       - reopened
-      - labeled
-      - unlabeled
     paths:
       - kubernetes/**/ocirepository.yaml
 
@@ -48,6 +46,7 @@ jobs:
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
+          minimum_release_age: 3d
           cache: false
           install_args: cosign yq
 
@@ -109,6 +108,7 @@ jobs:
       - name: Setup Mise
         uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
+          minimum_release_age: 3d
           cache: false
           install_args: yq
 
