@@ -31,26 +31,16 @@ feeding R2 from Garage would make the off-site path depend on the local
 repository, while running replication alongside the direct R2 policies would
 create overlapping writers for the same kopia identities.
 
+History in both repositories begins at the 2026-07-25 cutover; nothing
+earlier exists anywhere, the predecessor archive having been deleted on
+2026-09-05 (#2019).
+
 Ceph authentication runs on aes256k keys only. Every cephx entity was rotated
 to generation 2 after the Talos 1.14.0 rollout supplied the kernel support,
 the CSI keys with a rolling drain of each node so that no mount kept the
 prior key, and `allowedCiphers` is restricted to `aes256k` in the rook
 cluster HelmRelease. A future entity on a legacy key surfaces as a Ceph
 health warning; nothing mutes it.
-
-## The Retired VolSync Archive
-
-The fleet cut over to Kopiur on 2026-07-25 and VolSync was removed on
-2026-07-31. Its remote restic archive, one repository per app, held only
-history from before the cutover; Kopiur's repositories cover every point in
-time since. Nothing had been read from it after a `restic check` on
-2026-08-02, and Kopiur passed a full-fleet restore on 2026-09-03 and a
-verification pass on 2026-09-05.
-
-The archive was deleted on 2026-09-05 (#2019): every object purged, the
-bucket removed, the access token revoked, and the password-manager items retired.
-Pre-cutover history no longer exists anywhere. The retired manifests remain
-in Git history for reference only.
 
 ## UID/GID And Mover Permissions
 
