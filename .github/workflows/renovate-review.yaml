@@ -138,7 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          policy_version="7"
+          policy_version="8"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
           review_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.json"
@@ -209,15 +209,83 @@ jobs:
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch Konflate summary
+      - name: Fetch Konflate evidence
+        id: konflate
         if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
         env:
           KONFLATE_URL: ${{ vars.KONFLATE_URL }}
+          PR: ${{ env.PR_NUMBER }}
         run: |
-          summary=".renovate-review/konflate-summary.md"
-          mkdir -p "${summary%/*}"
-          [ -n "${KONFLATE_URL:-}" ] && curl -fsS -H "Accept: text/markdown" "${KONFLATE_URL%/}/api/prs/${PR_NUMBER}/summary" > "${summary}" ||
+          dir=".renovate-review"
+          summary="${dir}/konflate-summary.md"
+          rendered="${dir}/konflate-diff.md"
+          mkdir -p "${dir}"
+          echo "Konflate summary unavailable." > "${summary}"
+          echo "Konflate rendered diff unavailable." > "${rendered}"
+          status="unavailable"
+          finish() {
+            echo "status=${status}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Konflate evidence for PR #${PR}: ${status}"
+            exit 0
+          }
+
+          if [ -z "${KONFLATE_URL:-}" ]; then
+            finish
+          fi
+          base="${KONFLATE_URL%/}/api/prs/${PR}"
+
+          # The Markdown summary answers 503 + Retry-After while a render is in flight, so --retry waits it out.
+          if ! curl -fsS --retry 10 --retry-delay 6 -H "Accept: text/markdown" -o "${summary}" "${base}/summary"; then
             echo "Konflate summary unavailable." > "${summary}"
+            finish
+          fi
+          status="partial"
+
+          diff_json="${RUNNER_TEMP}/konflate-diff.json"
+          if ! curl -fsS -o "${diff_json}" "${base}/diff" || [ "$(jq -r '.status // ""' "${diff_json}")" != "ready" ]; then
+            finish
+          fi
+
+          # Flatten the per-resource rows (server-side highlighted HTML) into one plain-text unified diff per resource.
+          cat > "${RUNNER_TEMP}/konflate-diff.jq" <<'JQ'
+          def strip:
+            gsub("<[^>]*>"; "")
+            | gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&quot;"; "\"")
+            | gsub("&#39;"; "'") | gsub("&#34;"; "\"") | gsub("&amp;"; "&");
+          .diff as $d
+          | "# Konflate rendered diff for PR \($d.prNumber) at \($d.headSha[0:7])",
+            "Resources: \($d.summary.changed) changed, \($d.summary.added) added, \($d.summary.removed) removed. CRDs touched: \($d.impact.crds). Routine shape: \($d.routine). Resources omitted by the render cap: \($d.truncated // 0).",
+            (if ($d.warnings | length) > 0 then "Warnings:", ($d.warnings[] | "- [\(.level)] \(.rule) on \(.resource): \(.detail)") else "Warnings: none." end),
+            (if ($d.failures | length) > 0 then "Render failures:", ($d.failures[] | "- \(.parent): \(.message)") else "Render failures: none." end),
+            "",
+            ($d.resources[]
+              | "## \(.status) \(.kind) \(.name) (+\(.add) -\(.del); rendered by \(.parent))",
+                "```diff",
+                (.unified[]
+                  | select(.folded != true)
+                  | if .hunk then "@@ \(.count // 0) unchanged lines folded @@"
+                    else (if .kind == "add" then "+" elif .kind == "del" then "-" else " " end) + ((.html // "") | strip)
+                    end),
+                "```",
+                "")
+          JQ
+          if ! jq -r -f "${RUNNER_TEMP}/konflate-diff.jq" "${diff_json}" > "${rendered}.full"; then
+            rm -f "${rendered}.full"
+            finish
+          fi
+
+          # Bound what the model is handed; a sweeping render can run to megabytes.
+          cap=400000
+          if [ "$(wc -c < "${rendered}.full")" -gt "${cap}" ]; then
+            head -c "${cap}" "${rendered}.full" > "${rendered}"
+            printf '\n\n[truncated at %s bytes; %s changed resources in total, listed in the summary counts]\n' \
+              "${cap}" "$(jq -r '.diff.summary | .changed + .added + .removed' "${diff_json}")" >> "${rendered}"
+          else
+            mv "${rendered}.full" "${rendered}"
+          fi
+          rm -f "${rendered}.full"
+          status="ok"
+          finish
 
       - name: Review Renovate PR
         id: claude
@@ -242,6 +310,8 @@ jobs:
             PR: #${{ env.PR_NUMBER }}
             Review fingerprint: ${{ steps.review.outputs.fingerprint }}
             Force re-review requested: ${{ env.FORCE_REVIEW }}
+            Konflate evidence: ${{ steps.konflate.outputs.status }} (ok: summary and
+            rendered diff present; partial: summary only; unavailable: neither)
             Follow this prompt, then `AGENTS.md`, and only the guides under
             `docs/guides/` whose triggers match. Preflight already chose
             this PR; do not duplicate-skip or stop because an older comment exists.
@@ -253,22 +323,41 @@ jobs:
             - Check CI with `gh pr checks`. Legacy status API `total_count: 0`
               means no legacy statuses, not absent/pending/passing Actions. Do
               not cite or summarize this Renovate PR Review workflow.
-            - Read `.renovate-review/konflate-summary.md` as advisory rendered
-              evidence. If it says unavailable, report that plainly. If it
-              mentions cautions, CRDs, blast radius, removals, storage, RBAC,
-              routes, webhooks, or secrets, research those before the verdict.
-              If CRDs changed, use this summary to identify affected resources,
-              then inspect upstream CRD source diffs and summarize all schema or
-              description changes; do not call the impact image-only.
-              This repo's `kubernetes/flux/cluster/ks.yaml` injects
-              `install.crds: CreateReplace` and `upgrade.crds: CreateReplace`
-              into child HelmReleases. Treat chart-shipped CRDs as installed or
-              replaced on upgrade even when the leaf HelmRelease omits those
-              fields; do not assume Helm's default skip behavior.
+            - Read `.renovate-review/konflate-summary.md` (headline facts,
+              cautions, blast radius) and `.renovate-review/konflate-diff.md`
+              (the rendered manifest diff, one section per changed resource).
+              The rendered diff is the authority on what reaches the cluster.
+              Account for every resource section in it: say what changed and
+              why, grouping resources whose change is the same. A resource you
+              cannot explain from the upstream chart source is an Unknown,
+              never an omission. If either file says unavailable, report that
+              plainly and name what it leaves unverified.
+              If the summary mentions cautions, CRDs, blast radius, removals,
+              storage, RBAC, routes, webhooks, or secrets, research those
+              before the verdict. If CRDs changed, inspect the upstream CRD
+              source diffs and summarize every schema or description change;
+              do not call the impact image-only.
               Do not fetch, link, name, or quote the interactive Konflate UI,
               configured hostnames, or raw non-GitHub URLs.
               Do not repeat Konflate resource/app/CRD counts anywhere in the
               comment body; summarize only cautions or repo impact.
+            - For every chart bump, list the chart files that changed between
+              the two tags (`templates/`, `crds/`, `values.yaml`,
+              `values.schema.json`, subcharts) from the upstream source, and
+              say per file whether this repo's values reach it. Patch bumps
+              included: a template rewrite ships in a patch as easily as in a
+              major.
+            - CRD delivery here, stated in one line whenever CRDs differ:
+              `kubernetes/flux/cluster/ks.yaml` injects `install.crds:
+              CreateReplace` and `upgrade.crds: CreateReplace` into every child
+              HelmRelease, so chart `crds/` are created or replaced on upgrade
+              even when the leaf HelmRelease omits those fields; never assume
+              Helm's default skip. `bootstrap/helmfile/crds.yaml` applies CRDs
+              only on a cold bootstrap, and Flux owns every later upgrade.
+              cert-manager renders its CRDs as templates through
+              `crds.enabled`; toolhive's CRDs are a separate chart and
+              Kustomization, `toolhive-operator-crds`, that the operator
+              Kustomization depends on.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -283,6 +372,13 @@ jobs:
               deprecations, and new features worth adopting because they remove
               workarounds or improve reliability. Unused breaking changes are
               context, not action items.
+            Scale effort to the update class. For an image-only digest or
+            patch bump on an `app-template` HelmRelease, a short review is the
+            right one: read the release notes and the rendered diff, and scan
+            the commit range only when the notes mention security,
+            authentication, storage, or a configuration key that appears in
+            the local HelmRelease. Chart bumps, groups, majors, and anything
+            the summary flags get the full contract.
             Treat these one-line diffs as high risk: CRD schema/version/
             `conversion.webhook`; webhook Service/Deployment/certs; RBAC or
             ServiceAccount; PVC/storage/backup/Kopiur; runAsUser,
@@ -299,9 +395,14 @@ jobs:
             routes, auth, or security context.
             Submit exactly one `gh pr comment`, never approve or request changes.
             Use one recommendation: Safe to merge | Human review
-            recommended | Changes recommended before merge. Use High confidence
-            only when Konflate and upstream/local-impact evidence cover the
-            changed risk surfaces; use Low when material evidence is unavailable.
+            recommended | Changes recommended before merge. Human review
+            recommended is required, even when you find no local impact, for
+            a major chart bump; a rendered diff that adds a Secret, RBAC
+            object, webhook, or route; any Konflate caution; and any Unknown
+            left on a CRD, storage, auth, or route surface. Use High
+            confidence only when the rendered diff and upstream/local-impact
+            evidence cover the changed risk surfaces; Konflate partial caps
+            confidence at Medium, and unavailable at Low.
             Keep the visible summary compact; put detail in `<details>`.
             Do not link the current PR. Use `redirect.github.com` links for
             upstream evidence; include 1-3 proper Markdown links. Never write a
@@ -312,10 +413,19 @@ jobs:
             that carries the repository in its text, for example
             `[owner/repo#123](https://redirect.github.com/owner/repo/pull/123)`.
             A bare `#123` is correct only for this repository's own issues.
+            Before posting, check the draft against this list and fix it: no
+            Konflate counts in the body; a `###` Markdown heading, not HTML;
+            every upstream reference a Markdown link on `redirect.github.com`;
+            the machine line's `scope`, `confidence`, `konflate`, and
+            `unknowns` values match the prose; every rendered resource
+            accounted for or listed under Unknowns. `scope` is the
+            highest-risk class present: chart-crds when any chart CRD differs,
+            chart for any other chart bump, image for image-only bumps, talos
+            and kubernetes for those groups, other for the rest.
             Use this exact structure:
             ```markdown
             <!-- home-ops-renovate-research -->
-            <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} recommendation:safe|human-review|changes-recommended confidence:high|medium|low konflate:ok|unavailable gate:false -->
+            <!-- home-ops-renovate-research fingerprint:${{ steps.review.outputs.fingerprint }} recommendation:safe|human-review|changes-recommended confidence:high|medium|low konflate:ok|partial|unavailable scope:image|chart|chart-crds|talos|kubernetes|other unknowns:<count> gate:false -->
             ### Renovate PR Review
 
             **Recommendation:** Safe to merge / Human review recommended / Changes recommended before merge
@@ -330,6 +440,9 @@ jobs:
             <summary>Review details</summary>
 
             **What changed**
+            - ...
+
+            **Rendered resources**
             - ...
 
             </details>
@@ -353,12 +466,37 @@ jobs:
           FINGERPRINT: ${{ steps.review.outputs.fingerprint }}
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ steps.review.outputs.head_sha }}
+          KONFLATE_STATUS: ${{ steps.konflate.outputs.status || 'unavailable' }}
           PR: ${{ env.PR_NUMBER }}
           REVIEW_STARTED_AT: ${{ steps.review.outputs.started_at }}
         run: |
-          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "${EXECUTION_FILE}" ]; then
-            echo "::error::Claude execution output is missing"
+          # A run that fails before posting leaves a stub with the same machine line, so the PR
+          # says "unreviewed" instead of nothing. The stub is the workflow's own comment, never
+          # matched by the fingerprint skip, and it is removed once a real review lands.
+          stub_marker="<!-- home-ops-renovate-research-unavailable -->"
+          stub_ids() {
+            gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" |
+              jq -r --arg marker "${stub_marker}" '
+                (add // []) | .[] | select(.user.login == "github-actions[bot]")
+                | select(.body != null and (.body | contains($marker))) | .id'
+          }
+          fail_loud() {
+            reason="$1"
+            run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            body="$(printf '%s\n<!-- home-ops-renovate-research fingerprint:%s recommendation:unavailable confidence:none konflate:%s scope:unknown unknowns:unknown gate:false -->\n### Renovate PR Review\n\n**Recommendation:** Unavailable\n**Confidence:** None\n**Operator action:** Read the Konflate rendered diff and the upstream changes yourself, or re-run this review from the workflow'"'"'s manual trigger with this PR number.\n**Needs attention:** The review run did not post a review: %s. Details are in the [workflow run](%s).' \
+              "${stub_marker}" "${FINGERPRINT}" "${KONFLATE_STATUS}" "${reason}" "${run_url}")"
+            existing="$(stub_ids | head -n 1)"
+            if [ -n "${existing}" ]; then
+              gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="${body}" > /dev/null
+            else
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -f body="${body}" > /dev/null
+            fi
+            echo "::error::${reason}"
             exit 1
+          }
+
+          if [ -z "${EXECUTION_FILE:-}" ] || [ ! -f "${EXECUTION_FILE}" ]; then
+            fail_loud "the model step produced no execution output"
           fi
 
           result="$(jq -c '[.[] | select(.type == "result")][-1] // {}' "${EXECUTION_FILE}")"
@@ -366,8 +504,7 @@ jobs:
           echo "Claude result: $(jq -rc '{subtype, is_error, num_turns}' <<< "${result}")"
 
           if [ "${is_error}" = "missing" ]; then
-            echo "::error::Claude did not emit a usable result message"
-            exit 1
+            fail_loud "the model step emitted no usable result message"
           fi
 
           if [ "${is_error}" = "true" ]; then
@@ -392,8 +529,7 @@ jobs:
               head -c 4000
             echo
             echo "::endgroup::"
-            echo "::error::Claude exited with is_error=true"
-            exit 1
+            fail_loud "the model step ended in an error before a comment was posted"
           fi
 
           marker="<!-- home-ops-renovate-research -->"
@@ -429,8 +565,12 @@ jobs:
           done
 
           if [ -z "${comment}" ]; then
-            echo "::error::No fresh claude[bot] comment for review key ${FINGERPRINT} with marker ${marker}"
-            exit 1
+            fail_loud "the model step finished without posting a comment for review key ${FINGERPRINT}"
           fi
 
           echo "Verified fresh claude[bot] comment for ${HEAD_SHA} at $(jq -r '.created_at' <<< "${comment}")."
+
+          for stub in $(stub_ids); do
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${stub}" > /dev/null
+            echo "Removed the unavailable-review stub ${stub}."
+          done

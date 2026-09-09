@@ -59,10 +59,23 @@ Release notes describe the code. They do not describe what a chart's templates
 ship, and chart-shipped resources are where the deployed surface actually
 changes. Reviewing an upgrade from release notes alone will miss those.
 
-The Renovate PR Review bot reads the chart templates, so read its comment
-before merging a Renovate PR. On kopiur 0.9.1 it caught a new default-on
-cluster-scoped `FlowSchema` that a release-notes-only review missed entirely —
-see [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
+The Renovate PR Review bot receives Konflate's summary and rendered manifest
+diff for the pull request, and fetches the upstream chart source between the
+two tags itself; it has no render tooling of its own, so the rendered diff is
+its authority on what reaches the cluster. Read its comment before merging a
+Renovate PR. On kopiur 0.9.1 it caught a new default-on cluster-scoped
+`FlowSchema` that a release-notes-only review missed entirely — see
+[`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
+
+Its comment opens with a machine-readable line — recommendation, confidence,
+Konflate coverage, scope, and the count of unexplained rendered resources —
+for an agent triaging a backlog. A run that fails before posting leaves a stub
+comment with `recommendation:unavailable` and a link to the run; that pull
+request is unreviewed. Read the Konflate diff yourself, or re-run the review
+from the workflow's manual trigger with the pull request number. The classes
+Renovate automerges — trusted digests, weekly `kube-prometheus-stack` minors
+and patches, non-0.x Action updates — merge on CI status alone, so there the
+review lands after the fact.
 
 Treat its blocker-level findings as high-priority signals rather than
 advisory. If it flags something this repo documents as intentional, fix the
