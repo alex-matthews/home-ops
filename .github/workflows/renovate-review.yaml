@@ -138,7 +138,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
         run: |
-          policy_version="8"
+          policy_version="9"
           review_input="${RUNNER_TEMP}/renovate-review-input.txt"
           review_meta="${RUNNER_TEMP}/renovate-review-pr-meta.json"
           review_file_paths="${RUNNER_TEMP}/renovate-review-file-paths.json"
@@ -355,9 +355,10 @@ jobs:
               Helm's default skip. `bootstrap/helmfile/crds.yaml` applies CRDs
               only on a cold bootstrap, and Flux owns every later upgrade.
               cert-manager renders its CRDs as templates through
-              `crds.enabled`; toolhive's CRDs are a separate chart and
-              Kustomization, `toolhive-operator-crds`, that the operator
-              Kustomization depends on.
+              `crds.enabled`. toolhive's CRDs are ordinary templates in a
+              separate chart and Kustomization, `toolhive-operator-crds`,
+              that the operator Kustomization depends on; Helm applies them
+              as normal resources on upgrade, not through `CreateReplace`.
             - Trace upstream to origin. Start with PR release notes, then use
               GitHub Releases for every version, CHANGELOG/UPGRADING/migration
               docs, wrapper plus underlying changelogs, compatibility/breaking
@@ -373,12 +374,16 @@ jobs:
               workarounds or improve reliability. Unused breaking changes are
               context, not action items.
             Scale effort to the update class. For an image-only digest or
-            patch bump on an `app-template` HelmRelease, a short review is the
-            right one: read the release notes and the rendered diff, and scan
-            the commit range only when the notes mention security,
+            patch bump on an `app-template` HelmRelease, write the short
+            form: the four header lines, at most three Why bullets, and one
+            line under each details heading, at most 1,200 characters in
+            all. Read the release notes and the rendered diff; open the
+            commit range only when the notes mention security,
             authentication, storage, or a configuration key that appears in
-            the local HelmRelease. Chart bumps, groups, majors, and anything
-            the summary flags get the full contract.
+            the local HelmRelease, and stop there. Chart bumps, groups,
+            majors, and anything the summary flags get the full contract.
+            Before writing that no local value touches a key, grep the
+            HelmRelease for that key.
             Treat these one-line diffs as high risk: CRD schema/version/
             `conversion.webhook`; webhook Service/Deployment/certs; RBAC or
             ServiceAccount; PVC/storage/backup/Kopiur; runAsUser,
@@ -397,9 +402,11 @@ jobs:
             Use one recommendation: Safe to merge | Human review
             recommended | Changes recommended before merge. Human review
             recommended is required, even when you find no local impact, for
-            a major chart bump; a rendered diff that adds a Secret, RBAC
-            object, webhook, or route; any Konflate caution; and any Unknown
-            left on a CRD, storage, auth, or route surface. Use High
+            a major chart bump, meaning any pull request Renovate marks with
+            `!` in its title or the `type/major` label, 0.x minors included;
+            a rendered diff that adds a Secret, RBAC object, webhook, or
+            route; any Konflate caution; and any Unknown left on a CRD,
+            storage, auth, or route surface. Use High
             confidence only when the rendered diff and upstream/local-impact
             evidence cover the changed risk surfaces; Konflate partial caps
             confidence at Medium, and unavailable at Low.
