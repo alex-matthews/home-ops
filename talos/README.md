@@ -47,15 +47,15 @@ Two conventions keep the layers honest:
 
 ## Schematic
 
-The schematic defines the Image Factory build (system extensions, kernel
-args). `just talos schematic-id` POSTs it to the factory and gets back a
-content-addressed ID, which is templated into the `UnattendedInstallConfig`
-installer image and used by `download-image` and `upgrade-node`.
+The schematic customises the Image Factory build (system extensions, kernel
+args). `just talos schematic-id [node]` POSTs it to the factory and gets back
+a content-addressed ID, stored nowhere in the repository. `cluster.yaml.j2`
+templates the ID into the `UnattendedInstallConfig` installer image, which
+`upgrade-node` reads; `download-image` puts the same ID in the ISO URL.
 
 Resolution is per node. `nodes/<role>/<node>.schematic.yaml.j2` wins if
-present, otherwise the shared `schematic.yaml.j2` applies. Overrides are
-complete files, not deltas; they exist for nodes whose hardware diverges from
-the fleet. No node carries an override.
+present, otherwise the shared `schematic.yaml.j2` applies. An override is a
+complete file, not a delta, for a node whose hardware diverges from the fleet.
 
 ## Applying
 
