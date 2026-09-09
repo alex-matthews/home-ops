@@ -37,8 +37,8 @@ spec:
                 spec:
                   install:
                     crds: CreateReplace
-                    remediation:
-                      retries: 5
+                    strategy:
+                      name: RetryOnFailure
                   rollback:
                     cleanupOnFail: true
                   upgrade:
