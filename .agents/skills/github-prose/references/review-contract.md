@@ -6,15 +6,41 @@ flags a conflict with them rather than restating them.
 
 ## Lenses
 
-Two passes catch disjoint defects; run both.
+Three passes catch disjoint defects, run in this order.
 
-- **Adversarial-factual**: try to falsify claims, weakest first. On a
-  restyle, enumerate every sentence that is new since the last verified
-  pass — fluent rewrites reopen factual risk on every touched sentence.
-- **Cold reader**: read as an uninitiated human operator. A readability
-  finding counts when that reader would misread a fact or a decision.
-  The verdict names the audience it certifies; five expert passes once
+- **Cold reader**: read the draft before the fact sheet, as the reader
+  `docs/guides/writing-style.md` names, and time that guide's three
+  questions (what changed, why now, and is it safe). A readability
+  finding counts only if that reader would misread a fact or a decision.
+  The verdict names the audience it certifies. Five expert passes once
   certified prose the owner found unreadable (#1233).
+- **Technical writing**: apply the style guide to every sentence, with
+  the external references it lists as the check behind each rule. Report
+  a rule that produced worse prose as a finding against the rule.
+- **Adversarial-factual**: try to falsify claims, weakest first, against
+  the fact sheet and the artifacts the draft describes. On a restyle,
+  enumerate every sentence that is new since the last verified pass,
+  because fluent rewrites reopen factual risk on every touched sentence.
+
+## The gate
+
+Every agent-drafted artifact passes an editor before the owner reads it.
+The author and the editor are different agent instances; the owner is
+the repository owner. One editor runs all three lenses. A second editor
+joins for a body about storage, authentication, or a decision. The
+editor works from a fact sheet the author writes first, in two parts.
+Must-preserve holds the decisions and facts no edit may add, drop,
+soften, or reinterpret. May-cut holds the context an editor may shorten
+or remove. An editor who is unsure whether an edit changes meaning
+leaves it and lists it.
+
+Each pass records three measures in the evidence log
+(`.private/prose-evidence-log.md`): the editor's time to answer the
+three questions on the first draft, a cheaper reader's time on the
+revised draft, and the owner's yes or no to posting the result without a
+further edit round. The first number tracks the author's drafting, the
+second the body that ships. Briefs for the editor and the reader are in
+[editor-briefs.md](editor-briefs.md).
 
 ## Findings
 

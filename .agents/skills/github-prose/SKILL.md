@@ -58,9 +58,12 @@ request bodies see [references/pr-shapes.md](references/pr-shapes.md).
 
 ## 4. Review
 
-Apply [references/review-contract.md](references/review-contract.md).
-The owner may skip the review pass explicitly; record the skip rather
-than hiding it.
+Write the two-part fact sheet, then run the editorial gate in
+[references/review-contract.md](references/review-contract.md) with the
+briefs in [references/editor-briefs.md](references/editor-briefs.md).
+Merge the editor's revision, keep its unsure list for the owner, and
+log the two measures. The owner may skip the gate explicitly; record the
+skip rather than hiding it.
 
 ## 5. Sign off and post
 
