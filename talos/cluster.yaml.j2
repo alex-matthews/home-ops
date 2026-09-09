@@ -67,6 +67,14 @@ provisioning:
   wipe: false
 ---
 apiVersion: v1alpha1
+kind: FilesystemTrimConfig
+interval: 168h0m0s
+---
+apiVersion: v1alpha1
+kind: FilesystemScrubConfig
+interval: 168h0m0s
+---
+apiVersion: v1alpha1
 kind: DiscoveryServiceConfig
 name: default
 endpoint: https://discovery.talos.dev/
