@@ -7,14 +7,15 @@ reaches a node until an operator renders and applies it through the
 
 ## Layout
 
-| Path                          | Purpose                                                       |
-| ----------------------------- | ------------------------------------------------------------- |
-| `cluster.yaml.j2`             | Documents applied to every node                               |
-| `controlplane.yaml.j2`        | Control-plane-only documents, including `machine.type`        |
-| `workers.yaml.j2`             | Worker-only documents, absent until the first worker is added |
-| `nodes/<role>/<node>.yaml.j2` | Per-node documents (hostname, zone label)                     |
-| `schematic.yaml.j2`           | Shared [Image Factory](https://factory.talos.dev) schematic   |
-| `mod.just`                    | Recipes (`just talos ...`)                                    |
+| Path                                    | Purpose                                                       |
+| --------------------------------------- | ------------------------------------------------------------- |
+| `cluster.yaml.j2`                       | Documents applied to every node                               |
+| `controlplane.yaml.j2`                  | Control-plane-only documents, including `machine.type`        |
+| `workers.yaml.j2`                       | Worker-only documents, absent until the first worker is added |
+| `nodes/<role>/<node>.yaml.j2`           | Per-node documents (hostname, zone label)                     |
+| `nodes/<role>/<node>.schematic.yaml.j2` | Optional per-node schematic override                          |
+| `schematic.yaml.j2`                     | Shared [Image Factory](https://factory.talos.dev) schematic   |
+| `mod.just`                              | Recipes (`just talos ...`)                                    |
 
 ## Rendering
 
@@ -46,15 +47,15 @@ Two conventions keep the layers honest:
 
 ## Schematic
 
-`schematic.yaml.j2` declares the Image Factory build: the system extensions and
-kernel arguments baked into the installer image and the ISO. `just talos
-schematic-id` posts the rendered file to the factory and receives a
-content-addressed ID, which nothing in the repository stores, because the same
-content always yields the same ID. `render-config` passes that ID into the
-`UnattendedInstallConfig` installer image, `upgrade-node` reads that image from
-a fresh render, and `download-image` fetches the ID itself for the ISO URL, so
-a schematic edit needs no other step to reach the next render, upgrade, or
-download.
+The schematic defines the Image Factory build (system extensions, kernel
+args). `just talos schematic-id` POSTs it to the factory and gets back a
+content-addressed ID, which is templated into the `UnattendedInstallConfig`
+installer image and used by `download-image` and `upgrade-node`.
+
+Resolution is per node. `nodes/<role>/<node>.schematic.yaml.j2` wins if
+present, otherwise the shared `schematic.yaml.j2` applies. Overrides are
+complete files, not deltas; they exist for nodes whose hardware diverges from
+the fleet. No node carries an override.
 
 ## Applying
 

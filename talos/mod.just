@@ -42,8 +42,8 @@ cert-renew:
     talosctl config info -o yaml | yq -r '"certNotAfter=" + .certNotAfter'
 
 [doc('Download Talos machine image')]
-download-image version:
-    export SCHEMATIC="$(just talos schematic-id)"
+download-image version node="":
+    export SCHEMATIC="$(just talos schematic-id "{{ node }}")"
     curl -fL --remove-on-error --retry 5 --retry-delay 5 --retry-all-errors --progress-bar \
         -o "{{ source_directory() }}/talos-{{ version }}-${SCHEMATIC:0:8}.iso" \
         "https://factory.talos.dev/image/${SCHEMATIC}/{{ version }}/metal-amd64.iso"
@@ -59,7 +59,7 @@ reboot-node node:
 
 [doc('Render Talos config for a node')]
 render-config node:
-    schematic="$(just talos schematic-id)"
+    schematic="$(just talos schematic-id "{{ node }}")"
     role="controlplane"
     if [[ -f "{{ source_directory() }}/nodes/workers/{{ node }}.yaml.j2" ]]; then
         role="workers"
@@ -118,7 +118,7 @@ upgrade-k8s version:
 [confirm('Upgrade node ' + node + ' [y|N] ?')]
 [doc('Upgrade Talos version on a node')]
 upgrade-node node *args:
-    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image)" --timeout=10m {{ args }}
+    talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image "{{ node }}")" --timeout=10m {{ args }}
 
 [private]
 cert-days-left:
@@ -126,12 +126,22 @@ cert-days-left:
     jq -nr --arg d "$not_after" '(($d + "T00:00:00Z" | fromdateiso8601) - now) / 86400 | floor'
 
 [private]
-machine-image:
-    just template "{{ source_directory() }}/cluster.yaml.j2" -D "schematic=$(just talos schematic-id)" | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
+machine-image node="":
+    just template "{{ source_directory() }}/cluster.yaml.j2" -D "schematic=$(just talos schematic-id "{{ node }}")" | yq -r -e 'select(.kind == "UnattendedInstallConfig") | .installer.image'
 
 [private]
-schematic-id:
-    curl -sX POST --data-binary @<(just template "{{ source_directory() }}/schematic.yaml.j2") "https://factory.talos.dev/schematics" | jq -r '.id'
+schematic-file node="":
+    file="{{ source_directory() }}/schematic.yaml.j2"
+    if [[ -n "{{ node }}" ]]; then
+        for f in "{{ source_directory() }}"/nodes/*/"{{ node }}".schematic.yaml.j2; do
+            [[ -f "$f" ]] && file="$f"
+        done
+    fi
+    echo "$file"
+
+[private]
+schematic-id node="":
+    curl -sX POST --data-binary @<(just template "$(just talos schematic-file "{{ node }}")") "https://factory.talos.dev/schematics" | jq -r '.id'
 
 [private]
 talos-endpoint:
