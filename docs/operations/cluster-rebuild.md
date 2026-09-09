@@ -86,12 +86,18 @@ they apply.
   `flux reconcile hr <name> --reset`. A release whose Kustomization was held
   back by a `dependsOn` edge until storage existed, plex, kept budget and
   recovered unaided. The budget that applies on a cold start is the upgrade
-  one: installs run under `RetryOnFailure`, so a failed install is retried
-  as an upgrade with no uninstall in between, and every attempt after that
-  draws on `upgrade.remediation.retries`. With no successful revision to
-  roll back to, the release parks with `MissingRollbackTarget` once those
-  are spent. Since #1982 that is five upgrade retries, about 30 minutes at
-  the Helm timeout; #2020 made the install strategy explicit.
+  one. Installs run under `RetryOnFailure`, the default under the
+  `DefaultToRetryOnFailure` gate the flux-instance values enable, so a
+  failed install is retried as an upgrade with no uninstall in between.
+  Every attempt after the first draws on `upgrade.remediation.retries`, and
+  a release with no successful revision to roll back to parks with
+  `MissingRollbackTarget` once those are spent. Since #1982 that is five
+  upgrade retries, up from two, sized to outlast the storage wait the
+  rebuild showed (#1982 has the arithmetic). helm-controller requeues them
+  with its own backoff rather than at the release interval, so the budget
+  is about 30 minutes at the default five-minute Helm timeout, and about an
+  hour for `rook-ceph-cluster`, which sets a ten-minute one. Since #2024
+  the fleet patch sets the install strategy explicitly.
 - **Kustomizations that fail early wait a full interval.** One dry-run hit
   the kopiur mutating webhook before it had endpoints and waited an hour.
   Since #1982 every child Kustomization retries after two minutes.
