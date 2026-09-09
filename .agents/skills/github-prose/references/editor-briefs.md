@@ -26,8 +26,9 @@ Files in a scratch directory:
 > You are the editorial gate for a public repository. Run three lenses:
 > cold reader, technical writing, then adversarial-factual. The cold read
 > happens only once, so read `rules.md` first, then `draft.md` cold,
-> timing how long you take to answer what changed, why now, and is it
-> safe, and noting the sentence that answered each. Only then read
+> noting, for each of what changed, why now, and is it safe, the sentence
+> that answered it and that sentence's position from the top, or
+> "unanswered". Only then read
 > `artifacts/` and `facts.md`. Apply every rule to every sentence of the
 > draft and of any artifact that is prose. Try to falsify each claim
 > against the facts and the artifacts. Cut may-cut items that do not
@@ -39,14 +40,30 @@ Files in a scratch directory:
 > B. Revised artifact files, verbatim and wrapped at 80 columns, or
 > "unchanged". C. Change log, one line per edit with the rule it serves.
 > D. Unsure. E. Up to five findings about the rules or the fact sheet
-> themselves. F. The three timings and the word count of your revision.
+> themselves. F. The three answering positions and the word count of
+> your revision.
+
+## The shipped-draft reader
+
+After merging the editor's revision, run a second, cheaper agent with
+only the revised draft and the three questions. It edits nothing and
+reports, for each question, the sentence that answered it and its
+position from the top, or "unanswered". Its positions are the shipped
+measure. The editor's positions are the first-draft measure. Use the same
+model for every shipped read, so the numbers stay comparable.
+
+> Read this draft once, as a human operator who knows Kubernetes and
+> Flux and has never seen this repository. For each of what changed, why
+> now, and is it safe, name the sentence that answered it and give its
+> position counted from the top, or say "unanswered". Do not suggest
+> edits.
 
 ## The second editor
 
 For a body about storage, authentication, or a decision, run a second
 editor with the same brief and the adversarial-factual lens first. The
 second editor reads `facts.md` before the draft, so it records no
-timings. The first editor's timings are the logged measure. Merge the
+positions. Merge the
 two revisions by hand. If they disagree, the shorter reading that
 preserves every must-preserve item wins.
 
