@@ -20,6 +20,7 @@ experiments out of this tree.
 | Understand backup posture or verify a restore  | [Storage and Backups](operations/storage-and-backups.md)                             |
 | Renew or replace appliance management TLS      | [Appliance TLS](operations/appliance-tls.md)                                         |
 | Run or watch a Talos/Kubernetes node rollout   | [Node Upgrades](operations/node-upgrades.md)                                         |
+| Change Talos machine configuration             | [Talos Machine Configuration](../talos/README.md)                                    |
 | Reach the cluster when DNS or the router fails | [Talos Access and Break-Glass](operations/talos-access-and-break-glass.md)           |
 
 ## Placement Rule
