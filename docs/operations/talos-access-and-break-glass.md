@@ -31,9 +31,9 @@ never set the profile and use the per-command flags below.
   prints its error to stderr and leaves the pipeline reading nothing, so
   check the connection before trusting an empty result. The identity's objects live in
   `kubernetes/apps/kube-system/agent-access/`. Its token is minted per
-  sitting: `just kube readonly-token` requests an 8-hour token through the
+  sitting. `just kube readonly-token` requests an 8-hour token through the
   TokenRequest API with the administrative kubeconfig and writes
-  `kubeconfig-readonly`; the mise `enter` hook runs it, and it is a no-op
+  `kubeconfig-readonly`. The mise `enter` hook runs it, and it is a no-op
   while the current token has more than an hour left. No long-lived token
   exists. Revoke early by deleting the ServiceAccount, which Flux recreates
   with a new UID so every token issued to the old one stops validating.
@@ -75,7 +75,7 @@ Sequence, guards, and cold-start behaviour are in
 [`cluster-rebuild.md`](cluster-rebuild.md); the operator-side commands are in
 [`../../bootstrap/README.md`](../../bootstrap/README.md). Machine identity
 and secrets are injected from the password manager at render time, so both
-Talos identities survive a rebuild; the read-only Kubernetes identity's
+Talos identities survive a rebuild. The read-only Kubernetes identity's
 tokens do not, because the ServiceAccount is recreated, and one is minted
 again with `just kube readonly-token` once the API answers.
 
