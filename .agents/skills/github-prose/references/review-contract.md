@@ -9,9 +9,10 @@ flags a conflict with them rather than restating them.
 Three passes catch disjoint defects, run in this order.
 
 - **Cold reader**: read the draft before the fact sheet, as the reader
-  `docs/guides/writing-style.md` names, and time that guide's three
-  questions (what changed, why now, and is it safe). A readability
-  finding counts only if that reader would misread a fact or a decision.
+  `docs/guides/writing-style.md` names, and answer that guide's three
+  questions (what changed, why now, and is it safe), noting the position
+  of the sentence that answers each. A readability finding counts only if
+  that reader would misread a fact or a decision.
   The verdict names the audience it certifies. Five expert passes once
   certified prose the owner found unreadable (#1233).
 - **Technical writing**: apply the style guide to every sentence, with
@@ -35,11 +36,14 @@ or remove. An editor who is unsure whether an edit changes meaning
 leaves it and lists it.
 
 Each pass records three measures in the evidence log
-(`.private/prose-evidence-log.md`): the editor's time to answer the
-three questions on the first draft, a cheaper reader's time on the
-revised draft, and the owner's yes or no to posting the result without a
-further edit round. The first number tracks the author's drafting, the
-second the body that ships. Briefs for the editor and the reader are in
+(`.private/prose-evidence-log.md`): for the first draft and for the
+revised draft, the position of the sentence that answered each of the
+three questions, counted from the top, or "unanswered"; and the owner's
+yes or no to posting the result without a further edit round. A model
+has no clock, so seconds it reports are estimates and are logged only as
+a courtesy, from the same model each time. The first-draft positions
+track the author's drafting, the revised-draft positions the body that
+ships. Briefs for the editor and the reader are in
 [editor-briefs.md](editor-briefs.md).
 
 ## Findings
