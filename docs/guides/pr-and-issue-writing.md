@@ -11,7 +11,8 @@ first time, and does it help a later reader? If neither, cut it.
 
 The `github-prose` skill in `.agents/skills/` carries the drafting-to-posting
 process — artifact choice, shape catalogs, and the review contract. This
-guide stays canonical for the rules.
+guide stays canonical for policy. The craft rules (ordering, sentences,
+punctuation, cutting) are in [`writing-style.md`](writing-style.md).
 
 ## Issues
 
