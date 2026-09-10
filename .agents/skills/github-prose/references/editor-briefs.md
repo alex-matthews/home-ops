@@ -13,8 +13,11 @@ Files in a scratch directory:
 - `rules.md`: `docs/guides/writing-style.md` copied verbatim, plus the
   rules for the destination in `docs/guides/pr-and-issue-writing.md` and
   any template's section order.
-- `facts.md`: must-preserve first, then may-cut. Every number, name, and
-  decision the body carries is in one list or the other.
+- `facts.md`: must-appear, then must-hold, then may-cut. Every number,
+  name, and decision the body carries or must not contradict is in
+  exactly one list. An omitted must-appear item is a defect for the
+  editor to restore. An omitted must-hold item is not a defect, but a
+  contradicted one is.
 - `draft.md`: the title on the first line, then the body as it will be
   posted.
 - `artifacts/`: every file the draft adds or changes, copied whole, and a
@@ -32,9 +35,11 @@ Files in a scratch directory:
 > `artifacts/` and `facts.md`. Apply every rule to every sentence of the
 > draft and of any artifact that is prose. Try to falsify each claim
 > against the facts and the artifacts. Cut may-cut items that do not
-> earn their place. Do not add, drop, soften, or reinterpret a
-> must-preserve item. If unsure whether an edit changes meaning, leave it
-> and list it. Do not modify files. Reply in full.
+> earn their place. Restore a must-appear item the draft omits, and do
+> not drop, soften, or reinterpret one. Do not add a must-hold item. If
+> the draft contradicts one, fix the sentence that contradicts it. If
+> unsure whether an edit changes meaning, leave it and list it. Do not
+> modify files. Reply in full.
 >
 > Reply with exactly: A. Revised title and body, verbatim, ready to post.
 > B. Revised artifact files, verbatim and wrapped at 80 columns, or
@@ -65,7 +70,7 @@ editor with the same brief and the adversarial-factual lens first. The
 second editor reads `facts.md` before the draft, so it records no
 positions. Merge the
 two revisions by hand. If they disagree, the shorter reading that
-preserves every must-preserve item wins.
+carries every must-appear item wins.
 
 ## After the pass
 

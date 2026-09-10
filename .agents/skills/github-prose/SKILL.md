@@ -58,7 +58,8 @@ request bodies see [references/pr-shapes.md](references/pr-shapes.md).
 
 ## 4. Review
 
-Write the two-part fact sheet, then run the editorial gate in
+Write the three-part fact sheet, check that no claim appears in two of
+its lists, then run the editorial gate in
 [references/review-contract.md](references/review-contract.md) with the
 briefs in [references/editor-briefs.md](references/editor-briefs.md).
 Merge the editor's revision, keep its unsure list for the owner, and
