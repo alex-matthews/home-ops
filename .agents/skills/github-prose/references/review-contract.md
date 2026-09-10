@@ -29,10 +29,13 @@ Every agent-drafted artifact passes an editor before the owner reads it.
 The author and the editor are different agent instances; the owner is
 the repository owner. One editor runs all three lenses. A second editor
 joins for a body about storage, authentication, or a decision. The
-editor works from a fact sheet the author writes first, in two parts.
-Must-preserve holds the decisions and facts no edit may add, drop,
-soften, or reinterpret. May-cut holds the context an editor may shorten
-or remove. An editor who is unsure whether an edit changes meaning
+editor works from a fact sheet the author writes first, in three parts.
+Must-appear holds the decisions and facts the body must carry, and no
+edit may drop, soften, or reinterpret one. Must-hold holds the evidence and
+constraints the body may omit but must not contradict, such as a live
+observation, a source-level fact, or a rule the author is drafting under.
+May-cut holds the context an editor may shorten or remove. A claim sits
+in one list only. An editor who is unsure whether an edit changes meaning
 leaves it and lists it.
 
 Each pass records three measures in the evidence log
