@@ -48,7 +48,7 @@ jobs:
         with:
           minimum_release_age: 3d
           cache: false
-          install_args: cosign yq
+          install_args: cosign oras yq
 
       - name: Verify changed sources at their pinned tag
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
@@ -60,7 +60,17 @@ jobs:
             [ -f "$file" ] || continue
             provider="$(mise exec -- yq -r '.spec.verify.provider // ""' "$file")"
             if [ -z "$provider" ]; then
-              echo "::notice file=$file::no verify block; unverified source (see the exclusions inventory in ADR-0003)"
+              : > findings.md
+              : > errors.md
+              FINDINGS_OUT=findings.md ERRORS_OUT=errors.md \
+                .github/scripts/chart-signing-check.sh "$file" > result.tsv
+              if [ -s findings.md ]; then
+                echo "::warning file=$file::$(sed 's/^- //' findings.md | head -1) See ADR-0003 and #2018."
+              elif [ -s errors.md ]; then
+                echo "::notice file=$file::signing check inconclusive: $(sed 's/^- //' errors.md | head -1)"
+              else
+                echo "::notice file=$file::no verify block; $(cut -f5 result.tsv | head -1) (see the exclusions inventory in #1894)"
+              fi
               continue
             fi
             if [ "$provider" != "cosign" ]; then
