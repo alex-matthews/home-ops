@@ -177,4 +177,6 @@ This repository builds on patterns from
 
 ## License
 
-See [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE). The repository began from
+[onedr0p's cluster-template](https://github.com/onedr0p/cluster-template), and
+the parts that derive from it carry onedr0p's notice in [NOTICE](./NOTICE).
