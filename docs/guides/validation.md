@@ -47,6 +47,18 @@ denied port-forward reads as empty, not as an error, so confirm the tunnel
 before trusting a zero. Details in
 [`../operations/talos-access-and-break-glass.md`](../operations/talos-access-and-break-glass.md).
 
+Two things a render never proves. Flate expands Kustomizations without Flux's
+variable substitution, so a manifest that introduces `${SECRET_DOMAIN}` under
+a Kustomization with no `postBuild.substituteFrom` renders with the literal
+text and fails only at the server dry run. And `substituteFrom` reads the
+Secret from the Kustomization object's own namespace, so a namespace needs the
+sops component in its `kustomization.yaml` before any of its apps can
+substitute. When adding the first substituted value to an app, trace an
+existing route with `${SECRET_DOMAIN}` from its manifest through its `ks.yaml`
+to the namespace's components, and run the server dry run on the rendered
+output. Copying the manifest's shape alone is how Hubble broke the cilium
+Kustomization twice.
+
 ## What a local render does not prove
 
 The rendered `FluxInstance` pins its sync source to the remote `main` branch.

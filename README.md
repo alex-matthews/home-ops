@@ -53,13 +53,13 @@ and posts one advisory comment. It has flagged a good number of upgrades for a
 human look, including a default-on `FlowSchema` that the release notes did not
 mention.
 
-| Check                | Status   | Purpose                                                                        |
-| -------------------- | -------- | ------------------------------------------------------------------------------ |
-| `Lint`               | Required | Checks workflow syntax, security, and file format.                             |
-| `Image Pull`         | Required | Finds image changes and pulls them on a cluster runner.                        |
-| `Konflate`           | Required | Renders manifests, posts the diff, and verifies images exist.                  |
-| `Chart Verify`       | Advisory | Re-verifies changed chart sources and flags a dropped or changed verify block. |
-| `Renovate PR Review` | Advisory | Reads the rendered diff and the upstream chart source with Claude.             |
+| Check                | Status   | Purpose                                                                                                                       |
+| -------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `Lint`               | Required | Checks workflow syntax, security, and file format.                                                                            |
+| `Image Pull`         | Required | Finds image changes and pulls them on a cluster runner.                                                                       |
+| `Konflate`           | Required | Renders manifests, posts the diff, and verifies images exist.                                                                 |
+| `Chart Verify`       | Advisory | Re-verifies changed chart sources, flags a dropped or changed verify block, and checks an unsigned source for new signatures. |
+| `Renovate PR Review` | Advisory | Reads the rendered diff and the upstream chart source with Claude.                                                            |
 
 See [Validation and Tooling](docs/guides/validation.md) for what each check
 proves and what it cannot.

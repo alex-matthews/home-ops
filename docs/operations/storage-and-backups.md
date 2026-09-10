@@ -227,6 +227,15 @@ Operationally this means `<repo>-discovery` connect Jobs appear in
 sit `Pending` rather than failing, so backup-failure signals stay quiet; watch
 the repository phase and breaker metrics instead.
 
+A backend wiped after its repository went Ready is not recreated. From kopiur
+0.10.8 the `ClusterRepository` parks at `Failed` with reason
+`RepositoryReinitializeBlocked`, and the `KopiurRepositoryNotReady` alert text
+says so. Re-initialising is an explicit acknowledgement: annotate the object
+with `kopiur.home-operations.com/allow-reinitialize` set to the old
+`status.uniqueId`, and only after deciding that the data behind it is gone.
+Both `local` and `remote` set `create.enabled: true`, so this is the path a
+backend loss takes here.
+
 ## Known Quirks
 
 Rechecked on 2026-09-02 against 0.10.6 source. The live rollout verified
