@@ -199,7 +199,50 @@ removed or its identity changed unless the pull request carries the
 adding it re-run the Coverage job. It is advisory, not a required check,
 and it reads only public registries and Sigstore. Read its annotations
 before merging a chart bump it flags; a signer that changed is a policy
-decision under ADR-0003, never a regex to loosen.
+decision under ADR-0003, never a regex to loosen. On a bump of a source
+with no `verify` block, it runs the discovery described below on the new
+tag. A signature that verifies, or signing material it cannot verify, is a
+warning. An inconclusive lookup, or a conclusive absence, is a notice.
+
+The `Chart Signing Watch` workflow runs weekly, and on demand, over every
+source without a `verify` block. Both workflows call
+`.github/scripts/chart-signing-check.sh`. It takes the pinned digest, or
+resolves the pinned tag to one, then looks up the legacy signature tag, the
+legacy attestation tag, and the direct OCI referrers. A lookup is absent only
+if the registry answered that the manifest does not exist, and a source
+counts as unsigned only if all three lookups are absent. It checks material
+that exists by digest with cosign, keylessly under any identity, and treats
+any cosign result other than a clean pass or a clean mismatch as
+inconclusive. It checks cert-manager three ways, each on its own: under the
+published static key with SHA-512, the recorded state; under that key with
+SHA-256, which Flux's keyed verifier can read; and keylessly. A change in
+any of the three is a finding. On the watch it also resolves the exact tag,
+with any leading `v` stripped, on the mirror registry under the chart's own
+name, or under an alias the script carries, and reads charts-mirror's
+inventory only to refuse a name it lists more than once. The mirror registry
+also answers for packages the mirror has retired but still serves. On the
+watch, a finding opens or updates the one issue the workflow
+owns, found by title, marker, and author, and fails the run; do not rename
+that issue. A lookup that could not complete, or a source the script did not
+account for, fails the run and writes nothing, so a green run means every
+source was accounted for and every lookup answered. A clean run comments
+once on an open findings issue, and you close it once #1894 records the
+findings. Neither workflow adds a `verify` block. Add one only after you
+re-validate the identity and record it in #1894, as ADR-0003 requires.
+
+Three limits apply. The check does not discover a signature stored in a
+repository other than the chart's own. A source pinned by neither tag nor
+digest is reported as inconclusive rather than checked. `mirror.gcr.io` is a
+pull-through cache of Docker Hub with no documented signer of its own, so a
+source pinned there is checked at its cache path like any other and the
+upstream publisher is not watched through it. Two procedures go with the
+watch. After the first run on `main`, and after any run that reports a
+finding, record the dated outcome in the exclusions inventory in #1894, even
+if nothing changed. On a bump of `flux-instance` or `flux-operator`, read
+source-controller's release notes for changes to keyed verification and
+record in #1894 the version reviewed and whether cert-manager's SHA-512
+signature is still unreadable; a release that reads it brings cert-manager
+into scope for re-validation.
 
 The `Render` workflow is a GitHub-hosted post-merge alarm, not a required pull
 request check. It runs Flate on `main` after changes under `kubernetes/` so

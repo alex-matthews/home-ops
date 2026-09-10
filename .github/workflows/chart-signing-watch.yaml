@@ -1,0 +1,135 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Chart Signing Watch
+
+# Child 3 (#2018) of the artifact trust umbrella (#1893, ADR-0003). A source
+# without a verify block is excluded for a reason the exclusions inventory
+# (#1894) records once, and nothing else re-checks it. This runs
+# .github/scripts/chart-signing-check.sh weekly, or on demand, over every such
+# source: discovery of signing material at the pinned digest, classification
+# of what exists, and an exact-tag lookup on charts-mirror. A finding opens or
+# updates the one issue this workflow owns and fails the run. A lookup that
+# could not complete, or a source the script did not account for, fails the
+# run and writes nothing. A clean run comments once on an open findings issue.
+# The fix is a verify block, added only after the identity is re-validated
+# under ADR-0003.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 3 * * 1 # Mondays 03:00 UTC
+
+concurrency:
+  group: chart-signing-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    name: Chart Signing Watch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          minimum_release_age: 3d
+          cache: false
+          install_args: cosign oras yq
+
+      - name: Check every source without a verify block
+        id: check
+        shell: bash
+        run: |
+          : > excluded.txt
+          for file in $(find kubernetes -name ocirepository.yaml | sort); do
+            mise exec -- yq -e '.spec.verify.provider' "$file" > /dev/null 2>&1 || echo "$file" >> excluded.txt
+          done
+          : > findings.md
+          : > errors.md
+          : > results.tsv
+          FINDINGS_OUT=findings.md ERRORS_OUT=errors.md \
+            xargs -r .github/scripts/chart-signing-check.sh --mirror < excluded.txt > results.tsv
+          cat results.tsv
+          expected="$(wc -l < excluded.txt | tr -d ' ')"
+          accounted="$(cut -f1 results.tsv | sort -u | wc -l | tr -d ' ')"
+          if [ "$accounted" != "$expected" ]; then
+            echo "- the script accounted for $accounted of $expected sources; the run cannot be trusted" >> errors.md
+          fi
+          delim="cswatch-$RANDOM-$RANDOM"
+          {
+            echo "findings<<$delim"
+            cat findings.md
+            echo "$delim"
+            echo "errors<<$delim"
+            cat errors.md
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Chart signing watch"
+            echo
+            echo "| Source | Digest | Result | Detail |"
+            echo "| --- | --- | --- | --- |"
+            awk -F'\t' '{ printf "| `%s` | `%s` | %s | %s |\n", $2, substr($3, 1, 19), $4, $5 }' results.tsv
+            echo
+            if [ -s findings.md ]; then echo "### Findings"; echo; cat findings.md; echo; fi
+            if [ -s errors.md ]; then echo "### Lookups that did not complete"; echo; cat errors.md; echo; fi
+            if [ ! -s findings.md ] && [ ! -s errors.md ]; then
+              echo "Every source was accounted for, every lookup answered, and no signing state changed."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update the findings issue
+        if: ${{ steps.check.outputs.findings != '' && steps.check.outputs.errors == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FINDINGS: ${{ steps.check.outputs.findings }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Chart signing watch: findings"
+          block="$(printf '<!-- chart-signing-watch:findings -->\n%s\n<!-- /chart-signing-watch:findings -->' "$FINDINGS")"
+          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach needs the identity re-validated and recorded in #1894 before a verify block lands (ADR-0003). Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
+          number="$(gh issue list --state open --limit 100 --search "\"$title\" in:title" --json number,body,author \
+            --jq '[.[] | select((.author.login == "app/github-actions" or .author.login == "github-actions") and (.body | contains("<!-- chart-signing-watch -->")))][0].number // ""')"
+          if [ -z "$number" ]; then
+            gh issue create --title "$title" --body "$body"
+            exit 0
+          fi
+          last="$(gh issue view "$number" --json body,comments \
+            --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(contains("<!-- chart-signing-watch:findings -->"))) | last')"
+          extract() { printf '%s' "$1" | sed -n '/<!-- chart-signing-watch:findings -->/,/<!-- \/chart-signing-watch:findings -->/p'; }
+          if [ "$(extract "$last")" = "$(extract "$body")" ]; then
+            echo "findings unchanged since the last post on #$number"
+          else
+            gh issue comment "$number" --body "$body"
+          fi
+
+      - name: Record a clean run on an open findings issue
+        if: ${{ steps.check.outputs.findings == '' && steps.check.outputs.errors == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          number="$(gh issue list --state open --limit 100 --search '"Chart signing watch: findings" in:title' --json number,body,author \
+            --jq '[.[] | select((.author.login == "app/github-actions" or .author.login == "github-actions") and (.body | contains("<!-- chart-signing-watch -->")))][0].number // ""')"
+          [ -n "$number" ] || exit 0
+          last="$(gh issue view "$number" --json body,comments \
+            --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(contains("<!-- chart-signing-watch"))) | last')"
+          case "$last" in
+            *"<!-- chart-signing-watch:clean -->"*) echo "already recorded" ;;
+            *) gh issue comment "$number" --body "$(printf '<!-- chart-signing-watch:clean -->\nThis run found no changed signing state: every source accounted for, every lookup answered. Close this issue once the findings above are recorded in #1894.\n\nRun: %s' "$RUN_URL")" ;;
+          esac
+
+      - name: Fail on findings or incomplete checks
+        if: ${{ steps.check.outputs.findings != '' || steps.check.outputs.errors != '' }}
+        run: exit 1
