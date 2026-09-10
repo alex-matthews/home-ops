@@ -22,6 +22,13 @@ experiments out of this tree.
 | Run or watch a Talos/Kubernetes node rollout   | [Node Upgrades](operations/node-upgrades.md)                                         |
 | Change Talos machine configuration             | [Talos Machine Configuration](../talos/README.md)                                    |
 | Reach the cluster when DNS or the router fails | [Talos Access and Break-Glass](operations/talos-access-and-break-glass.md)           |
+| Rebuild the cluster or restore it cold         | [Cluster Rebuild](operations/cluster-rebuild.md)                                     |
+| Update node firmware or recover a node's boot  | [Node Firmware and Boot](operations/node-firmware-and-boot.md)                       |
+| Triage with metrics, logs, and alerts          | [Observability](operations/observability.md)                                         |
+| Check what is exposed publicly and how         | [Public Surfaces](operations/public-surfaces.md)                                     |
+| Understand the chart signing trust classes     | [ADR-0003: Chart Source Verification](adr/0003-helm-chart-source-verification.md)    |
+| Understand the controls on public services     | [ADR-0004: Per-Surface Controls](adr/0004-public-surface-controls.md)                |
+| Write prose a human will read                  | [Writing Style](guides/writing-style.md)                                             |
 
 ## Placement Rule
 
