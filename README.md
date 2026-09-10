@@ -22,45 +22,64 @@
 
 ## Overview
 
-This repository is the source of truth for my home Kubernetes cluster. The
-cluster runs [Talos Linux](https://www.talos.dev/), reconciles from Git with
-[Flux](https://fluxcd.io/), and is maintained with
-[Renovate](https://github.com/renovatebot/renovate) and
-[GitHub Actions](https://github.com/features/actions).
+This repository is the source of truth for my home Kubernetes cluster: three
+Intel NUC 11 Pro nodes running Talos Linux, with Flux reconciling the
+applications under `kubernetes/apps` from `main`. The household gets media and a
+few services out of it. I get a production system small enough to understand
+completely and real enough to break, where I learn how cloud-native platforms
+are built and run well.
 
-Changes are made in Git, validated in pull requests, merged to `main`, and then
-applied by Flux.
+Disaster recovery is built in. Wipe all three nodes and one command brings the
+cluster back from this repository and its own backups. I have done that in
+production, deliberately, and
+[Cluster Rebuild](docs/operations/cluster-rebuild.md) records what it took.
+
+## How a change lands
+
+Changes under `kubernetes/` arrive as pull requests, and Flux applies `main`
+once they merge. Renovate opens dependency updates for charts, containers,
+GitHub Actions, and the pinned toolchain. A few low-risk classes merge on their
+own once the required checks pass.
+
+Two guards on that path are this repository's own design. Flux verifies chart
+sources against the identity that signs them wherever a publisher's signature
+can be pinned to one. A tag bump signed by anyone else freezes that chart at
+its last verified revision.
+[ADR-0003](docs/adr/0003-helm-chart-source-verification.md) sets the trust
+classes and records what stays excluded. Renovate pull requests
+under `kubernetes/` also get a reviewer. It reads the manifests the upgrade
+renders, which release notes do not show, alongside the upstream chart source,
+and posts one advisory comment. It has caught a default-on `FlowSchema` that
+the release notes did not mention.
+
+| Check                | Status   | Purpose                                                                        |
+| -------------------- | -------- | ------------------------------------------------------------------------------ |
+| `Lint`               | Required | Checks workflow syntax, security, and file format.                             |
+| `Image Pull`         | Required | Finds image changes and pulls them on a cluster runner.                        |
+| `Konflate`           | Required | Renders manifests, posts the diff, and verifies images exist.                  |
+| `Chart Verify`       | Advisory | Re-verifies changed chart sources and flags a dropped or changed verify block. |
+| `Renovate PR Review` | Advisory | Reads the rendered diff and the upstream chart source with Claude.             |
+
+See [Validation and Tooling](docs/guides/validation.md) for what each check
+proves and what it cannot.
 
 ## Platform
 
-- Operating system: [Talos Linux](https://www.talos.dev/)
-- GitOps: [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator)
-  and [Flux](https://fluxcd.io/)
-- Networking: [Cilium](https://github.com/cilium/cilium),
-  [Envoy Gateway](https://github.com/envoyproxy/gateway), and
-  [cloudflared](https://github.com/cloudflare/cloudflared)
-- DNS: [ExternalDNS](https://github.com/kubernetes-sigs/external-dns),
-  Cloudflare, and UniFi
-- Secrets: [SOPS](https://github.com/getsops/sops),
-  [External Secrets](https://github.com/external-secrets/external-secrets), and
-  [1Password Connect](https://1password.com/)
-- Storage: [Rook-Ceph](https://github.com/rook/rook),
-  [OpenEBS](https://github.com/openebs/openebs), and Synology NFS
-- Backups: [Kopiur](https://github.com/home-operations/kopiur) to Garage S3 and
-  Cloudflare R2
-- Observability:
-  [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts),
-  [Grafana](https://github.com/grafana/grafana), and
-  [Gatus](https://github.com/TwiN/gatus) via gatus-sidecar
-- Automation: [Renovate](https://github.com/renovatebot/renovate),
-  [Konflate](https://github.com/home-operations/konflate), and
-  [GitHub Actions](https://github.com/features/actions)
-
-### Hardware
-
-The cluster runs on three Intel NUC 11 Pro i5 nodes. Each node has 64 GiB RAM,
-a 500 GB SATA SSD for system and scratch storage, and a dedicated 1 TB NVMe disk
-for the replicated Ceph pool.
+| Layer             | Role                                                                                                                                                                                                                                                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compute           | Three Intel NUC 11 Pro i5 nodes, all in the control plane, each with 64 GiB RAM, a 500 GB SATA SSD for system and scratch storage, and a 1 TB NVMe disk for Ceph                                                                                                                                                                        |
+| Operating system  | [Talos Linux](https://www.talos.dev/), upgraded in place by [tuppr](https://github.com/home-operations/tuppr)                                                                                                                                                                                                                           |
+| Delivery          | [Flux](https://fluxcd.io/), installed and kept current by [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator)                                                                                                                                                                                                       |
+| Networking        | [Cilium](https://github.com/cilium/cilium) for the pod network and service addresses, [Envoy Gateway](https://github.com/envoyproxy/gateway) for HTTP routes, and [cloudflared](https://github.com/cloudflare/cloudflared), a Cloudflare Tunnel that admits Internet traffic to the external Gateway with no inbound port opened for it |
+| DNS               | [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) writing records to UniFi for the LAN and to Cloudflare for the Internet                                                                                                                                                                                                  |
+| Secrets           | Runtime credentials from [1Password Connect](https://1password.com/) through [External Secrets](https://github.com/external-secrets/external-secrets). Build-time substitutions from [SOPS](https://github.com/getsops/sops)-encrypted files in Git.                                                                                    |
+| Application state | [Rook-Ceph](https://github.com/rook/rook) block storage, replicated across the three nodes                                                                                                                                                                                                                                              |
+| Bulk media        | Synology NAS over NFS                                                                                                                                                                                                                                                                                                                   |
+| CI workspaces     | [OpenEBS](https://github.com/openebs/openebs) host-local volumes                                                                                                                                                                                                                                                                        |
+| Backups           | [Kopiur](https://github.com/home-operations/kopiur) to two independent repositories, Garage S3 locally and Cloudflare R2 off-site                                                                                                                                                                                                       |
+| Observability     | [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and alerts, VictoriaLogs for logs, [Grafana](https://github.com/grafana/grafana) for dashboards, and [Gatus](https://github.com/TwiN/gatus) for endpoint checks                                                                                |
+| Automation        | [Renovate](https://github.com/renovatebot/renovate) for dependency updates, [GitHub Actions](https://github.com/features/actions) for the pull request checks above, and [Konflate](https://github.com/home-operations/konflate) for rendered diffs                                                                                     |
+| AI workbench      | [Hermes](https://github.com/NousResearch/hermes-agent) with [ToolHive](https://github.com/stacklok/toolhive): an in-cluster assistant with read-only tools for Flux, GitHub, Grafana, and Konflate                                                                                                                                      |
 
 ## Networking
 
@@ -70,98 +89,92 @@ the network.
 Cilium runs with `kubeProxyReplacement` and native routing, with no L2
 announcements. LoadBalancer addresses come from a dedicated range that no node
 holds an interface on; the nodes advertise routes to it over BGP, so all
-traffic to services goes through the gateway.
+traffic to those addresses goes through the gateway.
 
-### DNS
+Internet traffic reaches the external Gateway only through a Cloudflare Tunnel.
+Every service exposed that way has a row in the
+[public surfaces register](docs/operations/public-surfaces.md), which records
+who consumes it, whether it changes state, and what stands in front of it.
 
-Two ExternalDNS instances keep records in sync:
+Two ExternalDNS instances write the records, every route to UniFi through the
+[UniFi webhook](https://github.com/home-operations/external-dns-unifi-webhook)
+and only the external Gateway's routes to Cloudflare, so at home a public
+hostname resolves to its LAN address and traffic to my own services never
+leaves the network.
 
-- **Private** — every route, synced to the gateway through the
-  [ExternalDNS UniFi webhook](https://github.com/home-operations/external-dns-unifi-webhook).
-- **Public** — only routes on the external Gateway, synced to Cloudflare.
+## Local workflow
 
-The result is split-horizon DNS: at home, public hostnames resolve to LAN
-addresses, so traffic to my own services never leaves the network.
-
-## Key Paths
-
-```text
-.
-├── bootstrap/          # One-time cluster bootstrap helpers
-├── docs/               # ADRs, repo guidance, and operational notes
-├── kubernetes/
-│   ├── apps/           # Flux-managed applications, grouped by namespace
-│   ├── components/     # Shared Kustomize components, SOPS, alerts, Kopiur
-│   └── flux/cluster/   # Top-level Flux entrypoint used by render tooling
-└── talos/              # Talos config templates and operator commands
-```
-
-Flux enters the cluster at `kubernetes/flux/cluster/ks.yaml`, then reconciles
-the applications under `kubernetes/apps`.
-
-## Automation / CI
-
-Renovate manages dependency updates for charts, containers, GitHub Actions, and
-other versioned references. All updates use pull requests; selected low-risk
-classes auto-merge once the required checks pass.
-
-Pull request checks and reviewers are:
-
-| Check                | Status   | Purpose                                              |
-| -------------------- | -------- | ---------------------------------------------------- |
-| `Lint`               | Required | Checks workflow syntax, security, and file format.   |
-| `Image Pull`         | Required | Finds image changes and pre-pulls them on the nodes. |
-| `Konflate`           | Required | Renders manifests, posts diffs, and verifies images. |
-| `Renovate PR Review` | Advisory | Reviews eligible Renovate PRs with Claude.           |
-
-`Render` is a GitHub-hosted post-merge check that runs Flate (the local
-render tool) against `main` after changes under `kubernetes/`. Its failures
-surface only when watched — post-merge breakage otherwise reaches
-Alertmanager through Flux. It does not replace Konflate as the pull request
-render and diff gate.
-
-`Label Sync` keeps repository labels consistent.
-
-See [Validation and Tooling](docs/guides/validation.md) for local validation commands and
-repository conventions.
-
-## Local Workflow
-
-Local environment variables and repo toolchain activation are defined in
-`.mise/config.toml`; tools install pinned and checksum-verified against the
-committed `.mise/mise.lock`. The default environment carries the read-only
-cluster identities; `MISE_ENV=admin` selects the administrative credentials.
-Local secrets and auth state such as `age.key`, `kubeconfig`, `talosconfig`,
-and `.secrets.env` are ignored by Git.
-
-Useful entry points:
+To work in the repository, install the pinned toolchain and list the operator
+recipes:
 
 ```sh
 mise install
 just -l
 ```
 
-`just` is for local/operator workflows such as cluster bootstrap, Kubernetes
-diagnostics and Talos operations.
+`.mise/config.toml` pins the toolchain, checksum-verified against the committed
+`.mise/mise.lock`. `just` carries the recipes for bootstrap, cluster
+diagnostics, and Talos operations. Credential files such as `age.key`,
+`kubeconfig`, and `talosconfig` are ignored by Git.
 
-## Operations Docs
+> [!IMPORTANT]
+> The default environment carries read-only Kubernetes and Talos identities,
+> and a mise hook mints the Kubernetes token fresh each sitting.
+> `MISE_ENV=admin` selects the administrative ones, so writing to the cluster
+> is a deliberate step.
 
-- [AI Workbench](docs/operations/ai-workbench.md) is a compact operator note
-  for the Hermes and ToolHive workbench: current surface, boundaries, and the
-  cluster-health triage loop.
-- [Storage and Backups](docs/operations/storage-and-backups.md) describes the
-  backup posture, the protected application set, and how to verify a restore.
+## Repository layout
+
+```text
+.
+├── bootstrap/          # Helmfile and recipes for a cold start
+├── docs/               # Guides, operations notes, and ADRs
+├── kubernetes/
+│   ├── apps/           # Flux-managed applications, one directory per namespace
+│   ├── components/     # Kustomize components an app opts into: Kopiur backup
+│   │                   # and restore, scale-to-zero while NFS is unreachable,
+│   │                   # a Dragonfly cache, Flux alerts to Alertmanager and
+│   │                   # GitHub status, shared SOPS secrets
+│   └── flux/cluster/   # The root Kustomization Flux applies from main
+└── talos/              # Machine config templates and node recipes
+```
+
+## Where it is going
+
+Research comes first, then issues, then a decision record wherever a change
+touches how the cluster is run. The next stretch is security as one design I
+can explain end to end. Inside that sit network policy that holds within the
+cluster as well as at its edges, and one identity across the applications, the
+operator tooling, and the agents that help operate it. Alongside it, I want
+the in-cluster assistant to watch the cluster, report what it finds, and in
+time propose fixes for a human to review. The hardware I keep circling is a
+10 GbE core, enterprise disks in the NUCs, and a node built for inference.
+
+## Reading further
+
+The documentation is indexed in [docs/README.md](docs/README.md). Four to
+start with:
+
+- [Cluster Model](docs/guides/cluster-model.md) for how a merged change reaches
+  the cluster and what waits for what.
+- [Storage and Backups](docs/operations/storage-and-backups.md) for the backup
+  posture and how a restore is verified.
+- [Cluster Rebuild](docs/operations/cluster-rebuild.md) for what a full teardown
+  and rebuild involves.
+- [AI Workbench](docs/operations/ai-workbench.md) for what the in-cluster
+  assistant can reach.
+
+The larger decisions are in [docs/adr](docs/adr/) with the options they
+rejected, and the smaller ones are in issues. Rules for agents working in this
+repository are in [AGENTS.md](AGENTS.md).
 
 ## Thanks
 
 This repository builds on patterns from
 [onedr0p/home-ops](https://github.com/onedr0p/home-ops),
-[buroa/k8s-gitops](https://github.com/buroa/k8s-gitops),
+[buroa/home-ops](https://github.com/buroa/home-ops),
 [bjw-s-labs/home-ops](https://github.com/bjw-s-labs/home-ops), and the
 [Home Operations](https://discord.gg/home-operations) community.
-
-[kubesearch.dev](https://kubesearch.dev/) is a great way to find examples of how
-others deploy applications in similar clusters.
 
 ## License
 
