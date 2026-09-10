@@ -26,8 +26,8 @@ This repository is the source of truth for my home Kubernetes cluster: three
 Intel NUC 11 Pro nodes running Talos Linux, with Flux reconciling the
 applications under `kubernetes/apps` from `main`. The household gets media and a
 few services out of it. I get a production system small enough to understand
-completely and real enough to break, where I learn how cloud-native platforms
-are built and run well.
+completely and real enough to break, and a place to practise the design and
+operation of cloud-native platforms.
 
 Disaster recovery is built in. Wipe all three nodes and one command brings the
 cluster back from this repository and its own backups. I have done that in
@@ -49,8 +49,9 @@ its last verified revision.
 classes and records what stays excluded. Renovate pull requests
 under `kubernetes/` also get a reviewer. It reads the manifests the upgrade
 renders, which release notes do not show, alongside the upstream chart source,
-and posts one advisory comment. It has caught a default-on `FlowSchema` that
-the release notes did not mention.
+and posts one advisory comment. It has flagged a good number of upgrades for a
+human look, including a default-on `FlowSchema` that the release notes did not
+mention.
 
 | Check                | Status   | Purpose                                                                        |
 | -------------------- | -------- | ------------------------------------------------------------------------------ |
@@ -131,10 +132,8 @@ diagnostics, and Talos operations. Credential files such as `age.key`,
 ├── docs/               # Guides, operations notes, and ADRs
 ├── kubernetes/
 │   ├── apps/           # Flux-managed applications, one directory per namespace
-│   ├── components/     # Kustomize components an app opts into: Kopiur backup
-│   │                   # and restore, scale-to-zero while NFS is unreachable,
-│   │                   # a Dragonfly cache, Flux alerts to Alertmanager and
-│   │                   # GitHub status, shared SOPS secrets
+│   ├── components/     # Kustomize components an app opts into: alerts,
+│   │                   # dragonfly, kopiur, sops, zeroscaler
 │   └── flux/cluster/   # The root Kustomization Flux applies from main
 └── talos/              # Machine config templates and node recipes
 ```
