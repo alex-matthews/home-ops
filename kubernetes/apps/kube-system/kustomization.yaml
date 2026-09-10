@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: kube-system
 components:
   - ../../components/alerts
+  - ../../components/sops
 resources:
   - ./namespace.yaml
   - ./agent-access/ks.yaml
