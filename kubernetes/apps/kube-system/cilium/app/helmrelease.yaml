@@ -37,7 +37,24 @@ spec:
     envoy:
       enabled: false
     hubble:
-      enabled: false
+      enabled: true
+      metrics:
+        enabled:
+          - dns
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+        enableOpenMetrics: true
+        serviceMonitor:
+          enabled: true
+      relay:
+        enabled: true
+        rollOutPods: true
+      ui:
+        enabled: true
+        rollOutPods: true
     ipam:
       mode: kubernetes
     ipv4NativeRoutingCIDR: 10.69.0.0/16
