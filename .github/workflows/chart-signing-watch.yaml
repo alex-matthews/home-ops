@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,6 +45,17 @@ jobs:
           minimum_release_age: 3d
           cache: false
           install_args: cosign oras yq
+
+      # Anonymous lookups on ghcr.io answer "denied" for a package that does not
+      # exist, which the script rightly treats as inconclusive. Authenticated
+      # lookups answer "not found", which is the conclusive absence the mirror
+      # check needs.
+      - name: Log in to ghcr.io
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_ACTOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$GH_TOKEN" | mise exec -- oras login ghcr.io --username "$GH_ACTOR" --password-stdin
 
       - name: Check every source without a verify block
         id: check
