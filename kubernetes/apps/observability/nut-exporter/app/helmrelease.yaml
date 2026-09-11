@@ -73,6 +73,7 @@ spec:
         endpoints:
           - port: http
             path: /ups_metrics
+            interval: 15s
             params:
               ups:
                 - ups

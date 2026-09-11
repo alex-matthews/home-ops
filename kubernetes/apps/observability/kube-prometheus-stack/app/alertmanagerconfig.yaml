@@ -22,6 +22,12 @@ spec:
             value: Watchdog
             matchType: =
       - receiver: pushover
+        groupWait: 0s
+        matchers:
+          - name: alertname
+            value: UpsOnBattery
+            matchType: =
+      - receiver: pushover
         matchers:
           - name: severity
             value: critical
