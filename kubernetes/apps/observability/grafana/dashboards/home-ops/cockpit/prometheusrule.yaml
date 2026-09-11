@@ -1,0 +1,195 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: home-ops-cockpit
+spec:
+  groups:
+    - name: cockpit.rules
+      rules:
+        # Flux Kustomizations and HelmReleases that are not ready or are suspended
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(((gotk_resource_info{customresource_kind=~"Kustomization|HelmRelease",ready!="True"} == 1) or (gotk_resource_info{customresource_kind=~"Kustomization|HelmRelease",suspended=~"True|true"} == 1)), "namespace", "$1", "exported_namespace", "(.*)"), "resource", "$1", "name", "(.*)"), "detail", "$1", "customresource_kind", "(.*)")
+          labels:
+            area: flux
+            signal: "not ready/suspended"
+
+        # Flux sources and charts that are not ready or are suspended
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(((gotk_resource_info{customresource_kind=~"GitRepository|Bucket|HelmRepository|HelmChart|OCIRepository",ready!="True"} == 1) or (gotk_resource_info{customresource_kind=~"GitRepository|Bucket|HelmRepository|HelmChart|OCIRepository",suspended=~"True|true"} == 1)), "namespace", "$1", "exported_namespace", "(.*)"), "resource", "$1", "name", "(.*)"), "detail", "$1", "customresource_kind", "(.*)")
+          labels:
+            area: sources
+            signal: "source not ready/suspended"
+
+        # Containers that restarted in the last 6 hours, worst 8
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(topk(8, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h]))) > 0, "resource", "$1", "pod", "(.*)"), "detail", "$1", "container", "(.*)")
+          labels:
+            area: pods
+            signal: "restarts 6h"
+
+        # Containers stuck waiting on an image or configuration error
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(max by (namespace, pod, container, reason) (kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError"} == 1), "signal", "$1", "reason", "(.*)"), "resource", "$1", "pod", "(.*)"), "detail", "$1", "container", "(.*)")
+          labels:
+            area: pods
+
+        # Pods stuck in Pending
+        - record: cockpit:attention
+          expr: |-
+            label_replace(max by (namespace, pod) (kube_pod_status_phase{phase="Pending"} == 1), "resource", "$1", "pod", "(.*)")
+          labels:
+            area: pods
+            signal: "pod pending"
+
+        # Containers OOM-killed in the last 6 hours
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace((sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h])) > 0) * on(namespace, pod, container) group_left(reason) max by (namespace, pod, container, reason) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1), "resource", "$1", "pod", "(.*)"), "detail", "$1", "container", "(.*)")
+          labels:
+            area: pods
+            signal: "OOMKilled 6h"
+
+        # Deployments with unavailable replicas
+        - record: cockpit:attention
+          expr: |-
+            label_replace((kube_deployment_status_replicas_unavailable > 0), "resource", "$1", "deployment", "(.*)")
+          labels:
+            area: workloads
+            signal: unavailable
+            detail: Deployment
+
+        # StatefulSets with replicas not ready
+        - record: cockpit:attention
+          expr: |-
+            label_replace(((kube_statefulset_status_replicas - kube_statefulset_status_replicas_ready) > 0), "resource", "$1", "statefulset", "(.*)")
+          labels:
+            area: workloads
+            signal: unavailable
+            detail: StatefulSet
+
+        # DaemonSets with unavailable pods
+        - record: cockpit:attention
+          expr: |-
+            label_replace((kube_daemonset_status_number_unavailable > 0), "resource", "$1", "daemonset", "(.*)")
+          labels:
+            area: workloads
+            signal: unavailable
+            detail: DaemonSet
+
+        # Nodes that are not Ready
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(kube_node_status_condition{condition="Ready",status!="true"} == 1, "resource", "$1", "node", "(.*)"), "detail", "$1", "status", "(.*)")
+          labels:
+            area: nodes
+            signal: NotReady
+
+        # Nodes reporting disk, memory, PID or network pressure
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure|NetworkUnavailable",status="true"} == 1, "signal", "$1", "condition", "(.*)"), "resource", "$1", "node", "(.*)"), "detail", "$1", "status", "(.*)")
+          labels:
+            area: nodes
+
+        # Nodes marked unschedulable
+        - record: cockpit:attention
+          expr: |-
+            label_replace(kube_node_spec_unschedulable == 1, "resource", "$1", "node", "(.*)")
+          labels:
+            area: nodes
+            signal: unschedulable
+
+        # Jobs that failed in the last 24 hours
+        - record: cockpit:attention
+          expr: |-
+            label_replace(sum by (namespace, job_name) (increase(kube_job_status_failed[24h])) > 0, "resource", "$1", "job_name", "(.*)")
+          labels:
+            area: jobs
+            signal: "failed 24h"
+
+        # Prometheus scrape targets that are down
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(up == 0, "resource", "$1", "job", "(.*)"), "detail", "$1", "instance", "(.*)"), "namespace", "", "resource", ".*")
+          labels:
+            area: monitoring
+            signal: "target down"
+
+        # External and service Gatus endpoints failing
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(gatus_results_endpoint_success{group=~"external|services"} == 0, "resource", "$1", "name", "(.*)"), "detail", "$1", "group", "(.*)")
+          labels:
+            area: services
+            signal: "endpoint failing"
+            namespace: observability
+
+        # Internal Gatus endpoints reachable when they should not be
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(gatus_results_endpoint_success{group="internal"} == 0, "resource", "$1", "name", "(.*)"), "detail", "$1", "group", "(.*)")
+          labels:
+            area: services
+            signal: "unexpected exposure"
+            namespace: observability
+
+        # Ceph cluster health other than OK
+        - record: cockpit:attention
+          expr: |-
+            (max(ceph_health_status) or vector(2)) > 0
+          labels:
+            area: storage
+            signal: "ceph health"
+            namespace: rook-ceph
+            resource: rook-ceph
+            detail: cluster
+
+        # NAS NFS backup path probe failing
+        - record: cockpit:attention
+          expr: |-
+            ((1 - min(probe_success{job="nfs_probe"})) or vector(1)) > 0
+          labels:
+            area: storage
+            signal: "nfs probe failed"
+            namespace: observability
+            resource: "nas.internal:2049"
+            detail: NFS
+
+        # Kopiur policies with no successful backup in over 26 hours
+        - record: cockpit:attention
+          expr: |-
+            label_replace(clamp_max(max by (namespace, policy) ((time() - kopiur_policy_last_backup_success_timestamp_seconds) > 93600), 1), "resource", "$1", "policy", "(.*)")
+          labels:
+            area: backups
+            signal: "backup stale 26h"
+
+        # Kopiur snapshots with consecutive failures
+        - record: cockpit:attention
+          expr: |-
+            label_replace(max by (namespace, name) (kopiur_snapshot_consecutive_failures > 0), "resource", "$1", "name", "(.*)")
+          labels:
+            area: backups
+            signal: "consecutive failures"
+
+        # Kopiur repositories Degraded or Failed
+        - record: cockpit:attention
+          expr: |-
+            label_replace(label_replace(label_replace(max by (namespace, name, kind, phase) (kopiur_resource_phase{kind=~"Repository|ClusterRepository", phase=~"Degraded|Failed"}), "resource", "$1", "name", "(.*)"), "detail", "$1", "kind", "(.*)"), "signal", "repository $1", "phase", "(.*)")
+          labels:
+            area: backups
+
+        # No signals in any area
+        # Must stay last in the group; it reads the rules above it
+        - record: cockpit:attention
+          expr: |-
+            vector(0) unless on() (count(cockpit:attention{area!="all clear"}) > 0)
+          labels:
+            area: "all clear"
+            signal: OK
+            namespace: cluster
