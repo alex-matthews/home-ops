@@ -8,6 +8,7 @@ metadata:
     dashboards: grafana
 spec:
   title: home-ops
+  uid: home-ops
   instanceSelector:
     matchLabels:
       dashboards: grafana
