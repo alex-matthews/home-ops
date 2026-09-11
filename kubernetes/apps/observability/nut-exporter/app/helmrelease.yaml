@@ -76,3 +76,7 @@ spec:
             params:
               ups:
                 - ups
+            relabelings:
+              - sourceLabels:
+                  - __param_ups
+                targetLabel: ups
