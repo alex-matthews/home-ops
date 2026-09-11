@@ -135,8 +135,8 @@ jobs:
           while IFS=$'\t' read -r status file _; do
             case "$status" in
               M) before="$(block "$BASE_SHA" "$file")"; after="$(block "$HEAD_SHA" "$file")" ;;
-              A) before=""; after="$(block "$HEAD_SHA" "$file")" ;;
-              D) before="$(block "$BASE_SHA" "$file")"; after="" ;;
+              A) before='""'; after="$(block "$HEAD_SHA" "$file")" ;;
+              D) before="$(block "$BASE_SHA" "$file")"; after='""' ;;
               *) continue ;;
             esac
             if [ "$status" = A ] && [ "$after" = '""' ]; then
