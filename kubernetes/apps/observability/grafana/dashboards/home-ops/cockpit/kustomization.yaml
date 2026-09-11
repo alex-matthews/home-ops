@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./grafanadashboard.yaml
+configMapGenerator:
+  - name: home-ops-cockpit-dashboard
+    files:
+      - home-ops-cockpit.json=./resources/cockpit.json
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app.kubernetes.io/managed-by: grafana-operator
