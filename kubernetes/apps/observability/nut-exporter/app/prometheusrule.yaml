@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nut-exporter
+spec:
+  groups:
+    - name: nut-exporter.rules
+      rules:
+        - alert: UpsOnBattery
+          expr: |-
+            network_ups_tools_ups_status{flag="OB"} == 1
+          for: 1m
+          annotations:
+            summary: >-
+              UPS {{ $labels.ups }} is running on battery; mains power is out
+          labels:
+            severity: critical
+
+        - alert: UpsBatteryLow
+          expr: |-
+            network_ups_tools_ups_status{flag="LB"} == 1 or network_ups_tools_battery_charge < 30
+          for: 1m
+          annotations:
+            summary: >-
+              UPS {{ $labels.ups }} battery is low; shutdown is imminent
+          labels:
+            severity: critical
+
+        - alert: UpsBatteryNotCharging
+          expr: |-
+            network_ups_tools_battery_charge < 90 and network_ups_tools_ups_status{flag="OL"} == 1
+          for: 6h
+          annotations:
+            summary: >-
+              UPS {{ $labels.ups }} has sat below 90% charge for 6h while on mains; the battery may be failing
+          labels:
+            severity: warning
