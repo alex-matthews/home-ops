@@ -209,9 +209,10 @@ advisory, not required checks, and read only public registries and
 Sigstore. Read their annotations, not their colour.
 
 Signatures asks whether the chart bytes verify: it re-runs cosign at the
-new pinned tag under each changed manifest's own identity regexes. A green
-run proves only that the chart artifact matched the identity in its
-manifest. It says nothing about the container images the chart deploys,
+new pinned tag under each changed manifest's own identity regexes. A
+`verified` line in the log proves only that the chart artifact matched the
+identity in its manifest. It says nothing about the container images the
+chart deploys,
 and a source with no `verify` block, a non-cosign provider, or no tag pin
 does not fail the job; each is reported as a notice or warning and the job
 stays green. On a bump of a source with no `verify` block, it runs the
@@ -223,8 +224,10 @@ Coverage asks whether verification policy changed: it diffs each changed
 manifest's `verify` block against the base branch. A new source with a
 block passes, a new source without one gets a notice, and a removed block
 or changed identity fails unless the pull request carries the
-`verify/declared` label. The label is read when a run starts, so after
-adding it re-run the Coverage job. A signer that changed is a policy
+`verify/declared` label. The label is read from the event that triggered
+the run, so after adding it push a fresh commit (a rebase is enough);
+re-running the old job replays the original event and does not see the
+label. A signer that changed is a policy
 decision under ADR-0003, never a regex to loosen, and the label is for
 declared policy changes, not for a result that looks wrong: the first added
 source with a `verify` block (#2081) was misreported as an identity change
