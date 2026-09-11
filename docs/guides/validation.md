@@ -204,17 +204,31 @@ so changes under `kubernetes/` can trigger it even when the touched file is
 local/operator tooling rather than rendered cluster state.
 
 The `Chart Verify` workflow runs on pull requests that touch an
-`ocirepository.yaml`: it re-runs cosign at the new pinned tag under each
-changed manifest's own identity regexes, and fails when a `verify` block is
-removed or its identity changed unless the pull request carries the
+`ocirepository.yaml`, in two jobs that answer different questions. Both are
+advisory, not required checks, and read only public registries and
+Sigstore. Read their annotations, not their colour.
+
+Signatures asks whether the chart bytes verify: it re-runs cosign at the
+new pinned tag under each changed manifest's own identity regexes. A green
+run proves only that the chart artifact matched the identity in its
+manifest. It says nothing about the container images the chart deploys,
+and a source with no `verify` block, a non-cosign provider, or no tag pin
+does not fail the job; each is reported as a notice or warning and the job
+stays green. On a bump of a source with no `verify` block, it runs the
+discovery described below on the new tag. A signature that verifies, or
+signing material it cannot verify, is a warning. An inconclusive lookup, or
+a conclusive absence, is a notice.
+
+Coverage asks whether verification policy changed: it diffs each changed
+manifest's `verify` block against the base branch. A new source with a
+block passes, a new source without one gets a notice, and a removed block
+or changed identity fails unless the pull request carries the
 `verify/declared` label. The label is read when a run starts, so after
-adding it re-run the Coverage job. It is advisory, not a required check,
-and it reads only public registries and Sigstore. Read its annotations
-before merging a chart bump it flags; a signer that changed is a policy
-decision under ADR-0003, never a regex to loosen. On a bump of a source
-with no `verify` block, it runs the discovery described below on the new
-tag. A signature that verifies, or signing material it cannot verify, is a
-warning. An inconclusive lookup, or a conclusive absence, is a notice.
+adding it re-run the Coverage job. A signer that changed is a policy
+decision under ADR-0003, never a regex to loosen, and the label is for
+declared policy changes, not for a result that looks wrong: the first added
+source with a `verify` block (#2081) was misreported as an identity change
+by a sentinel bug in the workflow, and was fixed rather than declared.
 
 The `Chart Signing Watch` workflow runs weekly, and on demand, over every
 source without a `verify` block. Both workflows call
