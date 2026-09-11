@@ -24,10 +24,10 @@ spec:
             area: sources
             signal: "source not ready/suspended"
 
-        # Containers that restarted in the last 6 hours, worst 8
+        # Containers that restarted in the last 6 hours
         - record: cockpit:attention
           expr: |-
-            label_replace(label_replace(topk(8, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h]))) > 0, "resource", "$1", "pod", "(.*)"), "detail", "$1", "container", "(.*)")
+            label_replace(label_replace(sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total[6h])) > 0, "resource", "$1", "pod", "(.*)"), "detail", "$1", "container", "(.*)")
           labels:
             area: pods
             signal: "restarts 6h"
