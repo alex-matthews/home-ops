@@ -36,18 +36,18 @@ everything back from this repository and S3 within minutes.
 
 | Layer             | Role                                                                                                                                                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Compute           | Three Intel NUC 11 Pro i5 nodes, all in the control plane, each with 64 GiB RAM, a 500 GB SATA SSD for system and scratch storage, and a 1 TB NVMe disk for Ceph                                                                                         |
+| Compute           | Three Intel NUC 11 Pro i5 control-plane nodes; each has 64 GiB RAM, a 500 GB SATA SSD, and a 1 TB NVMe disk for Ceph                                                                                                                                     |
 | Operating system  | [Talos Linux](https://www.talos.dev/), upgraded in place by [tuppr](https://github.com/home-operations/tuppr)                                                                                                                                            |
 | Delivery          | [Flux](https://fluxcd.io/), installed and kept current by [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator)                                                                                                                        |
 | Networking        | [Cilium](https://github.com/cilium/cilium) for the pod network and service addresses, [Envoy Gateway](https://github.com/envoyproxy/gateway) for HTTP routes, and [cloudflared](https://github.com/cloudflare/cloudflared) for the tunnel                |
 | DNS               | [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) writing records to UniFi for the LAN and to Cloudflare for the Internet                                                                                                                   |
-| Secrets           | Runtime credentials from [1Password Connect](https://1password.com/) through [External Secrets](https://github.com/external-secrets/external-secrets). Build-time substitutions from [SOPS](https://github.com/getsops/sops)-encrypted files in Git.     |
+| Secrets           | [External Secrets](https://github.com/external-secrets/external-secrets) supplies runtime credentials from [1Password Connect](https://1password.com/); [SOPS](https://github.com/getsops/sops) encrypts configuration secrets in Git                    |
 | Application state | [Rook-Ceph](https://github.com/rook/rook) block storage, replicated across the three nodes                                                                                                                                                               |
 | Bulk media        | Synology NAS over NFS                                                                                                                                                                                                                                    |
 | CI workspaces     | [OpenEBS](https://github.com/openebs/openebs) host-local volumes                                                                                                                                                                                         |
 | Backups           | [Kopiur](https://github.com/home-operations/kopiur) to two independent repositories, Garage S3 locally and Cloudflare R2 off-site                                                                                                                        |
 | Observability     | [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts) for metrics and alerts, VictoriaLogs for logs, [Grafana](https://github.com/grafana/grafana) for dashboards, and [Gatus](https://github.com/TwiN/gatus) for endpoint checks |
-| Automation        | [Renovate](https://github.com/renovatebot/renovate) for dependency updates, [GitHub Actions](https://github.com/features/actions) for the pull request checks below, and [Konflate](https://github.com/home-operations/konflate) for rendered diffs      |
+| Automation        | [Renovate](https://github.com/renovatebot/renovate) updates dependencies; [GitHub Actions](https://github.com/features/actions) checks pull requests; [Konflate](https://github.com/home-operations/konflate) renders manifest diffs                     |
 | AI workbench      | [Hermes](https://github.com/NousResearch/hermes-agent) with [ToolHive](https://github.com/stacklok/toolhive): an in-cluster assistant with read-only tools for the cluster and this repository                                                           |
 
 ## Networking
@@ -71,7 +71,10 @@ locally even through its public hostname.
 Changes under `kubernetes/` arrive as pull requests, and Flux applies `main`
 once they merge. Renovate opens dependency updates for charts, containers,
 GitHub Actions, and the pinned toolchain. A few low-risk classes merge on their
-own once the required checks pass.
+own once the required checks pass. Flux verifies eligible chart sources against
+pinned signing identities and rejects an update that fails verification;
+[ADR-0003](docs/adr/0003-helm-chart-source-verification.md) explains the
+coverage and the exceptions.
 
 | Check                | Status   | Purpose                                                                                                                       |
 | -------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -86,7 +89,8 @@ proves and what it cannot.
 
 ## Local workflow
 
-To work in the repository, install the pinned toolchain and list the operator
+From the repository root, install the pinned toolchain with
+[mise](https://mise.jdx.dev/getting-started.html) and list the operator
 recipes:
 
 ```sh
