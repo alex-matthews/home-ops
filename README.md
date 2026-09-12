@@ -55,16 +55,16 @@ everything back from this repository and S3 within minutes.
 Cilium runs with `kubeProxyReplacement` and native routing, with no L2
 announcements. LoadBalancer addresses come from a dedicated range that no node
 holds an interface on; the nodes advertise routes to it over BGP, so all
-traffic to those addresses goes through the gateway.
+traffic to those addresses goes through the UniFi router.
 
 Internet traffic reaches the external Gateway only through a Cloudflare Tunnel.
 Every service exposed that way has a row in the
 [public surfaces register](docs/operations/public-surfaces.md), which records
 who consumes it, whether it changes state, and what stands in front of it.
 
-Two ExternalDNS instances keep UniFi and Cloudflare in step, so at home a
-public hostname resolves to its LAN address and traffic to my own services
-never leaves the network.
+ExternalDNS publishes every route to UniFi for the LAN and only the external
+Gateway's routes to Cloudflare, so a client on LAN DNS reaches a service
+locally even through its public hostname.
 
 ## How a change lands
 
@@ -96,7 +96,7 @@ just -l
 
 > [!IMPORTANT]
 > The default environment carries read-only Kubernetes and Talos identities,
-> and a mise hook mints the Kubernetes token fresh each sitting.
+> and a mise hook refreshes the Kubernetes token when needed.
 > `MISE_ENV=admin` selects the administrative identities.
 
 ## Repository layout
@@ -114,18 +114,17 @@ just -l
 
 ## Where it is going
 
-- Security as one design I can explain end to end: network policy that holds
-  inside the cluster as well as at its edges, and a single identity provider
-  for the applications, the operator tools, and the agents, so that access is
-  granted and revoked in one place.
-- The in-cluster assistant watching the cluster, reporting what it finds, and
-  in time proposing fixes for a human to review.
-- A 10 GbE core, enterprise disks in the NUCs, and a node built for inference.
+- Extend network policy within the cluster, and centralise identity for the
+  applications, the operator tools, and the agents.
+- Extend the in-cluster assistant to monitor the cluster and propose fixes for
+  human review.
+- Upgrade to a 10 GbE core, enterprise disks in the NUCs, and a dedicated
+  inference node.
 
-## Reading further
+## Documentation
 
-The documentation is indexed in [docs/README.md](docs/README.md). Four to
-start with:
+The documentation is indexed in [docs/README.md](docs/README.md). Start with
+these guides:
 
 - [Cluster Model](docs/guides/cluster-model.md): how a merged change reaches
   the cluster.
