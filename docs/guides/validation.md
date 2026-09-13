@@ -94,6 +94,15 @@ Renovate automerges — trusted digests, weekly `kube-prometheus-stack` minors
 and patches, non-0.x Action updates — merge on CI status alone, so there the
 review lands after the fact.
 
+That merge path exists only because `.renovaterc.json5` sets
+`automergeType: "pr"` at the top level. The preset extends `:automergeBranch`,
+and a Renovate branch never gets checks here because every required workflow
+triggers on `pull_request` alone, so branch automerge waits forever with no
+pull request to review. The config validator accepts both shapes: #1990
+removed the key as a supposed default and validated clean, and every automerge
+class then stalled silently for nine days. The dependency dashboard's
+"Pending Branch Automerge" section is the only signal.
+
 Treat its blocker-level findings as high-priority signals rather than
 advisory. If it flags something this repo documents as intentional, fix the
 reviewer's prompt — it is inline in `.github/workflows/renovate-review.yaml` —

@@ -6,6 +6,10 @@
     "github>home-operations/renovate-presets//apps/talosFactory.json5#8.1.0",
     ":timezone(Pacific/Auckland)",
   ],
+  // Override, not a default: the preset extends :automergeBranch, and a branch
+  // never gets checks here because every required workflow triggers only on
+  // pull_request, so branch automerge waits forever (#1990 dropped this).
+  automergeType: "pr",
   lockFileMaintenance: {
     enabled: true,
     schedule: ["before 6am on the first day of the month"],
