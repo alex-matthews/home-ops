@@ -13,6 +13,13 @@ spec:
     fullnameOverride: coredns
     image:
       repository: mirror.gcr.io/coredns/coredns
+      # Chart 1.47.1 still ships appVersion 1.14.6, which carries the autopath
+      # regression from coredns/coredns#8390 (1.14.3 to 1.14.6: background
+      # cache refresh lost the client address, so search-expanded A answers
+      # went NXDOMAIN while AAAA stayed fresh). 1.14.7 moves autopath before
+      # cache and closes it. Drop this pin once the chart's appVersion is
+      # 1.14.7 or later.
+      tag: 1.14.7@sha256:7efd3c635b03efd68c4e8398fc45f0d993d0e9ab016f72c1cefb0fd6d01aa286
     replicaCount: 2
     k8sAppLabelOverride: kube-dns
     serviceAccount:
@@ -30,7 +37,7 @@ spec:
           # The cluster is SingleStack/IPv4, so an AAAA answer is unusable even
           # when upstream returns one. Answer AAAA locally with NODATA instead
           # of forwarding it. Plugin order comes from plugin.cfg, not this
-          # list: template(60) runs before kubernetes(67) and forward(73), so
+          # list: template(62) runs before kubernetes(69) and forward(75), so
           # AAAA never leaves the cluster.
           #
           # This is a `.`-wide blackhole with no fallthrough and it fails
