@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: memini
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: memini
+  interval: 1h
+  values:
+    controllers:
+      main:
+        type: deployment
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          main:
+            env:
+              MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
+              MEMINI_BACKEND: postgres
+              MEMINI_EMBED_BASE_URL: http://text-embeddings-inference.ai.svc.cluster.local:8080/v1
+              MEMINI_EMBED_MODEL: BAAI/bge-small-en-v1.5
+              MEMINI_EMBED_DIMS: "384"
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-secret"
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    persistence:
+      data:
+        enabled: false
+      api-keys:
+        enabled: true
+    route:
+      main:
+        enabled: true
+        hostnames:
+          - "{{ .Release.Name }}.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+      ui:
+        enabled: true
+        hostnames:
+          - "{{ .Release.Name }}-ui.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
