@@ -13,6 +13,8 @@ spec:
     controllers:
       main:
         type: deployment
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           main:
             env:
