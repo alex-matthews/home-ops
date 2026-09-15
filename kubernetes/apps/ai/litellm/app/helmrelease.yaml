@@ -27,9 +27,12 @@ spec:
               PROXY_BASE_URL: http://litellm.ai.svc.cluster.local:4000
               REDIS_HOST: litellm-dragonfly
               REDIS_PORT: "6379"
+              STORE_MODEL_IN_DB: "True"
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
+              - secretRef:
+                  name: "{{ .Release.Name }}-db-secret"
             probes:
               liveness:
                 enabled: true
@@ -104,3 +107,7 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /app/cache
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
