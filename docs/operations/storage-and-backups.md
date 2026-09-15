@@ -165,8 +165,9 @@ spec:
 
 The drill passes when `postgres-restore` reaches `Cluster in healthy
 state`, `SELECT max(t) FROM restore_marker` through `postgres-restore-rw`
-returns the marker written above, and `SELECT extname, extversion FROM
-pg_extension` lists `vchord` and `vector`. Record the elapsed time from
+returns the marker written above, and `SELECT name, default_version FROM
+pg_available_extensions` lists `vchord` and `vector` (`pg_extension` lists
+only what a database has already created, which a fresh restore may not). Record the elapsed time from
 apply to healthy and the recovery window observed, then delete the drill
 cluster and its PVC. Each drill reads the archive `postgres-v1` and writes
 nothing to it.
@@ -421,6 +422,14 @@ kopia takes of the restored volume before concluding data is missing.
 
 ## Restore Drill Record
 
+- **2026-09-16**, PostgreSQL, first drill after #2124 and #2125. Base
+  backup `20260915T133704` completed in 4 s; marker row written at
+  13:38:48 UTC and its WAL segment forced out; `postgres-restore`
+  bootstrapped from the `postgres-v1` archive and reported healthy 54 s
+  after apply; the marker came back identical through
+  `postgres-restore-rw`; `vchord` 1.1.1, `vector` 0.8.6 and
+  `earthdistance` 1.2 were available in the restored image. Drill cluster
+  and volume deleted. First recoverability point 13:37:08 UTC.
 - **2026-09-03**, full production rebuild, all protected apps at once,
   populated from the local repository. Every Restore resolved the newest
   snapshot the repository held for its identity — matched against the
