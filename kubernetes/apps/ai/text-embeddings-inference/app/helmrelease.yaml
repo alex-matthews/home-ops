@@ -29,11 +29,7 @@ spec:
             probes:
               liveness:
                 enabled: true
-                custom: true
                 spec:
-                  httpGet:
-                    path: /health
-                    port: &port 8080
                   periodSeconds: 30
                   timeoutSeconds: 5
                   failureThreshold: 5
@@ -43,20 +39,16 @@ spec:
                 spec:
                   httpGet:
                     path: /health
-                    port: *port
+                    port: &port 8080
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 5
               startup:
                 enabled: true
-                custom: true
                 spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  initialDelaySeconds: 5
-                  periodSeconds: 10
+                  # Twice the usual budget: the first start downloads the model.
                   failureThreshold: 60
+                  periodSeconds: 10
             resources:
               requests:
                 cpu: 100m
