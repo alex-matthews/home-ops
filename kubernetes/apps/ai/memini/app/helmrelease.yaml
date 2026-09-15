@@ -25,6 +25,12 @@ spec:
             env:
               MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
               MEMINI_BACKEND: postgres
+              # Pinned together: changing the model or its width means export,
+              # wipe, and re-import; the store refuses to start against a
+              # mismatch.
+              MEMINI_EMBED_BASE_URL: http://text-embeddings-inference.ai.svc.cluster.local:8080/v1
+              MEMINI_EMBED_MODEL: BAAI/bge-small-en-v1.5
+              MEMINI_EMBED_DIMS: "384"
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
