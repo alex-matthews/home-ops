@@ -7,3 +7,4 @@ resources:
   - ./objectstore.yaml
   - ./cluster.yaml
   - ./scheduledbackup.yaml
+  - ./litellm.yaml
