@@ -13,13 +13,6 @@ spec:
     controllers:
       main:
         type: deployment
-        pod:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1032
-            runAsGroup: 100
-            fsGroup: 100
-            fsGroupChangePolicy: OnRootMismatch
         containers:
           main:
             env:
