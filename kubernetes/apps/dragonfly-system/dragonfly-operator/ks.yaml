@@ -6,11 +6,11 @@ metadata:
   name: dragonfly-operator
 spec:
   interval: 1h
-  path: ./kubernetes/apps/database/dragonfly-operator/app
+  path: ./kubernetes/apps/dragonfly-system/dragonfly-operator/app
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: database
+  targetNamespace: dragonfly-system
   wait: true
