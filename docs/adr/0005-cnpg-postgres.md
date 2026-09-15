@@ -69,15 +69,11 @@ carrying the `cnpg.io/reload` label, and connect through the `postgres-rw`
 service. The first consumer is LiteLLM. No consumer depends on the cluster
 until a restore from R2 into a second cluster has been demonstrated.
 
-The instance count is a spec field; scaling to one or three later is a
-change to this record's consequences, not a rebuild.
-
-- One shared cluster is the default, not a rule. A consumer whose
-  PostgreSQL major or extension version must diverge from the shared
-  cluster's gets its own `Cluster` under the same operator, with its own
-  archive name. Peers who run Immich apart did so because it once needed
-  the custom `cloudnative-vectorchord` image; extension images remove that
-  need.
+One shared cluster is the default, not a rule. A consumer whose PostgreSQL
+major or extension version must diverge from the shared cluster's gets its
+own `Cluster` under the same operator, with its own archive name. Peers who
+run Immich apart did so because it once needed the custom
+`cloudnative-vectorchord` image; extension images remove that need.
 
 ## Consequences
 
@@ -86,20 +82,36 @@ change to this record's consequences, not a rebuild.
   operator adds ten CRDs and two admission webhooks.
 - The `postgres` Kustomization depends on both operator Kustomizations,
   under the instance-of-an-operator's-API rule in the cluster model.
-- The local SSD class still uses the kubelet bind-mount path that #2057
-  moves. The move is a restore into a new cluster on the new path, which
-  is the same procedure as the restore demonstration, so #2057 does not
-  block this decision.
-- The operator's stated Kubernetes support stops at 1.36 while this
-  cluster runs 1.37; peers run the same pairing. A failure specific to
-  1.37 is a reason to hold at 1.36 features, not to change the decision.
+- Replication is asynchronous: a failover can lose transactions the
+  primary had acknowledged but not yet streamed. The recovery point of a
+  restore from R2 is the last WAL segment the archive received, so archive
+  health bounds data loss and is checked before any consumer is admitted.
 - Restore is proven by bootstrapping a second `Cluster` from the archive
-  with a different name and archive name, checking its contents, and
-  deleting it; the recipe is in the storage note. Reusing an archive name
-  for two live clusters corrupts the archive.
+  under a different name, checking that a marker written after the last
+  base backup is present and that both extensions load, and deleting it;
+  the recipe and its pass criteria are in the storage note. No consumer is
+  admitted before that has been done once. Reusing an archive name for
+  two live clusters corrupts the archive.
+- The local SSD class still uses the kubelet bind-mount path that #2057
+  moves. The move is a bootstrap of a replacement cluster from the archive
+  onto the new path, with writers quiesced and consumers cut over, as the
+  storage note describes; it shares its mechanism with the restore drill
+  but is not one. #2057 does not block this decision.
+- Revisit the instance count if a consumer needs synchronous durability,
+  or if a failover is observed to lose data a consumer could not
+  tolerate. Scaling to one is a spec change; scaling to three needs the
+  affinity widened to m1 or relaxed, since the pair is pinned to m2 and
+  m3.
+- Revisit the storage class if measured system-SSD wear or etcd fsync
+  latency on m2 or m3 becomes unacceptable; the alternative is
+  `ceph-block`, option 5, with the write amplification it carries.
+- The operator's stated Kubernetes support stops at 1.36 while this
+  cluster runs 1.37; peers run the same pairing. A demonstrated
+  incompatibility is handled by holding the operator at its current
+  version and raising it upstream; if the operator cannot run on the
+  cluster's Kubernetes at all, this decision is revisited.
 - The PostgreSQL image and the two extension images are pinned by digest
   in the `Cluster` spec, which Renovate does not track today; bumps are
   manual until a rule is added.
-- System-SSD write wear on m2 and m3 becomes a tracked metric; the drives
-  are rated at 300 TBW. If measured wear makes two copies untenable, the
-  fallback is one instance, recorded by amending this record.
+- System-SSD write wear on m2 and m3 becomes a tracked metric against the
+  drives' 300 TBW rating. Wear figures are scenarios until measured.
