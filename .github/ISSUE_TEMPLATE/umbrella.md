@@ -5,7 +5,7 @@ about: Coordinate independent child issues that share scope, sequencing, and cro
 
 <!--
 One line per paragraph; let the browser wrap. Delete any section that does not apply.
-Writing standards, template routing, and the public-safety checklist: docs/guides/pr-and-issue-writing.md.
+Writing standards, template routing, and the public-safety checklist: docs/guides/writing.md.
 -->
 
 <!-- Lead paragraph, no heading: one to three sentences stating what the programme achieves and why it exists now. -->
