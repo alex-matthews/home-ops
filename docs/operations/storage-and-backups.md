@@ -8,10 +8,10 @@ after restore drills, or when the operational rules below stop holding.
 Persistent application data lives on Rook-Ceph `ceph-block` PVCs. Some
 media-adjacent workloads also mount Synology NAS storage over NFS at runtime.
 
-Kopiur is the only backup system. It provides both the snapshot path and the
-passive `Restore` population path for every protected application PVC (what
-a cold cluster does with them is in
-[`cluster-rebuild.md`](cluster-rebuild.md)):
+Kopiur is the backup system for application PVCs; PostgreSQL has its own
+path, below. Kopiur provides both the snapshot path and the passive
+`Restore` population path for every protected application PVC (what a cold
+cluster does with them is in [`cluster-rebuild.md`](cluster-rebuild.md)):
 
 - hourly snapshots to a local Garage S3 repository on the NAS;
 - daily snapshots to an independent Cloudflare R2 repository, with its own
@@ -102,6 +102,36 @@ Separately declared cache PVCs are runtime-only and are not backup sources.
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover by itself.
+
+## PostgreSQL
+
+The shared `postgres` cluster in `database` ([ADR-0005](../adr/0005-cnpg-postgres.md))
+runs two CloudNativePG instances on `openebs-hostpath`, so its volumes are
+local to m2 and m3 and outside Kopiur. Its backup is the Barman Cloud
+plugin: continuous WAL archiving and a daily base backup to the `cnpg` R2
+bucket under the archive name `postgres-v1`, 14 days of retention. A node
+loss fails over to the other instance; the archive is for restore, not
+availability.
+
+Check the backup path with:
+
+```sh
+kubectl -n database get cluster,scheduledbackup,backup
+kubectl -n database get objectstore r2 -o yaml
+```
+
+Restore into a second cluster, never over the live one: apply a `Cluster`
+with a new name, `bootstrap.recovery.source` naming an `externalClusters`
+entry whose plugin parameters give `barmanObjectName: r2` and
+`serverName: postgres-v1`, and its own plugin block with a different
+`serverName`. Check the data through `postgres-restore-rw`, then delete the
+cluster. Two live clusters sharing an archive name corrupt the archive. The
+move to the #2057 volume path is this procedure with the new storage path,
+not a migration.
+
+Consumers each hold a `DatabaseRole`, a `Database`, and a
+`kubernetes.io/basic-auth` Secret with the `cnpg.io/reload` label in
+`database`, and connect through `postgres-rw`.
 
 ## Intentional Non-Coverage
 

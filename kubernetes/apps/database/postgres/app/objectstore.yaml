@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/barmancloud.cnpg.io/objectstore_v1.json
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: r2
+spec:
+  configuration:
+    # Account-scoped endpoint, shared with kopiur.
+    endpointURL: "${SECRET_KOPIUR_R2_ENDPOINT}"
+    destinationPath: s3://cnpg/
+    s3Credentials:
+      accessKeyId:
+        name: cnpg-r2-secret
+        key: AWS_ACCESS_KEY_ID
+      secretAccessKey:
+        name: cnpg-r2-secret
+        key: AWS_SECRET_ACCESS_KEY
+    data:
+      compression: gzip
+    wal:
+      compression: zstd
+      maxParallel: 4
+  retentionPolicy: 14d
