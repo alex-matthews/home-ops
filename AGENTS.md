@@ -3,7 +3,7 @@
 This repository is the GitOps source of truth for the cluster. Keep changes
 small, reviewable, and independently reconcilable.
 
-## Entry Points
+## Entry Point
 
 This file is the canonical agent entrypoint and, among this repository's own
 documents, the authority on change control: where it and another document here
@@ -16,44 +16,42 @@ without that layer runs sessions on prose alone.
 `CLAUDE.md` beside it is a compatibility symlink to this file, because Claude
 Code reads that name and not `AGENTS.md`. Edit this file, never the link.
 
-`docs/guides/` holds the working references. Each opens with a **When to use**
-line; read only those whose triggers match the task at hand.
+## Find The Document For The Task
 
-- `cluster-model.md`: how a change reaches the cluster, secrets, backups, and
-  which surfaces are high-risk to touch.
-- `app-pattern.md`: repository layout and app file shape.
-- `yaml-ordering.md`: key ordering conventions for YAML edits.
-- `validation.md`: what to run, what each check proves, CI and tooling
-  boundaries, bypass merges.
-- `peers.md`: reference repository catalog and how to use it.
-- `pr-and-issue-writing.md`: issue bodies, pull request descriptions, and
-  comments. Read it before drafting, reviewing, or posting any GitHub prose.
+Start with the matching task; follow relevant pointers, and apply the
+validation and safety routes when they also match. This table is the only
+index; `docs/README.md` describes the directories and points back here.
 
-`.agents/skills/` holds harness-agnostic task recipes such as `add-app`;
-anything specific to a particular harness lives in the dotfiles layer, not
-here. Load a skill only when performing that task. Load `maintenance-window`
-before planning or executing any window that stops workloads, deletes or
-recreates PVCs, or holds imperative cluster state across a merge. Load
-`github-prose` when drafting an issue, pull request body, or ADR.
+| Task                                                                                                                                                            | Read                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Add an app                                                                                                                                                      | `.agents/skills/add-app/SKILL.md`                 |
+| Change an app: values, images, storage, routes, substitution, removal                                                                                           | `docs/guides/app-pattern.md`                      |
+| Understand how a change reaches the cluster: Flux ordering, `dependsOn`, secrets, substitution                                                                  | `docs/guides/cluster-model.md`                    |
+| Validate before merge, or change CI, a workflow, or repo tooling: what to run, what each check proves, bypass merges, the Renovate review, `just` versus `mise` | `docs/guides/validation.md`                       |
+| Order keys in YAML                                                                                                                                              | `docs/guides/yaml-ordering.md`                    |
+| Compare with a peer repository                                                                                                                                  | `docs/guides/peers.md`                            |
+| Write an issue, pull request body, comment, or ADR                                                                                                              | `docs/guides/writing.md`                          |
+| Plan or execute a window that stops workloads, deletes or recreates PVCs, or holds imperative state across a merge                                              | `.agents/skills/maintenance-window/SKILL.md`      |
+| Recover: rebuild or cold start                                                                                                                                  | `docs/operations/cluster-rebuild.md`              |
+| Recover: reach the cluster when DNS or the router fails                                                                                                         | `docs/operations/talos-access-and-break-glass.md` |
+| Recover: a node that will not boot, or firmware                                                                                                                 | `docs/operations/node-firmware-and-boot.md`       |
+| Operate: backups, restores, PVC lifecycle, Kopiur                                                                                                               | `docs/operations/storage-and-backups.md`          |
+| Operate: Talos or Kubernetes node upgrades                                                                                                                      | `docs/operations/node-upgrades.md`                |
+| Operate: Talos machine configuration                                                                                                                            | `talos/README.md`                                 |
+| Operate: metrics, logs, alerts, silences                                                                                                                        | `docs/operations/observability.md`                |
+| Operate: appliance management TLS                                                                                                                               | `docs/operations/appliance-tls.md`                |
+| Operate: what is exposed publicly and how                                                                                                                       | `docs/operations/public-surfaces.md`              |
+| Operate: the Hermes and ToolHive workbench                                                                                                                      | `docs/operations/ai-workbench.md`                 |
+| Why the AI workbench is shaped as it is                                                                                                                         | `docs/adr/0001-ai-home-ops-workbench.md`          |
+| Why backups use two independent repositories                                                                                                                    | `docs/adr/0002-kopiur-backup-storage-shape.md`    |
+| Why chart sources are verified, and the trust classes                                                                                                           | `docs/adr/0003-helm-chart-source-verification.md` |
+| Why public services carry the controls they do                                                                                                                  | `docs/adr/0004-public-surface-controls.md`        |
 
-## Before Editing
-
-- For non-trivial infra, workflow, GitOps, and automation changes, state the
-  intended diff, the validation plan, and the done criteria before editing.
-  Keep this short when immediate implementation is requested.
-- Read the relevant manifests, workflows, docs, or scripts before proposing a
-  fix.
-- If a branch or pull request is the active iteration surface, amend it rather
-  than accumulating work on `main`.
-- If a Renovate PR has human companion commits, do not rebase it or let Renovate
-  rewrite it unless the user accepts that risk.
-- Compare against peer or upstream patterns where one exists, using the catalog
-  in `docs/guides/peers.md`. Avoid bespoke glue unless local constraints
-  require it.
-- Before merging a Renovate PR, read the Renovate PR Review bot's comment. It
-  analyses the chart templates, which is where a chart's surface actually
-  changes — release notes describe the code and routinely miss it. See
-  `docs/guides/validation.md`.
+A retired document is still readable from the local clone. `docs/README.md`
+records the last commit that contained each one and its path; search that
+commit with `git grep -n -e '<phrase>' <sha> -- docs .agents/skills` and read
+the file with
+`git show <sha>:<path>`.
 
 ## Treat This Repository As Public
 
@@ -73,8 +71,8 @@ defaults. Prefer `${SECRET_DOMAIN}` or existing repo secrets/vars such as
 public hostnames when needed.
 
 Writing standards and the pre-publication checklist are in
-[`docs/guides/pr-and-issue-writing.md`](docs/guides/pr-and-issue-writing.md).
-Read it rather than inferring house style from surrounding text.
+[`docs/guides/writing.md`](docs/guides/writing.md). Read it rather than
+inferring house style from surrounding text.
 
 ## Safety Boundaries
 
@@ -129,49 +127,47 @@ it and the next apply that will clear it; if it must survive, put it in Git or
 suspend the controller. Gate destructive steps on freshly re-read state, never
 on state asserted earlier in the session.
 
-## Repo Conventions
+## Working Here
 
+- For non-trivial infra, workflow, GitOps, and automation changes, state the
+  intended diff, the validation plan, and the done criteria before editing.
+  Keep this short when immediate implementation is requested. Read the
+  manifests, workflows, docs, or scripts the change touches first.
 - Follow nearby manifests and the app patterns in `docs/guides/app-pattern.md`
-  before introducing a new shape.
-- For YAML ordering, use `docs/guides/yaml-ordering.md` and the surrounding
-  files' established pattern.
-- Keep `just` focused on local/operator workflows. CI should call purpose-built
-  tools directly unless there is a specific reason to do otherwise.
-- Use `mise exec -- <tool> ...` when invoking repo-pinned tools that may not be
-  available on the ambient `PATH`.
+  before introducing a new shape. Compare against peer or upstream patterns
+  where one exists, using the catalog in `docs/guides/peers.md`.
+- If a branch or pull request is the active iteration surface, amend it rather
+  than accumulating work on `main`.
+- If a Renovate PR has human companion commits, do not rebase it or let
+  Renovate rewrite it unless the user accepts that risk. Before merging a
+  Renovate PR, read the Renovate PR Review bot's comment; it analyses the
+  chart templates, which is where a chart's surface actually changes.
+- Use the smallest validation set that matches the change; the commands and
+  what each proves are in `docs/guides/validation.md`. Use
+  `mise exec -- <tool> ...` for repo-pinned tools that may not be on the
+  ambient `PATH`.
+- When reporting to the user, state what changed, what was validated, and any
+  remaining gap or risk plainly.
 
-## Recording What You Learn
+## What You Learn
 
-When a session establishes a durable working preference or a non-obvious fact
-about this repository, write it into the document that owns the topic.
+Two kinds of thing are maintained here, and durability alone admits neither.
+An **instruction** is an enforceable constraint: an operating limit, a
+recovery step, an approval boundary, a public-safety rule. It goes in the
+document the table routes to, or in this file only if it changes what an agent
+is allowed to do. A **procedure** is recurring work that needs
+repository-specific steps; it becomes a skill or an operations note only once
+the work recurs and the steps are this repository's own.
 
-Agent memory is not a home for it. Some harnesses write memory automatically,
-so the rule is not "never use it" but "never let it be the only copy": other
-agents and other clients cannot read it, and guidance held by one assistant is
-guidance every other one ignores.
+Everything else is a **lesson**: a correction, an observation, a workaround a
+later version retired. Keep it as a note with the pull request, issue, or
+commit it came from and the condition it held under, in `.private/` or harness
+memory until a shared store exists. A note is history, never an instruction: it
+grants no permission and overrides nothing current. A lesson found wrong is
+corrected or superseded in place, keeping its source and its applicability.
 
-Place content by who must act on it: authoring → guides, operating →
-operations notes, deciding → ADRs.
-
-- A prose, review, or issue-hygiene convention →
-  `docs/guides/pr-and-issue-writing.md`.
-- A cluster, secret, or storage fact → `docs/guides/cluster-model.md`, or the
-  relevant note under `docs/operations/`.
-- A decision among alternatives, with trade-offs accepted → an ADR under
-  `docs/adr/`.
-- A caveat about what a check does or does not prove →
-  `docs/guides/validation.md`.
-- A peer-comparison scoping rule → `docs/guides/peers.md`.
-- A rule that changes what an agent is allowed to do → this file.
-- If nothing owns it, add a guide rather than widening this file.
-
-## Communication
-
-When reporting to the user, state what changed, what was validated, and any
-remaining gap or risk plainly.
-
-## Validation
-
-Use the smallest validation set that matches the change. Commands, per-change
-heuristics, and the caveats that make a given check trustworthy are in
-`docs/guides/validation.md`.
+A section leaves a document when a repository command regenerates it and the
+document links to that command, or when nothing operational depends on it and
+its last verification is dated. Before removing a document, add its path and
+the last commit that contains it to the retired table in `docs/README.md`, so
+the retrieval commands above work offline.
