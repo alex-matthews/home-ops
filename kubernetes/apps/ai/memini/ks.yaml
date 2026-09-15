@@ -5,13 +5,9 @@ kind: Kustomization
 metadata:
   name: memini
 spec:
-  components:
-    - ../../../../components/kopiur
   interval: 1h
-  path: ./kubernetes/apps/default/memini/app
+  path: ./kubernetes/apps/ai/memini/app
   postBuild:
-    substitute:
-      APP: memini
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
@@ -20,5 +16,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: default
+  targetNamespace: ai
   wait: false
