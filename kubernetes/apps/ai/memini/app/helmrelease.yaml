@@ -12,6 +12,7 @@ spec:
   values:
     controllers:
       main:
+        type: deployment
         pod:
           securityContext:
             runAsNonRoot: true
@@ -23,6 +24,10 @@ spec:
           main:
             env:
               MEMINI_API_KEYS_FILE: /etc/memini/api-keys.yaml
+              MEMINI_BACKEND: postgres
+            envFrom:
+              - secretRef:
+                  name: "{{ .Release.Name }}-secret"
             resources:
               requests:
                 cpu: 25m
@@ -31,7 +36,7 @@ spec:
                 memory: 512Mi
     persistence:
       data:
-        existingClaim: "{{ .Release.Name }}"
+        enabled: false
       api-keys:
         enabled: true
     route:

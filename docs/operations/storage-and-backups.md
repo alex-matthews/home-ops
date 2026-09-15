@@ -182,7 +182,10 @@ old cluster. Two live clusters must never share an archive name.
 
 Consumers each hold a `DatabaseRole`, a `Database`, and a
 `kubernetes.io/basic-auth` Secret with the `cnpg.io/reload` label in
-`database`, and connect through `postgres-rw`.
+`database`, and connect through `postgres-rw`. Extensions a consumer needs
+are declared on its `Database`, so the operator creates them as superuser
+and the application role never needs `CREATE EXTENSION`. Consumers: LiteLLM,
+Memini.
 
 ## Intentional Non-Coverage
 

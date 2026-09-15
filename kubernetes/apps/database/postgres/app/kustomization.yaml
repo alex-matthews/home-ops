@@ -8,3 +8,4 @@ resources:
   - ./cluster.yaml
   - ./scheduledbackup.yaml
   - ./litellm.yaml
+  - ./memini.yaml
