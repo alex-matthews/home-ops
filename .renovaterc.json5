@@ -14,6 +14,17 @@
     enabled: true,
     schedule: ["before 6am on the first day of the month"],
   },
+  customManagers: [
+    {
+      description: "Digest-pinned images in the CNPG Cluster spec, which no built-in manager reads",
+      customType: "regex",
+      managerFilePatterns: ["/kubernetes/apps/database/postgres/app/cluster\\.yaml$/"],
+      matchStrings: [
+        "(?:imageName|reference): (?<depName>[^:\\s]+):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})",
+      ],
+      datasourceTemplate: "docker",
+    },
+  ],
   packageRules: [
     // Automerge
     {
