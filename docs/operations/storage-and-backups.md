@@ -8,10 +8,10 @@ after restore drills, or when the operational rules below stop holding.
 Persistent application data lives on Rook-Ceph `ceph-block` PVCs. Some
 media-adjacent workloads also mount Synology NAS storage over NFS at runtime.
 
-Kopiur is the only backup system. It provides both the snapshot path and the
-passive `Restore` population path for every protected application PVC (what
-a cold cluster does with them is in
-[`cluster-rebuild.md`](cluster-rebuild.md)):
+Kopiur is the backup system for application PVCs; PostgreSQL has its own
+path, below. Kopiur provides both the snapshot path and the passive
+`Restore` population path for every protected application PVC (what a cold
+cluster does with them is in [`cluster-rebuild.md`](cluster-rebuild.md)):
 
 - hourly snapshots to a local Garage S3 repository on the NAS;
 - daily snapshots to an independent Cloudflare R2 repository, with its own
@@ -102,6 +102,86 @@ Separately declared cache PVCs are runtime-only and are not backup sources.
 
 Zeroscaler protects apps that need NAS access at runtime. It does not protect a
 backup mover by itself.
+
+## PostgreSQL
+
+The shared `postgres` cluster in `database` ([ADR-0005](../adr/0005-cnpg-postgres.md))
+runs two CloudNativePG instances on `openebs-hostpath`, so its volumes are
+local to m2 and m3 and outside Kopiur. Its backup is the Barman Cloud
+plugin: continuous WAL archiving and a daily base backup to the `cnpg` R2
+bucket under the archive name `postgres-v1`, 14 days of retention. A node
+loss fails over to the other instance; the archive is for restore, not
+availability.
+
+Check the backup path with:
+
+```sh
+kubectl -n database get cluster,scheduledbackup,backup
+kubectl -n database get objectstore r2 -o yaml
+```
+
+Restore is drilled into a second cluster, never over the live one. Before
+a drill, and before any consumer is admitted, check archive health:
+`kubectl -n database get objectstore r2 -o jsonpath='{.status}'` reports
+the recovery window per archive name, and `kubectl -n database get backup`
+shows the last base backup completed. Then write a marker row after that
+backup, so the drill proves WAL replay and not only the base copy:
+
+```sh
+kubectl -n database exec postgres-1 -c postgres -- psql -c \
+  "CREATE TABLE IF NOT EXISTS restore_marker (t timestamptz DEFAULT now()); INSERT INTO restore_marker DEFAULT VALUES;"
+```
+
+Apply the drill cluster. It copies the live cluster's image, extension
+images and preload libraries so the archive's data can load, runs one
+instance, and carries no plugin block of its own, so it archives nothing:
+
+```yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+    name: postgres-restore
+    namespace: database
+spec:
+    imageName: <the live cluster's imageName, verbatim>
+    instances: 1
+    storage:
+        size: 20Gi
+        storageClass: openebs-hostpath
+    postgresql:
+        shared_preload_libraries: [vchord.so]
+        extensions: <the live cluster's extensions block, verbatim>
+    bootstrap:
+        recovery:
+            source: origin
+    externalClusters:
+        - name: origin
+          plugin:
+              name: barman-cloud.cloudnative-pg.io
+              parameters:
+                  barmanObjectName: r2
+                  serverName: postgres-v1
+```
+
+The drill passes when `postgres-restore` reaches `Cluster in healthy
+state`, `SELECT max(t) FROM restore_marker` through `postgres-restore-rw`
+returns the marker written above, and `SELECT extname, extversion FROM
+pg_extension` lists `vchord` and `vector`. Record the elapsed time from
+apply to healthy and the recovery window observed, then delete the drill
+cluster and its PVC. Each drill reads the archive `postgres-v1` and writes
+nothing to it.
+
+Moving the live cluster, for example onto the #2057 volume path, is not a
+drill. Scale every consumer to zero, force the final WAL segment out with
+`SELECT pg_switch_wal()` on the primary and wait for the archive to report
+it, bootstrap the replacement cluster from `postgres-v1` as above but with
+its own plugin block and a new archive name (`postgres-v2`), point the
+consumers' connection secrets at the new service, and only then delete the
+old cluster. Two live clusters must never share an archive name.
+
+Consumers each hold a `DatabaseRole`, a `Database`, and a
+`kubernetes.io/basic-auth` Secret with the `cnpg.io/reload` label in
+`database`, and connect through `postgres-rw`.
 
 ## Intentional Non-Coverage
 
