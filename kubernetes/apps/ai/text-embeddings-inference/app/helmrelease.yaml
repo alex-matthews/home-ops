@@ -24,8 +24,6 @@ spec:
               - "8080"
               - --auto-truncate
             env:
-              # The model is fetched from the Hub on first start into the cache
-              # below; the root filesystem stays read-only.
               HOME: /data
               HF_HOME: /data
             probes:

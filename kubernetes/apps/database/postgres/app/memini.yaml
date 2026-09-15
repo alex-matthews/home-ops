@@ -47,8 +47,6 @@ spec:
   name: memini
   owner: memini
   databaseReclaimPolicy: retain
-  # Created by the operator as superuser, so the application role never needs
-  # CREATE EXTENSION.
   extensions:
     - name: vector
       ensure: present
