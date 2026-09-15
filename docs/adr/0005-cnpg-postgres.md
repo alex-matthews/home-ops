@@ -1,6 +1,6 @@
 # ADR-0005: Shared PostgreSQL on CloudNativePG
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-16
 - **Related:** [ADR-0002](0002-kopiur-backup-storage-shape.md), the
   shared-memory review of 2026-09-15 (private notes)

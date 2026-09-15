@@ -1,0 +1,43 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgres
+spec:
+  groups:
+    - name: postgres.rules
+      rules:
+        # No base-backup age alert: the collector's backup timestamps are deprecated.
+        - alert: PostgresArchivingFailing
+          expr: |-
+            (cnpg_pg_stat_archiver_last_failed_time - cnpg_pg_stat_archiver_last_archived_time) > 1
+          for: 5m
+          annotations:
+            summary: "WAL archiving is failing on {{ $labels.pod }}"
+          labels:
+            severity: warning
+        - alert: PostgresReplicaNotReplicating
+          expr: |-
+            cnpg_pg_replication_in_recovery > cnpg_pg_replication_is_wal_receiver_up
+          for: 5m
+          annotations:
+            summary: "Replica {{ $labels.pod }} is not receiving WAL from the primary"
+          labels:
+            severity: warning
+        - alert: PostgresReplicationLag
+          expr: |-
+            cnpg_pg_replication_lag > 300
+          for: 5m
+          annotations:
+            summary: "Replica {{ $labels.pod }} is over 5 minutes behind the primary"
+          labels:
+            severity: warning
+        - alert: PostgresDown
+          expr: |-
+            cnpg_collector_up == 0
+          for: 5m
+          annotations:
+            summary: "PostgreSQL is down on {{ $labels.pod }}"
+          labels:
+            severity: critical
