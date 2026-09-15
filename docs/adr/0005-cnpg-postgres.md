@@ -7,12 +7,12 @@
 
 ## Context and Problem Statement
 
-Three planned workloads need PostgreSQL, and none has it: LiteLLM runs
+Four candidate workloads need PostgreSQL, and none has it: LiteLLM runs
 without a database, so its key management, spend tracking and stored
-configuration are off; the shared memory store selected on 2026-09-15 runs
-on SQLite for its experiment and moves to PostgreSQL if adopted; Immich and
-kguardian both ship a bundled single-pod database whose backup is
-best-effort or absent. Two of them need the VectorChord extension. The
+configuration are off; Immich and kguardian both ship a bundled single-pod
+database whose backup is best-effort or absent; the shared memory store
+selected on 2026-09-15 runs on SQLite for its experiment and would move to
+PostgreSQL only if adopted. Two of them need the VectorChord extension. The
 cluster has no PostgreSQL, no second backup system, and a doctrine that
 every new operator, CRD family and backup path is an ask-first change with
 its rationale recorded.
@@ -35,15 +35,17 @@ its rationale recorded.
 1. **CloudNativePG, two instances, asynchronous replication, local SSD
    class, Barman Cloud plugin to R2.** Chosen.
 2. CloudNativePG with a single instance. Smaller, but node loss means a
-   restore from the archive with up to five minutes of WAL lost, and it
-   forfeits the reason the local SSD class was chosen over Ceph.
-3. CloudNativePG with three instances and a quorum. Nothing planned needs
-   synchronous durability, and a third copy triples system-SSD wear.
+   restore from the archive, losing whatever the archive had not yet
+   received, and it forfeits the reason the local SSD class was chosen over
+   Ceph.
+3. CloudNativePG with three instances. A third copy of every write on a
+   third system SSD, for a quorum nothing planned needs, and the third
+   node is the one whose storage is due for replacement.
 4. Per-application bundled databases. No shared operations, no tested
    backup, and the extension problem solved separately each time.
 5. CloudNativePG on `ceph-block`. Snapshots for free, but PostgreSQL
-   replication on top of Ceph's three-way replication writes every byte
-   six times across the NVMe OSDs.
+   replication on top of Ceph's own replication multiplies every write
+   across the NVMe OSDs.
 
 ## Decision
 

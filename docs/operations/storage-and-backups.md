@@ -120,14 +120,64 @@ kubectl -n database get cluster,scheduledbackup,backup
 kubectl -n database get objectstore r2 -o yaml
 ```
 
-Restore into a second cluster, never over the live one: apply a `Cluster`
-with a new name, `bootstrap.recovery.source` naming an `externalClusters`
-entry whose plugin parameters give `barmanObjectName: r2` and
-`serverName: postgres-v1`, and its own plugin block with a different
-`serverName`. Check the data through `postgres-restore-rw`, then delete the
-cluster. Two live clusters sharing an archive name corrupt the archive. The
-move to the #2057 volume path is this procedure with the new storage path,
-not a migration.
+Restore is drilled into a second cluster, never over the live one. Before
+a drill, and before any consumer is admitted, check archive health:
+`kubectl -n database get objectstore r2 -o jsonpath='{.status}'` reports
+the recovery window per archive name, and `kubectl -n database get backup`
+shows the last base backup completed. Then write a marker row after that
+backup, so the drill proves WAL replay and not only the base copy:
+
+```sh
+kubectl -n database exec postgres-1 -c postgres -- psql -c \
+  "CREATE TABLE IF NOT EXISTS restore_marker (t timestamptz DEFAULT now()); INSERT INTO restore_marker DEFAULT VALUES;"
+```
+
+Apply the drill cluster. It copies the live cluster's image, extension
+images and preload libraries so the archive's data can load, runs one
+instance, and carries no plugin block of its own, so it archives nothing:
+
+```yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+    name: postgres-restore
+    namespace: database
+spec:
+    imageName: <the live cluster's imageName, verbatim>
+    instances: 1
+    storage:
+        size: 20Gi
+        storageClass: openebs-hostpath
+    postgresql:
+        shared_preload_libraries: [vchord.so]
+        extensions: <the live cluster's extensions block, verbatim>
+    bootstrap:
+        recovery:
+            source: origin
+    externalClusters:
+        - name: origin
+          plugin:
+              name: barman-cloud.cloudnative-pg.io
+              parameters:
+                  barmanObjectName: r2
+                  serverName: postgres-v1
+```
+
+The drill passes when `postgres-restore` reaches `Cluster in healthy
+state`, `SELECT max(t) FROM restore_marker` through `postgres-restore-rw`
+returns the marker written above, and `SELECT extname, extversion FROM
+pg_extension` lists `vchord` and `vector`. Record the elapsed time from
+apply to healthy and the recovery window observed, then delete the drill
+cluster and its PVC. Each drill reads the archive `postgres-v1` and writes
+nothing to it.
+
+Moving the live cluster, for example onto the #2057 volume path, is not a
+drill. Scale every consumer to zero, force the final WAL segment out with
+`SELECT pg_switch_wal()` on the primary and wait for the archive to report
+it, bootstrap the replacement cluster from `postgres-v1` as above but with
+its own plugin block and a new archive name (`postgres-v2`), point the
+consumers' connection secrets at the new service, and only then delete the
+old cluster. Two live clusters must never share an archive name.
 
 Consumers each hold a `DatabaseRole`, a `Database`, and a
 `kubernetes.io/basic-auth` Secret with the `cnpg.io/reload` label in
