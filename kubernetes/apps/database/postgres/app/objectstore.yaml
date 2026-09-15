@@ -7,7 +7,7 @@ metadata:
 spec:
   configuration:
     # Account-scoped endpoint, shared with kopiur.
-    endpointURL: "${SECRET_KOPIUR_R2_ENDPOINT}"
+    endpointURL: "https://${SECRET_KOPIUR_R2_ENDPOINT}"
     destinationPath: s3://cnpg/
     s3Credentials:
       accessKeyId:
