@@ -8,9 +8,7 @@ spec:
   groups:
     - name: postgres.rules
       rules:
-        # The plugin's backup timestamps are deprecated collector metrics, so
-        # base-backup age is not alerted here; the ObjectStore status carries
-        # it. Archiving and replication use the live pg_stat metrics.
+        # No base-backup age alert: the collector's backup timestamps are deprecated.
         - alert: PostgresArchivingFailing
           annotations:
             summary: "WAL archiving is failing on {{ $labels.pod }}"
