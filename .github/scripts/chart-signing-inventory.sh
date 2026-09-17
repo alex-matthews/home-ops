@@ -10,7 +10,6 @@
 set -euo pipefail
 
 ANNOTATION_REASON=home-ops/chart-verify-exclusion-reason
-ANNOTATION_KEY=home-ops/chart-verify-key-fingerprint
 # Recognize the configured mirror signer offline, not the registry URL.
 export MIRROR_ISSUER='^https://token\.actions\.githubusercontent\.com$'
 export MIRROR_SUBJECT='^https://github\.com/home-operations/charts-mirror/\.github/workflows/app-builder\.yaml@refs/heads/main$'
@@ -19,8 +18,8 @@ tool() {
 }
 
 rows="$(for file in $(find kubernetes -name ocirepository.yaml | sort); do
-  tool yq -o=json -I=0 "[\"$file\", .spec.url, (.spec.ref.tag // .spec.ref.digest // \"\"), (.spec.verify != null), (.metadata.annotations[\"$ANNOTATION_REASON\"] // \"undeclared\"), (.metadata.annotations[\"$ANNOTATION_KEY\"] // \"\"), ([.spec.verify.matchOIDCIdentity[]?.subject] | join(\" \")), (.spec.verify.provider == \"cosign\" and ([.spec.verify.matchOIDCIdentity[]? | select(.issuer == strenv(MIRROR_ISSUER) and .subject == strenv(MIRROR_SUBJECT))] | length > 0))] | @tsv" -r "$file"
-done | awk -F'\t' 'BEGIN { OFS = "\t" } { if ($4 == "true") print $1, $2, $3, "verified", $7, ($8 == "true" ? "mirror custody" : ""); else print $1, $2, $3, $5, $6, "" }')"
+  tool yq -o=json -I=0 "[\"$file\", .spec.url, (.spec.ref.tag // .spec.ref.digest // \"\"), (.spec.verify != null), (.metadata.annotations[\"$ANNOTATION_REASON\"] // \"undeclared\"), ([.spec.verify.matchOIDCIdentity[]?.subject] | join(\" \")), (.spec.verify.provider == \"cosign\" and ([.spec.verify.matchOIDCIdentity[]? | select(.issuer == strenv(MIRROR_ISSUER) and .subject == strenv(MIRROR_SUBJECT))] | length > 0))] | @tsv" -r "$file"
+done | awk -F'\t' 'BEGIN { OFS = "\t" } { if ($4 == "true") print $1, $2, $3, "verified", $6, ($7 == "true" ? "mirror custody" : ""); else print $1, $2, $3, $5, "", "" }')"
 
 if [ "${1:-}" = "--tsv" ]; then printf '%s\n' "$rows"; exit 0; fi
 
@@ -30,9 +29,9 @@ echo "## Chart sources: $verified verified, $excluded excluded"
 echo
 echo "### Excluded, by declared reason"
 echo
-echo "| Source | Pin | Reason | Key |"
+echo "| Source | Pin | Reason | Discovery |"
 echo "| --- | --- | --- | --- |"
-printf '%s\n' "$rows" | awk -F'\t' '$4 != "verified" { printf "| `%s` | `%s` | %s | %s |\n", $2, $3, $4, ($5 == "" ? "" : "`" $5 "`") }'
+printf '%s\n' "$rows" | awk -F'\t' '$4 != "verified" { printf "| `%s` | `%s` | %s | %s |\n", $2, $3, $4, ($4 == "unsigned" ? "weekly + PR" : "manual review") }'
 echo
 echo "### Verified, by pinned identity"
 echo

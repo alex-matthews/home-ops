@@ -106,14 +106,13 @@ chart, first see what the registry shows:
 .github/scripts/chart-signing-check.sh kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
 ```
 
-Then either derive the identity per ADR-0003 and add a `verify` block, or
-declare why the source is excluded with the annotation
-`home-ops/chart-verify-exclusion-reason` set to what the check observed:
-`unsigned`, `keyed-unpinned`, `verifier-gap` or `unverifiable`. The Coverage
-check refuses the merge with neither, and with both. Never copy another
-chart's identity, and never declare a reason the check did not observe; a
-signature that verifies is a reason to re-validate, not to exclude
-(`docs/guides/validation.md`).
+Then inspect any discovered material and either derive the identity per
+ADR-0003 and add a `verify` block, or record the exclusion reason in
+`home-ops/chart-verify-exclusion-reason`: `unsigned`, `keyed-unpinned`,
+`verifier-gap` or `unverifiable`. Discovery does not classify or verify the
+material. Non-unsigned reasons require manual investigation and opt the source
+out of ongoing discovery. Coverage rejects missing or conflicting declarations.
+Never copy another chart's identity; see `docs/guides/validation.md`.
 
 ### app/helmrelease.yaml
 

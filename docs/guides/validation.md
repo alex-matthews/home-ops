@@ -232,39 +232,34 @@ repository's required checks. Every `OCIRepository` under `kubernetes/`
 must live in `ocirepository.yaml` and carry exactly one of `spec.verify` or
 `home-ops/chart-verify-exclusion-reason`:
 
-| Reason           | What the check observes                                                               |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| `unsigned`       | No signing material discovered at the referenced artifact.                            |
-| `keyed-unpinned` | Keyed signing material, with no key declared for this source.                         |
-| `verifier-gap`   | The declared key verifies with SHA-512 but not SHA-256.                               |
-| `unverifiable`   | Attestation-only material, or a certificate signature refused under its own identity. |
+| Reason           | Operator assessment                                                | Discovery                         |
+| ---------------- | ------------------------------------------------------------------ | --------------------------------- |
+| `unsigned`       | No signing material found at the referenced artifact.              | Weekly and on changed-source PRs. |
+| `keyed-unpinned` | Keyed signing material exists; a trusted key has not been adopted. | Manual review.                    |
+| `verifier-gap`   | Signing is blocked by a known verifier limitation.                 | Manual review.                    |
+| `unverifiable`   | Investigated material does not provide a usable chart signature.   | Manual review.                    |
 
-Only `verifier-gap` also carries `home-ops/chart-verify-key-fingerprint`, the
-SHA-256 of the DER-encoded public key committed under `.github/keys/`.
-Coverage rejects missing, conflicting or invalid declarations and unknown
-key fingerprints. It also guards verification removal and identity changes,
-matching moved sources by name and URL, then by path. These changes require
-the `verify/declared` pull request label and the rationale under ADR-0003;
-adding an exclusion annotation does not bypass the guard. After labelling,
-push a fresh commit: rerunning an old job uses its original event labels.
+Coverage validates the declaration, not the truth of the operator's assessment.
+It also guards verification removal and identity changes, matching moved sources
+by name and URL, then by path. These changes require the `verify/declared` pull
+request label and the rationale under ADR-0003; an exclusion annotation does not
+bypass the guard. After labelling, push a fresh commit: rerunning an old job uses
+its original event labels.
 
-Signatures is advisory. Changed verified sources are checked with cosign
-under their manifest's identity regexes at the pinned tag. This proves
-chart signer identity, not the images or content the chart deploys. Changed
-excluded sources use the same discovery as the weekly watch: a difference
-from the declared reason is a warning, and an inconclusive check is a
-notice. Fixtures runs the offline tests when scripts, keys, fixtures or
-chart workflows change.
+Signatures is advisory. Changed verified sources are checked with cosign under
+their manifest's identity regexes at the pinned tag. This proves chart signer
+identity, not the images or content the chart deploys. Changed unsigned sources
+use the same discovery as the weekly watch: material found is a warning and an
+inconclusive check is a notice. Other exclusions are explicitly skipped. Fixtures
+runs the offline tests when scripts, fixtures or chart workflows change.
 
-`Chart Signing Watch` runs weekly and on demand over excluded sources. The
-check resolves the manifest's tag or uses its digest, discovers legacy
-signature/attestation tags and direct OCI referrers, and inspects the signing
-material. It verifies certificates under their own identities and tries
-only a `verifier-gap` source's declared key. Matching observations are
-silent; newly signed artifacts, missing signing material, failed declared
-keys and newly usable signatures produce findings. Registry errors,
-unsupported material and unrecognised verification failures are
-inconclusive, never evidence that a chart is unsigned.
+`Chart Signing Watch` runs weekly and on demand over sources declared `unsigned`.
+It resolves the manifest's tag or uses its digest, checks legacy signature and
+attestation tags, and lists direct OCI referrers. SPDX and CycloneDX SBOM referrers
+are ignored; other referrer types (including unknown types) and either legacy tag
+produce a finding for human review. The watch does not download signing bundles,
+classify signatures, verify keys or establish publisher identity. Failed lookups
+and malformed responses are inconclusive, never evidence of absence.
 
 Run the same commands locally:
 
@@ -284,7 +279,11 @@ by title, marker and author. A clean run comments once; close the issue
 after addressing its findings. Neither workflow changes declarations or
 trust automatically; re-validate a proposed signer under ADR-0003.
 
-Discovery covers the referenced chart in its own registry repository.
+Discovery covers the referenced unsigned chart in its own registry repository.
+Signed exclusions, including Memini and cert-manager, stay in the inventory but
+receive manual review. Signing improvements, disappearance and key changes on
+those sources are not watched. An incorrect non-unsigned reason also opts a
+source out; review that assertion when adding or changing its declaration.
 It does not search newer releases, other signature locations, mirror
 availability/retirement, or extra signatures on verified sources. A
 publisher authenticating a key out of band is also invisible to these

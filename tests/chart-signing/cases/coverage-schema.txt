@@ -93,81 +93,6 @@ spec:
   ref:
     tag: 1.2.3
   url: oci://registry.example.test/charts/demo
-=== v09-fingerprint-not-committed
---- base .keep
---- declared
-false
---- exit
-1
---- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo names the key fingerprint 'sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa' and no key under .github/keys matches it
-new source without a verify block, declared verifier-gap: kubernetes/apps/demo/app/ocirepository.yaml
---- head .keep
---- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: verifier-gap
-    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
-=== v10-verifier-gap-without-fingerprint
---- base .keep
---- declared
-false
---- exit
-1
---- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo declares verifier-gap without home-ops/chart-verify-key-fingerprint
-new source without a verify block, declared verifier-gap: kubernetes/apps/demo/app/ocirepository.yaml
---- head .github/keys/cert-manager.pem
-@material/cert-manager.pem
---- head .keep
---- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: verifier-gap
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
-=== v11-fingerprint-with-wrong-reason
---- base .keep
---- declared
-false
---- exit
-1
---- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo carries home-ops/chart-verify-key-fingerprint but its reason is 'unsigned'; only verifier-gap names a key
-new source without a verify block, declared unsigned: kubernetes/apps/demo/app/ocirepository.yaml
---- head .github/keys/cert-manager.pem
-@material/cert-manager.pem
---- head .keep
---- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
-    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
 === v12-new-source-with-reason
 --- base .keep
 --- declared
@@ -198,8 +123,6 @@ false
 0
 --- expected
 new source without a verify block, declared verifier-gap: kubernetes/apps/demo/app/ocirepository.yaml
---- head .github/keys/cert-manager.pem
-@material/cert-manager.pem
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
 ---
@@ -209,7 +132,6 @@ metadata:
   name: demo
   annotations:
     home-ops/chart-verify-exclusion-reason: verifier-gap
-    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
 spec:
   interval: 15m
   ref:
@@ -233,32 +155,6 @@ metadata:
   name: demo
   annotations:
     home-ops/chart-verify-exclusion-reason: .*
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
-=== v18-fingerprint-is-a-regex
---- base .keep
---- declared
-false
---- exit
-1
---- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo names the key fingerprint 'sha256:.*', which is not sha256: followed by 64 hex digits
-new source without a verify block, declared verifier-gap: kubernetes/apps/demo/app/ocirepository.yaml
---- head .github/keys/cert-manager.pem
-@material/cert-manager.pem
---- head .keep
---- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: verifier-gap
-    home-ops/chart-verify-key-fingerprint: sha256:.*
 spec:
   interval: 15m
   ref:

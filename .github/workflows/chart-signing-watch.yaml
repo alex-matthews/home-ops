@@ -2,10 +2,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Chart Signing Watch
 
-# Weekly discovery for excluded chart sources (#2018, #2145, ADR-0003).
-# Compare signing material with each manifest's reason; only the declared key
-# is tried for verifier-gap. Findings update one issue; inconclusive runs fail
-# without posting. The step summary includes the manifest-derived inventory.
+# Weekly discovery for sources declared unsigned (#2018, #2145, ADR-0003).
+# Signing-related or unknown material needs human review. Signed exclusions
+# receive manual review; all sources appear in the manifest-derived inventory.
 on:
   workflow_dispatch:
   schedule:
@@ -37,7 +36,7 @@ jobs:
         with:
           minimum_release_age: 3d
           cache: false
-          install_args: cosign oras yq
+          install_args: oras yq
 
       # Anonymous lookups on ghcr.io answer "denied" for a package that does not
       # exist, which the script rightly treats as inconclusive. Authenticated
@@ -49,13 +48,14 @@ jobs:
         run: |
           printf '%s' "$GH_TOKEN" | mise exec -- oras login ghcr.io --username "$GH_ACTOR" --password-stdin
 
-      - name: Check every excluded source
+      - name: Discover material on unsigned sources
         id: check
         shell: bash
         run: |
           : > selected.txt
           for file in $(find kubernetes -name ocirepository.yaml | sort); do
-            if ! mise exec -- yq -e '.spec.verify.provider' "$file" > /dev/null 2>&1; then
+            selected="$(mise exec -- yq -r '.spec.verify == null and .metadata.annotations["home-ops/chart-verify-exclusion-reason"] == "unsigned"' "$file")"
+            if [ "$selected" = true ]; then
               echo "$file" >> selected.txt
             fi
           done
@@ -89,7 +89,7 @@ jobs:
             if [ -s findings.md ]; then echo "### Findings"; echo; cat findings.md; echo; fi
             if [ -s errors.md ]; then echo "### Lookups that did not complete"; echo; cat errors.md; echo; fi
             if [ ! -s findings.md ] && [ ! -s errors.md ]; then
-              echo "Every source was accounted for, every lookup answered, and nothing observed differs from what the manifests declare."
+              echo "Every selected unsigned source was accounted for, every lookup answered, and no signing-related or unknown material was found. Signed exclusions require manual review."
               echo
             fi
             .github/scripts/chart-signing-inventory.sh
@@ -105,7 +105,7 @@ jobs:
         run: |
           title="Chart signing watch: findings"
           block="$(printf '<!-- chart-signing-watch:findings -->\n%s\n<!-- /chart-signing-watch:findings -->' "$FINDINGS")"
-          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach finding is a difference between what a manifest declares and what the run observed, or a regression in its declared signing key. Act on it in a pull request: a verify block after the identity is re-validated under ADR-0003, or a corrected exclusion reason on the manifest. Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
+          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach finding is signing-related or unknown material on a source declared unsigned. Inspect it under ADR-0003 before adding a verify block or correcting the exclusion reason. Discovery does not establish signature validity or publisher identity. Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
           number="$(gh issue list --state open --limit 100 --search "\"$title\" in:title" --json number,body,author \
             --jq '[.[] | select((.author.login == "app/github-actions" or .author.login == "github-actions") and (.body | contains("<!-- chart-signing-watch -->")))][0].number // ""')"
           if [ -z "$number" ]; then
@@ -135,7 +135,7 @@ jobs:
             --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(contains("<!-- chart-signing-watch"))) | last')"
           case "$last" in
             *"<!-- chart-signing-watch:clean -->"*) echo "already recorded" ;;
-            *) gh issue comment "$number" --body "$(printf '<!-- chart-signing-watch:clean -->\nThis run found nothing that differs from what the manifests declare: every source accounted for, every lookup answered. Close this issue once the findings above are acted on.\n\nRun: %s' "$RUN_URL")" ;;
+            *) gh issue comment "$number" --body "$(printf '<!-- chart-signing-watch:clean -->\nThis run found no signing-related or unknown material on the selected unsigned sources: every selected source accounted for, every lookup answered. Signed exclusions require manual review. Close this issue once the findings above are acted on.\n\nRun: %s' "$RUN_URL")" ;;
           esac
 
       - name: Fail on findings or incomplete checks

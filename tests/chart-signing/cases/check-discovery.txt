@@ -1,0 +1,467 @@
+=== d01-unsigned
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	no signing-related or unknown material discovered
+--- findings
+--- errors
+=== d02-digest-pin
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    digest: sha256:abababababababababababababababababababababababababababababababab
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab	sha256:abababababababababababababababababababababababababababababababab	unsigned	no signing-related or unknown material discovered
+--- findings
+--- errors
+=== d03-legacy-signature
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|0|{}|
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	legacy-.sig
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (legacy-.sig). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d04-legacy-attestation
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|0|{}|
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	legacy-.att
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (legacy-.att). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d05-sigstore-referrer
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[{"artifactType":"application/vnd.dev.sigstore.bundle.v0.3+json"}]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	referrer:application/vnd.dev.sigstore.bundle.v0.3+json
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (referrer:application/vnd.dev.sigstore.bundle.v0.3+json). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d06-unknown-referrer
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[{"artifactType":"application/vnd.example.unknown"}]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	referrer:application/vnd.example.unknown
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (referrer:application/vnd.example.unknown). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d07-ignored-sboms
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[{"artifactType":"application/spdx+json"},{"artifactType":"application/vnd.cyclonedx+json"}]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	no signing-related or unknown material discovered
+--- findings
+--- errors
+=== d08-untyped-referrer
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[{},{"artifactType":""}]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	referrer:untyped referrer:untyped
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (referrer:untyped referrer:untyped). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d09-attestation-beside-sbom
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[{"artifactType":"application/spdx+json"},{"artifactType":"application/vnd.in-toto+json"}]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	referrer:application/vnd.in-toto+json
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (referrer:application/vnd.in-toto+json). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d10-lookup-error-overrides-material
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: 503 Service Unavailable
+oras|manifest fetch --descriptor *.att|0|{}|
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	legacy .sig tag: Error response from registry: 503 Service Unavailable
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: legacy .sig tag: Error response from registry: 503 Service Unavailable (`ocirepository.yaml`)
+=== d11-denied-is-not-absence
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: denied
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	legacy .sig tag: Error response from registry: denied
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: legacy .sig tag: Error response from registry: denied (`ocirepository.yaml`)
+=== d12-discovery-error
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover *|1||connection timed out
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	referrers: connection timed out
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: referrers: connection timed out (`ocirepository.yaml`)
+=== d13-malformed-response
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	invalid referrer response
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: invalid referrer response (`ocirepository.yaml`)
+=== d14-missing-tag
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve *|1||Error response from registry: failed to find chart: not found
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	the tag does not exist
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: the tag does not exist (`ocirepository.yaml`)
+=== d15-invalid-digest
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve *|0|garbage|
+oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	invalid or unsupported digest
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: invalid or unsupported digest (`ocirepository.yaml`)
+=== d16-skip-keyed
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: keyed-unpinned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	skipped	declared keyed-unpinned; manual signing review
+--- findings
+--- errors
+=== d17-skip-verifier-gap
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	skipped	declared verifier-gap; manual signing review
+--- findings
+--- errors
+=== d18-skip-unverifiable
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unverifiable
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	skipped	declared unverifiable; manual signing review
+--- findings
+--- errors
+=== d19-skip-verified
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+  verify:
+    provider: cosign
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	skipped	verify block present; discovery not applicable
+--- findings
+--- errors
+=== d20-unknown-reason
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: .*
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	unknown exclusion reason: .
+--- findings
+--- errors
+- `registry.example.test/charts/demo:1.2.3`: unknown exclusion reason: . (`ocirepository.yaml`)
+=== d21-undeclared-local-discovery
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
+--- response discover.json
+{"referrers":[]}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor *.sig|0|{}|
+oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	material-present	legacy-.sig
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries signing-related or unknown material (legacy-.sig). Review it under ADR-0003 before changing trust or the exclusion reason (`ocirepository.yaml`).
+--- errors
+=== d22-no-pin
+--- manifest
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+--- response discover.json
+{"referrers":[]}
+--- responses
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:	-	inconclusive	no tag or digest pin
+--- findings
+--- errors
+- `registry.example.test/charts/demo:`: no tag or digest pin (`ocirepository.yaml`)

@@ -3,11 +3,10 @@
 #
 # Each case starts with "=== NAME"; each section starts with "--- SECTION".
 # Check sections: manifest, args, responses, results, findings, errors,
-# response FILE (tool stdout), keys FILE. Coverage sections:
+# response FILE (tool stdout). Coverage sections:
 # declared, head-ref (optional), base PATH, head PATH, expected, and exit.
 # Section bodies are literal, including blank lines; an empty body is an
-# empty file. A single line @material/FILE copies that shared artefact.
-# material/ is also copied into CASE_DIR for paths in the response table.
+# empty file.
 # Marker lines are reserved. Paths are relative to the corresponding tree.
 #
 # Coverage cases build two commits in a temporary repository to exercise
@@ -29,9 +28,8 @@ trap 'rm -rf "$scratch"' EXIT
 
 # Extract one case with awk, then map its sections to the old on-disk shape.
 materialise() { # case-file name destination
-  local source=$1 wanted=$2 dest=$3 number section path body reference
+  local source=$1 wanted=$2 dest=$3 number section path body
   mkdir -p "$dest" "$work/sections"
-  cp -RL "$here/material" "$dest/material"
   awk -v wanted="$wanted" -v out="$work/sections" '
     /^=== / { active = (substr($0, 5) == wanted); next }
     !active { next }
@@ -57,7 +55,7 @@ materialise() { # case-file name destination
       exit) path=expected.exit ;;
       args|declared|head-ref) path="$section" ;;
       'response '*) path="${section#* }" ;;
-      'keys '*|'base '*|'head '*) path="${section%% *}/${section#* }" ;;
+      'base '*|'head '*) path="${section%% *}/${section#* }" ;;
       *) echo "unknown section: $section" >&2; return 1 ;;
     esac
     # Keep malformed fixture paths inside the temporary case directory.
@@ -67,12 +65,7 @@ materialise() { # case-file name destination
     [ ! -e "$dest/$path" ] || { echo "duplicate section path: $path" >&2; return 1; }
     mkdir -p "$(dirname "$dest/$path")"
     body="$work/sections/$number"
-    reference="$(cat "$body")"
-    if [[ "$reference" =~ ^@material/[a-zA-Z0-9_.-]+$ ]] && [ "$(wc -l < "$body")" -eq 1 ]; then
-      cp "$here/${reference#@}" "$dest/$path"
-    else
-      cp "$body" "$dest/$path"
-    fi
+    cp "$body" "$dest/$path"
   done < "$work/sections/index"
 }
 # End materialiser.
@@ -120,7 +113,7 @@ for name in "${cases[@]}"; do
     : > "$work/findings.md"; : > "$work/errors.md"
     set +e
     # shellcheck disable=SC2086
-    (cd "$case" && CASE_DIR="$case" CHART_SIGNING_TOOLS="$here/bin" CHART_SIGNING_KEYS=keys \
+    (cd "$case" && CASE_DIR="$case" CHART_SIGNING_TOOLS="$here/bin" \
       FINDINGS_OUT="$work/findings.md" ERRORS_OUT="$work/errors.md" "$check" $args ocirepository.yaml > "$work/results.tsv" 2> "$work/stderr"); code=$?
     set -e
     [ "$code" = 0 ] || { echo "  script exited $code:"; sed 's/^/    /' "$work/stderr"; ok=0; }
