@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
 # Chart verification coverage (ADR-0003, #1967, #2145). Offline: git and yq only.
 #
-# Two questions, answered against git refs so fixtures can build the trees.
-# First, over the whole head tree: every YAML document of kind OCIRepository
-# under kubernetes/ lives in a file named ocirepository.yaml, has a name and
-# URL no other source shares, and carries exactly one of a verify block or
-# the annotation home-ops/chart-verify-exclusion-reason with a known value.
-# Second, over the diff: each head source is matched to a base source by identity,
-# the manifest's name and URL, and failing that by path, so a moved file and
-# a renamed source are both modifications; a verify block removed or an
-# identity changed fails unless the change is declared (the verify/declared
-# label), and an annotation never satisfies that guard.
+# Every OCIRepository needs a verify block or a valid exclusion reason, a
+# unique (name, URL) pair, and the canonical ocirepository.yaml filename.
+# Compare verify blocks by (name, URL), falling back to path: an exclusion
+# annotation never authorizes removal or alteration without verify/declared.
 #
 # usage: chart-signing-coverage.sh BASE_REF HEAD_REF [true|false]
-# The third argument says whether the change is declared. Output uses GitHub
-# workflow commands; exit 1 on any error, and exit 2 when a ref cannot be read.
+# The third argument is whether the PR has verify/declared. Exit 1 on policy
+# violations, 2 on unreadable refs/manifests; diagnostics use workflow commands.
 set -euo pipefail
 
 BASE=${1:?base ref}; HEAD=${2:?head ref}; DECLARED=${3:-false}
@@ -34,11 +28,9 @@ for ref in "$BASE" "$HEAD"; do
   git rev-parse --verify --quiet "$ref^{tree}" > /dev/null || die "ref '$ref' cannot be read"
 done
 
-# sources REF -> lines "path<TAB>name<TAB>url<TAB>reason<TAB>verify-base64" for every
-# OCIRepository document. The ref's kubernetes/ tree is extracted and every YAML file in it is parsed in one
-# yq pass that checks each document's top-level kind, so no textual prefilter can miss a source; a git or
-# yq failure aborts the run. Absent annotations are "-" so every row keeps five columns (bash's read
-# collapses consecutive tabs).
+# sources REF -> TSV: path, name, URL, reason, base64-encoded verify block.
+# Parse every YAML document: textual kind searches miss valid quoted/escaped
+# spellings. Use "-" for absent reasons because Bash collapses empty tab fields.
 sources() {
   local ref=$1 dir path
   # A tree without kubernetes/ has no sources; git archive would refuse the pathspec.

@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Stand-in for an external tool inside a fixture. The case directory's
-# responses.psv has one pipe-separated line per answer: tool, glob pattern
-# over the argument string, exit code, stdout (a file under the case, or
-# literal text), stderr text. Pipes, not tabs, because bash's read collapses
-# consecutive tabs and an empty stdout field would shift the columns. First match wins; an unmatched call fails the case loudly.
+# Called through the oras and yq symlinks. ORAS reads canned responses from
+# CASE_DIR/responses.psv; yq forwards to the real repo-pinned binary.
+# Fields: tool | argument-string glob | exit code | stdout (file or text) | stderr.
+# Pipes preserve empty fields that Bash's tab-separated read would collapse.
+# First matching row wins; unexpected calls exit 99. Rows can be reused.
 set -uo pipefail
 tool="$(basename "$0")"; args="$*"
-# yq is deterministic and offline, so the real one runs, resolved through the repository's mise config.
 if [ "$tool" = yq ]; then root="$(cd "$(dirname "$0")/../../../.." && pwd)"; exec "$(mise -C "$root" which yq)" "$@"; fi
 : "${CASE_DIR:?CASE_DIR must name the fixture}"
 while IFS='|' read -r t pat code out err; do

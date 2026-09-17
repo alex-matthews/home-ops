@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Chart signing inventory (ADR-0003, #2145). Offline: yq only.
 #
-# Prints the register of chart sources derived from the manifests: every
-# OCIRepository under kubernetes/, verified sources with the identities their
-# verify blocks pin, excluded sources with the reason their annotation
-# declares. This is the register; nothing else is maintained by hand.
+# Derive exclusions, discovery coverage and pinned signing subjects from the
+# manifests. "Verified" means configured verification, not a live signature check.
 #
 # usage: chart-signing-inventory.sh [--tsv]
 set -euo pipefail

@@ -2,15 +2,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Chart Verify
 
-# Pre-merge guard for chart source verification (#1967, #2145, ADR-0003).
-# Coverage is offline and intended to be required: every OCIRepository carries a verify
-# block or a declared exclusion reason, and a dropped or changed verify
-# block needs the verify/declared label. It runs on every pull request
-# because a required check from a path-skipped workflow stays pending and
-# blocks the merge. Signatures is advisory: it reads public registries and
-# Sigstore, re-verifies a bumped source under its pinned identity, and discovers
-# signing material on bumped unsigned sources. Signed exclusions are skipped.
-# Fixtures runs the offline tests when scripts, workflows or fixtures change.
+# Coverage validates declarations and guards verification changes offline.
+# It runs on every PR so it can become required without path-skipped checks.
+# Signatures is advisory: check keyless Cosign identities at tag pins, discover
+# material on unsigned sources, and skip other exclusions. Fixtures exercises
+# the Coverage and discovery scripts offline; it does not test live Cosign.
 on:
   pull_request:
     branches:

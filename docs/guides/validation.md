@@ -246,12 +246,16 @@ request label and the rationale under ADR-0003; an exclusion annotation does not
 bypass the guard. After labelling, push a fresh commit: rerunning an old job uses
 its original event labels.
 
-Signatures is advisory. Changed verified sources are checked with cosign under
-their manifest's identity regexes at the pinned tag. This proves chart signer
-identity, not the images or content the chart deploys. Changed unsigned sources
-use the same discovery as the weekly watch: material found is a warning and an
-inconclusive check is a notice. Other exclusions are explicitly skipped. Fixtures
-runs the offline tests when scripts, fixtures or chart workflows change.
+Signatures is advisory. Its verification covers keyless Cosign sources with tag
+pins, using the manifest's identity regexes. Other providers and digest-only pins
+are warned about and skipped; adopting keyed verification also requires extending
+this job. This checks chart signer identity, not deployed images or content.
+Changed unsigned sources use the same discovery as the weekly watch: material
+found is a warning and an inconclusive check is a notice. Other exclusions are
+explicitly skipped. Fixtures runs the offline tests when scripts, fixtures or
+chart workflows change. Those tests exercise discovery with canned ORAS responses
+and Coverage with real Git repositories and yq; they do not verify live signatures
+or GitHub issue posting.
 
 `Chart Signing Watch` runs weekly and on demand over sources declared `unsigned`.
 It resolves the manifest's tag or uses its digest, checks legacy signature and

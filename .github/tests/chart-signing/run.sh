@@ -2,18 +2,18 @@
 # Runs the cases in .github/tests/chart-signing/cases/*.txt offline (#2145).
 #
 # Each case starts with "=== NAME"; each section starts with "--- SECTION".
-# Check sections: manifest, args, responses, results, findings, errors,
-# response FILE (tool stdout). Coverage sections:
-# declared, head-ref (optional), base PATH, head PATH, expected, and exit.
+# Discovery sections: manifest, responses, results, findings, errors,
+# response FILE (tool stdout). Coverage sections: base PATH, head PATH,
+# expected, exit, declared (defaults to false), head-ref (optional override).
 # Section bodies are literal, including blank lines; an empty body is an
 # empty file. A body containing only @fixtures/NAME.yaml copies that literal
-# manifest; expected outputs are always inline. No defaults or mutations apply.
+# manifest unchanged. Expected outputs stay inline in each case.
 # Marker lines are reserved. Paths are relative to the corresponding tree.
 #
 # Coverage cases build two commits in a temporary repository to exercise
-# real git reads. Check output is compared byte-for-byte; coverage output is
-# sorted, retaining duplicates, before comparison. Stand-ins match flattened
-# argument globs; these fixtures do not assert argument boundaries or counts.
+# real git reads; yq also runs unchanged. Discovery output is compared
+# byte-for-byte; Coverage output is sorted, retaining duplicates. The ORAS
+# stand-in matches argument-string globs, not argument boundaries or call counts.
 #
 # usage: .github/tests/chart-signing/run.sh [CASE...]
 # To update an expectation, edit its results/findings/errors or expected/exit
@@ -27,7 +27,7 @@ failed=0; passed=0
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 
-# Extract one case with awk, then map its sections to the old on-disk shape.
+# Materialise one case as inputs and expectations in a temporary directory.
 materialise() { # case-file name destination
   local source=$1 wanted=$2 dest=$3 number section path body reference
   mkdir -p "$dest" "$work/sections"
@@ -54,7 +54,7 @@ materialise() { # case-file name destination
       errors) path=errors.md ;;
       expected) path=expected.txt ;;
       exit) path=expected.exit ;;
-      args|declared|head-ref) path="$section" ;;
+      declared|head-ref) path="$section" ;;
       'response '*) path="${section#* }" ;;
       'base '*|'head '*) path="${section%% *}/${section#* }" ;;
       *) echo "unknown section: $section" >&2; return 1 ;;
@@ -74,7 +74,6 @@ materialise() { # case-file name destination
     fi
   done < "$work/sections/index"
 }
-# End materialiser.
 
 diff_or_fail() { # expected actual label
   if diff -u "$1" "$2" > "$work/diff"; then return 0; fi
@@ -115,12 +114,10 @@ for name in "${cases[@]}"; do
     diff_or_fail "$work/exp.sorted" "$work/out.sorted" output || ok=0
     [ "$code" = "$(cat "$case/expected.exit")" ] || { echo "  exit $code, expected $(cat "$case/expected.exit")"; ok=0; }
   else
-    args="$(cat "$case/args" 2> /dev/null || true)"
     : > "$work/findings.md"; : > "$work/errors.md"
     set +e
-    # shellcheck disable=SC2086
     (cd "$case" && CASE_DIR="$case" CHART_SIGNING_TOOLS="$here/bin" \
-      FINDINGS_OUT="$work/findings.md" ERRORS_OUT="$work/errors.md" "$check" $args ocirepository.yaml > "$work/results.tsv" 2> "$work/stderr"); code=$?
+      FINDINGS_OUT="$work/findings.md" ERRORS_OUT="$work/errors.md" "$check" ocirepository.yaml > "$work/results.tsv" 2> "$work/stderr"); code=$?
     set -e
     [ "$code" = 0 ] || { echo "  script exited $code:"; sed 's/^/    /' "$work/stderr"; ok=0; }
     diff_or_fail "$case/results.tsv" "$work/results.tsv" results.tsv || ok=0
