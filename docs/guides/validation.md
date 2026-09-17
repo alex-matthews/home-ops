@@ -67,8 +67,9 @@ successful local run proves the baseline on the remote `main` branch is
 renderable — not your branch's commits — and can miss branch-only changes
 beneath those child paths. Do not cite it as branch-diff
 evidence without first proving the changed objects appear in its output. Use
-the Konflate pull-request render, or an explicitly branch-aware disposable
-render, as the authority for those changes.
+the Konflate pull-request render, or `flate diff all --base main`, which
+materialises `main` and renders only what the branch changed against it,
+as the authority for those changes.
 
 ## What release notes do not prove
 

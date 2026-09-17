@@ -114,6 +114,20 @@ loss fails over to the other instance; the archive is for restore, not
 availability. Write wear on the m2 and m3 system SSDs is watched by the
 existing `SmartDeviceEnduranceConsumed` alert.
 
+The Cluster bootstraps with `recovery` from that same archive, and the
+`cnpg.io/skipEmptyWalArchiveCheck` annotation lets it archive into the
+name it restored from. A recreated cluster, as after a rebuild, therefore
+restores the newest base backup, replays WAL to the last archived segment
+and continues on a new timeline, with no manifest edit and no new archive
+name. Retention prunes nothing newer than the base backup it needs, so the
+latest state stays restorable for as long as the cluster archives. The
+one case this does not cover is a genuinely empty archive: recovery then
+blocks rather than initialising, and the manifest is switched to `initdb`
+once, then back to the recovery configuration after the first base backup
+completes. Two live clusters must never share an archive name; the check
+the annotation skips exists to catch that. Restore drills read
+`postgres-v1` without archiving; migrations write to a new archive name.
+
 Check the backup path with:
 
 ```sh
@@ -426,6 +440,19 @@ kopia takes of the restored volume before concluding data is missing.
 
 ## Restore Drill Record
 
+- **2026-09-17**, PostgreSQL, live recreate rehearsal for #2141, three
+  runs, LiteLLM and Memini held at zero. Each run: marker row written,
+  `pg_switch_wal()` confirmed archived, the `postgres` Cluster deleted with
+  its volumes, Flux recreating it from `postgres-v1`. Deletion to healthy
+  in 2m25s, 2m09s and 1m48s; timeline 2 to 3 to 4 to 5; every marker
+  present after every run; roles, databases, `vchord` 1.1.1 and `vector`
+  0.8.6 present; replication streaming and archiving resumed each time.
+  Runs one and two selected base backup `20260917T000000` with no backup
+  between them; run three selected the manual backup `20260917T062536`
+  and recovered a marker written after it. A
+  scratch cluster pointed at a nonexistent archive name stayed in "Setting
+  up primary" with `no target backup found`, then was deleted. Backup
+  selection read from VictoriaLogs after the recovery jobs were gone.
 - **2026-09-16**, PostgreSQL, first drill after #2124 and #2125. Base
   backup `20260915T133704` completed in 4 s; marker row written at
   13:38:48 UTC and its WAL segment forced out; `postgres-restore`
