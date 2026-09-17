@@ -5,7 +5,7 @@ kind: OCIRepository
 metadata:
   name: smartctl-exporter
   annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
+    home-ops/chart-verify-exclusion-reason: verifier-gap
 spec:
   interval: 15m
   layerSelector:

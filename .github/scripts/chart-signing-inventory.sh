@@ -27,12 +27,12 @@ echo "## Chart sources: $verified verified, $excluded excluded"
 echo
 echo "### Excluded, by declared reason"
 echo
-echo "| Source | Pin | Reason | Discovery |"
-echo "| --- | --- | --- | --- |"
-printf '%s\n' "$rows" | awk -F'\t' '$4 != "verified" { printf "| `%s` | `%s` | %s | %s |\n", $2, $3, $4, ($4 == "unsigned" ? "weekly + PR" : "manual review") }'
+echo "| Manifest | Source | Pin | Reason | Discovery |"
+echo "| --- | --- | --- | --- | --- |"
+printf '%s\n' "$rows" | awk -F'\t' '$4 != "verified" { printf "| `%s` | `%s` | `%s` | %s | %s |\n", $1, $2, $3, $4, ($4 == "unsigned" ? "weekly + PR" : "manual review") }'
 echo
 echo "### Verified, by pinned identity"
 echo
-echo "| Source | Pin | Verification | Identity |"
-echo "| --- | --- | --- | --- |"
-printf '%s\n' "$rows" | awk -F'\t' '$4 == "verified" { printf "| `%s` | `%s` | verified%s | `%s` |\n", $2, $3, ($6 == "" ? "" : " — " $6), $5 }'
+echo "| Manifest | Source | Pin | Verification | Identity |"
+echo "| --- | --- | --- | --- | --- |"
+printf '%s\n' "$rows" | awk -F'\t' '$4 == "verified" { printf "| `%s` | `%s` | `%s` | verified%s | `%s` |\n", $1, $2, $3, ($6 == "" ? "" : " — " $6), $5 }'

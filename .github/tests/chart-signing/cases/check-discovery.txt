@@ -5,8 +5,8 @@
 {"referrers":[]}
 --- responses
 oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
-oras|manifest fetch --descriptor *.sig|1||Error response from registry: failed to find chart.sig: not found
-oras|manifest fetch --descriptor *.att|1||Error response from registry: failed to find chart.att: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find chart.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find chart.att: not found
 oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
 --- results
 ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	no signing-related or unknown material discovered

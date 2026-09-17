@@ -229,8 +229,8 @@ local/operator tooling rather than rendered cluster state.
 The `Chart Verify` workflow has three jobs. Coverage runs offline on every
 pull request and is intended to be required after the owner adds it to the
 repository's required checks. Every `OCIRepository` under `kubernetes/`
-must live in `ocirepository.yaml` and carry exactly one of `spec.verify` or
-`home-ops/chart-verify-exclusion-reason`:
+must be the only YAML document in `ocirepository.yaml` and carry exactly one
+of `spec.verify` or `home-ops/chart-verify-exclusion-reason`:
 
 | Reason           | Operator assessment                                                | Discovery                         |
 | ---------------- | ------------------------------------------------------------------ | --------------------------------- |
@@ -241,9 +241,10 @@ must live in `ocirepository.yaml` and carry exactly one of `spec.verify` or
 
 Coverage validates the declaration, not the truth of the operator's assessment.
 It also guards verification removal and identity changes, matching moved sources
-by name and URL, then by path. These changes require the `verify/declared` pull
-request label and the rationale under ADR-0003; an exclusion annotation does not
-bypass the guard. After labelling, push a fresh commit: rerunning an old job uses
+by name and URL, then by path. An unmatched verified source also requires
+review, including when removing an app entirely. These changes require the
+`verify/declared` pull request label and the rationale under ADR-0003; an
+exclusion annotation does not bypass the guard. After labelling, push a fresh commit: rerunning an old job uses
 its original event labels.
 
 Signatures is advisory. Its verification covers keyless Cosign sources with tag
@@ -284,12 +285,14 @@ after addressing its findings. Neither workflow changes declarations or
 trust automatically; re-validate a proposed signer under ADR-0003.
 
 Discovery covers the referenced unsigned chart in its own registry repository.
-Signed exclusions, including Memini and cert-manager, stay in the inventory but
-receive manual review. Signing improvements, disappearance and key changes on
-those sources are not watched. An incorrect non-unsigned reason also opts a
+Signed exclusions, including Memini, cert-manager and Prometheus-community
+charts with Helm PGP provenance, stay in the inventory but receive manual
+review. Signing improvements, disappearance and key changes on those sources
+are not watched. An incorrect non-unsigned reason also opts a
 source out; review that assertion when adding or changing its declaration.
-It does not search newer releases, other signature locations, mirror
-availability/retirement, or extra signatures on verified sources. A
+It does not inspect embedded Helm provenance layers or search newer releases,
+other signature locations, mirror availability/retirement, or extra signatures
+on verified sources. A
 publisher authenticating a key out of band is also invisible to these
 lookups. For `mirror.gcr.io`, only the configured cache path is inspected.
 On `flux-instance` or `flux-operator` bumps, check source-controller release

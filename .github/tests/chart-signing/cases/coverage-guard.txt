@@ -84,9 +84,9 @@ verify block added: kubernetes/apps/demo/app/ocirepository.yaml
 --- declared
 false
 --- exit
-0
+1
 --- expected
-source removed: kubernetes/apps/demo/app/ocirepository.yaml (demo)
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
 --- head .keep
 === v16-moved-unchanged
 --- base .keep
@@ -124,3 +124,71 @@ spec:
   ref:
     tag: 1.2.3
   url: oci://registry.example.test/charts/demo-renamed
+=== v23-moved-and-renamed-false
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+@fixtures/verified.yaml
+--- declared
+false
+--- exit
+1
+--- expected
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+new source without a verify block, declared unsigned: kubernetes/apps/demo2/app/ocirepository.yaml
+--- head .keep
+--- head kubernetes/apps/demo2/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo2
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo2
+=== v24-moved-and-renamed-true
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+@fixtures/verified.yaml
+--- declared
+true
+--- exit
+0
+--- expected
+::warning file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed (declared with the verify/declared label)
+new source without a verify block, declared unsigned: kubernetes/apps/demo2/app/ocirepository.yaml
+--- head .keep
+--- head kubernetes/apps/demo2/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo2
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo2
+=== v25-verified-source-removed-with-label
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+@fixtures/verified.yaml
+--- declared
+true
+--- exit
+0
+--- expected
+::warning file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed (declared with the verify/declared label)
+--- head .keep
+=== v26-unsigned-source-removed
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+@fixtures/unsigned.yaml
+--- exit
+0
+--- expected
+source removed: kubernetes/apps/demo/app/ocirepository.yaml (demo)
+--- head .keep

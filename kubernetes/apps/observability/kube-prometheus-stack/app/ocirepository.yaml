@@ -5,7 +5,7 @@ kind: OCIRepository
 metadata:
   name: kube-prometheus-stack
   annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
+    home-ops/chart-verify-exclusion-reason: verifier-gap
 spec:
   interval: 15m
   layerSelector:

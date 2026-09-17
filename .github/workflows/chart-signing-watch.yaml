@@ -52,13 +52,8 @@ jobs:
         id: check
         shell: bash
         run: |
-          : > selected.txt
-          for file in $(find kubernetes -name ocirepository.yaml | sort); do
-            selected="$(mise exec -- yq -r '.spec.verify == null and .metadata.annotations["home-ops/chart-verify-exclusion-reason"] == "unsigned"' "$file")"
-            if [ "$selected" = true ]; then
-              echo "$file" >> selected.txt
-            fi
-          done
+          .github/scripts/chart-signing-inventory.sh --tsv > inventory.tsv
+          awk -F'\t' '$4 == "unsigned" { print $1 }' inventory.tsv > selected.txt
           : > findings.md
           : > errors.md
           : > results.tsv
