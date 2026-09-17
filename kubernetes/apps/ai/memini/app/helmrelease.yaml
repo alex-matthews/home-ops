@@ -23,6 +23,8 @@ spec:
               MEMINI_EMBED_BASE_URL: http://text-embeddings-inference.ai.svc.cluster.local:8080/v1
               MEMINI_EMBED_MODEL: BAAI/bge-small-en-v1.5
               MEMINI_EMBED_DIMS: "384"
+              # Locks the client defaults; the UI cannot change them.
+              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":false,"inline_extract":false,"auto_save":false,"session_digest":true}'
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
@@ -36,6 +38,9 @@ spec:
       data:
         enabled: false
       api-keys:
+        enabled: true
+    serviceMonitor:
+      main:
         enabled: true
     route:
       main:
