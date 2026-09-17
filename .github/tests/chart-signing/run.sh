@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Runs the cases in tests/chart-signing/cases/*.txt offline (#2145).
+# Runs the cases in .github/tests/chart-signing/cases/*.txt offline (#2145).
 #
 # Each case starts with "=== NAME"; each section starts with "--- SECTION".
 # Check sections: manifest, args, responses, results, findings, errors,
 # response FILE (tool stdout). Coverage sections:
 # declared, head-ref (optional), base PATH, head PATH, expected, and exit.
 # Section bodies are literal, including blank lines; an empty body is an
-# empty file.
+# empty file. A body containing only @fixtures/NAME.yaml copies that literal
+# manifest; expected outputs are always inline. No defaults or mutations apply.
 # Marker lines are reserved. Paths are relative to the corresponding tree.
 #
 # Coverage cases build two commits in a temporary repository to exercise
@@ -14,12 +15,12 @@
 # sorted, retaining duplicates, before comparison. Stand-ins match flattened
 # argument globs; these fixtures do not assert argument boundaries or counts.
 #
-# usage: tests/chart-signing/run.sh [CASE...]
+# usage: .github/tests/chart-signing/run.sh [CASE...]
 # To update an expectation, edit its results/findings/errors or expected/exit
 # section and review the diff. Expectations are never overwritten by a run.
 set -euo pipefail
-root="$(cd "$(dirname "$0")/../.." && pwd)"
-here="$root/tests/chart-signing"
+root="$(cd "$(dirname "$0")/../../.." && pwd)"
+here="$root/.github/tests/chart-signing"
 check="$root/.github/scripts/chart-signing-check.sh"
 coverage="$root/.github/scripts/chart-signing-coverage.sh"
 failed=0; passed=0
@@ -28,7 +29,7 @@ trap 'rm -rf "$scratch"' EXIT
 
 # Extract one case with awk, then map its sections to the old on-disk shape.
 materialise() { # case-file name destination
-  local source=$1 wanted=$2 dest=$3 number section path body
+  local source=$1 wanted=$2 dest=$3 number section path body reference
   mkdir -p "$dest" "$work/sections"
   awk -v wanted="$wanted" -v out="$work/sections" '
     /^=== / { active = (substr($0, 5) == wanted); next }
@@ -65,7 +66,12 @@ materialise() { # case-file name destination
     [ ! -e "$dest/$path" ] || { echo "duplicate section path: $path" >&2; return 1; }
     mkdir -p "$(dirname "$dest/$path")"
     body="$work/sections/$number"
-    cp "$body" "$dest/$path"
+    reference="$(cat "$body")"
+    if [[ "$reference" =~ ^@fixtures/[a-zA-Z0-9_-]+\.yaml$ ]] && [ "$(wc -l < "$body")" -eq 1 ]; then
+      cp "$here/${reference#@}" "$dest/$path"
+    else
+      cp "$body" "$dest/$path"
+    fi
   done < "$work/sections/index"
 }
 # End materialiser.

@@ -81,18 +81,7 @@ false
 new source without a verify block, declared unsigned: kubernetes/apps/demo/app/source.yaml
 --- head .keep
 --- head kubernetes/apps/demo/app/source.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
+@fixtures/unsigned.yaml
 === v12-new-source-with-reason
 --- base .keep
 --- declared
@@ -103,18 +92,7 @@ false
 new source without a verify block, declared unsigned: kubernetes/apps/demo/app/ocirepository.yaml
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
+@fixtures/unsigned.yaml
 === v15-verifier-gap-complete
 --- base .keep
 --- declared
@@ -163,21 +141,7 @@ spec:
 === v19-head-ref-unreadable
 --- base .keep
 --- base kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
-  verify:
-    provider: cosign
-    matchOIDCIdentity:
-      - issuer: "^https://token.actions.githubusercontent.com$"
-        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+@fixtures/verified.yaml
 --- declared
 false
 --- exit
@@ -188,21 +152,7 @@ false
 deadbeef
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
-  verify:
-    provider: cosign
-    matchOIDCIdentity:
-      - issuer: "^https://token.actions.githubusercontent.com$"
-        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+@fixtures/verified.yaml
 === v21-duplicate-identity
 --- base .keep
 --- declared
@@ -216,31 +166,9 @@ new source without a verify block, declared unsigned: kubernetes/apps/demo/app/o
 new source without a verify block, declared unsigned: kubernetes/apps/demo/other/ocirepository.yaml
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
+@fixtures/unsigned.yaml
 --- head kubernetes/apps/demo/other/ocirepository.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: OCIRepository
-metadata:
-  name: demo
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
-spec:
-  interval: 15m
-  ref:
-    tag: 1.2.3
-  url: oci://registry.example.test/charts/demo
+@fixtures/unsigned.yaml
 === v22-kind-written-with-escape
 --- base .keep
 --- declared

@@ -7,7 +7,7 @@
 set -uo pipefail
 tool="$(basename "$0")"; args="$*"
 # yq is deterministic and offline, so the real one runs, resolved through the repository's mise config.
-if [ "$tool" = yq ]; then root="$(cd "$(dirname "$0")/../../.." && pwd)"; exec "$(mise -C "$root" which yq)" "$@"; fi
+if [ "$tool" = yq ]; then root="$(cd "$(dirname "$0")/../../../.." && pwd)"; exec "$(mise -C "$root" which yq)" "$@"; fi
 : "${CASE_DIR:?CASE_DIR must name the fixture}"
 while IFS='|' read -r t pat code out err; do
   [ "$t" = "$tool" ] || continue

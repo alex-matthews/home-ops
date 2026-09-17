@@ -20,8 +20,8 @@ mise exec --no-deps -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
 Shell scripts and their offline fixtures:
 
 ```sh
-mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' 'tests/chart-signing/bin/_fake')
-tests/chart-signing/run.sh
+mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/tests/chart-signing/bin/_fake')
+.github/tests/chart-signing/run.sh
 ```
 
 Flux and Kubernetes rendering:
@@ -217,8 +217,8 @@ CI runs tools directly. Do not route everything through `just`.
 A script that CI runs, and any script that is not an operator recipe, is
 bash: `set -euo pipefail`, external tools called through one wrapper
 function so fixtures can stand them in, `shellcheck` clean at warning level,
-and its branches exercised by offline fixtures under `tests/`. The chart
-signing scripts under `.github/scripts/` are the pattern.
+and its branches exercised by offline fixtures under `.github/tests/`. The
+chart signing scripts under `.github/scripts/` are the pattern.
 
 `just` is for local/operator workflows: diagnostics, rendering helpers, live
 cluster actions, bootstrap, Talos, and restore operations. Changes to Justfiles

@@ -46,7 +46,7 @@ jobs:
         with:
           patterns: |
             **/*.sh
-            tests/chart-signing/bin/_fake
+            .github/tests/chart-signing/bin/_fake
 
       - name: Get changed formatted files
         id: formatted-files
@@ -142,7 +142,7 @@ jobs:
           }}
         run: |
           # shellcheck disable=SC2046
-          mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' 'tests/chart-signing/bin/_fake')
+          mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/tests/chart-signing/bin/_fake')
 
       - name: Check formatting
         if: >-

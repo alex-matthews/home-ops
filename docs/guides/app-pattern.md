@@ -13,7 +13,7 @@ cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
 - `.github/actionlint.yaml`: actionlint configuration.
 - `.github/labels.yaml`: label definitions synced by CI.
 - `.github/scripts/`: the bash scripts CI runs, with their offline fixtures
-  under `tests/`.
+  under `.github/tests/`.
 - `.github/workflows/`: Lint, Image Pull, Chart Verify, the post-merge
   Render alarm, Chart Signing Watch, Renovate, Renovate PR Review, and Label
   Sync.

@@ -143,7 +143,7 @@ jobs:
           patterns: |
             .github/scripts/chart-signing-*.sh
             .github/workflows/chart-*.yaml
-            tests/chart-signing/**
+            .github/tests/chart-signing/**
 
       - name: Checkout
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
@@ -161,4 +161,4 @@ jobs:
 
       - name: Run the offline fixtures
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
-        run: tests/chart-signing/run.sh
+        run: .github/tests/chart-signing/run.sh
