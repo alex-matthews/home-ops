@@ -12,7 +12,11 @@ Every pod's stdout and stderr is shipped to VictoriaLogs (service
 pod replacement do not lose history — a controller's behaviour from weeks
 ago is still queryable long after `kubectl logs` has nothing. Collection
 began 2026-08-07; nothing earlier exists, and the live window should be
-checked before assuming old events are still held.
+checked before assuming old events are still held. Jobs are the usual
+case: when a Job is cleaned up its pods go with it and `kubectl logs` has
+nothing, so a kopiur mover, a Helm hook or a CloudNativePG recovery that
+has already finished is read here. A recovery's `Target backup found`
+entry names the base backup it used.
 
 Query with LogsQL over the HTTP API through a short-lived port-forward:
 
