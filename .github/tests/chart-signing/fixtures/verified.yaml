@@ -1,0 +1,15 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"

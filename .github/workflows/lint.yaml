@@ -39,6 +39,15 @@ jobs:
             .github/workflows/**/*.yaml
             .github/workflows/**/*.yml
 
+      - name: Get changed shell scripts
+        id: shell-files
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
+        with:
+          patterns: |
+            **/*.sh
+            .github/tests/chart-signing/bin/_fake
+
       - name: Get changed formatted files
         id: formatted-files
         if: ${{ github.event_name == 'pull_request' }}
@@ -61,15 +70,17 @@ jobs:
             github.event_name == 'workflow_dispatch' ||
             steps.actionlint-files.outputs.changed_files != '[]' ||
             steps.workflow-files.outputs.changed_files != '[]' ||
+            steps.shell-files.outputs.changed_files != '[]' ||
             steps.formatted-files.outputs.changed_files != '[]'
           }}
         env:
           ACTIONLINT_FILES: ${{ steps.actionlint-files.outputs.changed_files }}
           FORMATTED_FILES: ${{ steps.formatted-files.outputs.changed_files }}
+          SHELL_FILES: ${{ steps.shell-files.outputs.changed_files }}
           WORKFLOW_FILES: ${{ steps.workflow-files.outputs.changed_files }}
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            echo "install_args=actionlint oxfmt zizmor" >> "$GITHUB_OUTPUT"
+            echo "install_args=actionlint oxfmt shellcheck zizmor" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -77,6 +88,10 @@ jobs:
 
           if [ "${ACTIONLINT_FILES}" != "[]" ]; then
             tools+=(actionlint)
+          fi
+
+          if [ "${SHELL_FILES}" != "[]" ]; then
+            tools+=(shellcheck)
           fi
 
           if [ "${FORMATTED_FILES}" != "[]" ]; then
@@ -119,6 +134,16 @@ jobs:
           }}
         run: mise exec --no-deps -- zizmor --offline .github/workflows
 
+      - name: Lint shell scripts
+        if: >-
+          ${{
+            github.event_name == 'workflow_dispatch' ||
+            steps.shell-files.outputs.changed_files != '[]'
+          }}
+        run: |
+          # shellcheck disable=SC2046
+          mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/tests/chart-signing/bin/_fake')
+
       - name: Check formatting
         if: >-
           ${{
@@ -133,6 +158,7 @@ jobs:
             github.event_name == 'pull_request' &&
             steps.actionlint-files.outputs.changed_files == '[]' &&
             steps.workflow-files.outputs.changed_files == '[]' &&
+            steps.shell-files.outputs.changed_files == '[]' &&
             steps.formatted-files.outputs.changed_files == '[]'
           }}
-        run: echo "No workflow or formatted file changes detected"
+        run: echo "No workflow, shell script, or formatted file changes detected"

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Called through the oras and yq symlinks. ORAS reads canned responses from
+# CASE_DIR/responses.psv; yq forwards to the real repo-pinned binary.
+# Fields: tool | argument-string glob | exit code | stdout (file or text) | stderr.
+# Pipes preserve empty fields that Bash's tab-separated read would collapse.
+# First matching row wins; unexpected calls exit 99. Rows can be reused.
+set -uo pipefail
+tool="$(basename "$0")"; args="$*"
+if [ "$tool" = yq ]; then root="$(cd "$(dirname "$0")/../../../.." && pwd)"; exec "$(mise -C "$root" which yq)" "$@"; fi
+: "${CASE_DIR:?CASE_DIR must name the fixture}"
+while IFS='|' read -r t pat code out err; do
+  [ "$t" = "$tool" ] || continue
+  # shellcheck disable=SC2053
+  [[ "$args" == $pat ]] || continue
+  if [ -n "$out" ]; then
+    if [ -f "$CASE_DIR/$out" ]; then content="$(cat "$CASE_DIR/$out")"; else content="$out"; fi
+    printf '%s\n' "$content"
+  fi
+  [ -n "$err" ] && printf '%s\n' "$err" >&2
+  exit "${code:-0}"
+done < "$CASE_DIR/responses.psv"
+echo "unmatched $tool call: $args" >&2; exit 99

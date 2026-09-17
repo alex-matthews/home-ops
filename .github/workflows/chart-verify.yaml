@@ -2,11 +2,11 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Chart Verify
 
-# Pre-merge guard for chart source verification (#1967, ADR-0003). Signer
-# drift on a tag bump would freeze reconciliation at merge; a dropped or
-# changed verify block would freeze nothing, which is the problem. Both are
-# caught here, read-only against public registries and the public Sigstore
-# infrastructure. Advisory: not in the ruleset's required checks.
+# Coverage validates declarations and guards verification changes offline.
+# It runs on every PR so it can become required without path-skipped checks.
+# Signatures is advisory: check keyless Cosign identities at tag pins, discover
+# material on unsigned sources, and skip other exclusions. Fixtures exercises
+# the Coverage and discovery scripts offline; it does not test live Cosign.
 on:
   pull_request:
     branches:
@@ -15,8 +15,6 @@ on:
       - opened
       - synchronize
       - reopened
-    paths:
-      - kubernetes/**/ocirepository.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -59,17 +57,17 @@ jobs:
           for file in $(jq -r '.[]' <<< "$CHANGED_FILES"); do
             [ -f "$file" ] || continue
             provider="$(mise exec -- yq -r '.spec.verify.provider // ""' "$file")"
+            : > findings.md
+            : > errors.md
             if [ -z "$provider" ]; then
-              : > findings.md
-              : > errors.md
               FINDINGS_OUT=findings.md ERRORS_OUT=errors.md \
                 .github/scripts/chart-signing-check.sh "$file" > result.tsv
               if [ -s findings.md ]; then
-                echo "::warning file=$file::$(sed 's/^- //' findings.md | head -1) See ADR-0003 and #2018."
+                echo "::warning file=$file::$(sed 's/^- //' findings.md | head -1)"
               elif [ -s errors.md ]; then
                 echo "::notice file=$file::signing check inconclusive: $(sed 's/^- //' errors.md | head -1)"
               else
-                echo "::notice file=$file::no verify block; $(cut -f5 result.tsv | head -1) (see the exclusions inventory in #1894)"
+                echo "::notice file=$file::no verify block; $(cut -f5 result.tsv | head -1)"
               fi
               continue
             fi
@@ -101,6 +99,7 @@ jobs:
             else
               echo "::error file=$file::$url:$tag does not verify under the manifest's identity: $(tail -1 cosign.err)"
               failed=1
+              continue
             fi
           done
           exit "$failed"
@@ -122,45 +121,40 @@ jobs:
           cache: false
           install_args: yq
 
-      - name: Diff verify blocks against the base branch
+      - name: Check every source has a verify block or a declared reason, and guard removals
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           DECLARED: ${{ contains(github.event.pull_request.labels.*.name, 'verify/declared') }}
-        run: |
-          block() { # ref path -> canonical verify block, or empty
-            git show "$1:$2" 2> /dev/null | mise exec -- yq -o=json -I=0 '.spec.verify // ""'
-          }
-          undeclared=0
-          while IFS=$'\t' read -r status file _; do
-            case "$status" in
-              M) before="$(block "$BASE_SHA" "$file")"; after="$(block "$HEAD_SHA" "$file")" ;;
-              A) before='""'; after="$(block "$HEAD_SHA" "$file")" ;;
-              D) before="$(block "$BASE_SHA" "$file")"; after='""' ;;
-              *) continue ;;
-            esac
-            if [ "$status" = A ] && [ "$after" = '""' ]; then
-              echo "::notice file=$file::new source without a verify block; record it in the exclusions inventory or add one"
-              continue
-            fi
-            if [ "$status" = D ]; then
-              echo "source removed: $file"
-              continue
-            fi
-            [ "$before" = "$after" ] && continue
-            if [ "$after" = '""' ] && [ "$before" != '""' ]; then
-              msg="verify block removed"
-            elif [ "$before" = '""' ]; then
-              echo "verify block added: $file"
-              continue
-            else
-              msg="verify identity changed"
-            fi
-            if [ "$DECLARED" = "true" ]; then
-              echo "::warning file=$file::$msg (declared with the verify/declared label)"
-            else
-              echo "::error file=$file::$msg without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request"
-              undeclared=1
-            fi
-          done < <(git diff --name-status "$BASE_SHA" "$HEAD_SHA" -- 'kubernetes/**/ocirepository.yaml')
-          exit "$undeclared"
+        run: .github/scripts/chart-signing-coverage.sh "$BASE_SHA" "$HEAD_SHA" "$DECLARED"
+
+  fixtures:
+    name: Chart Verify - Fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get changed tooling
+        id: changed-files
+        uses: bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
+        with:
+          patterns: |
+            .github/scripts/chart-signing-*.sh
+            .github/workflows/chart-*.yaml
+            .github/tests/chart-signing/**
+
+      - name: Checkout
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Mise
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          minimum_release_age: 3d
+          cache: false
+          install_args: yq
+
+      - name: Run the offline fixtures
+        if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
+        run: .github/tests/chart-signing/run.sh
