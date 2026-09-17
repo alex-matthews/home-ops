@@ -1,51 +1,34 @@
 #!/usr/bin/env bash
-# Chart signing check for sources without a verify block (ADR-0003, #2018).
-#
-# Discovery first, verification second. For each ocirepository.yaml given, the
-# script takes the pinned digest, or resolves the pinned tag to one, then runs
-# three lookups against that digest: the legacy signature tag, the legacy
-# attestation tag, and the direct OCI referrers. Each lookup ends present,
-# absent, or inconclusive; absent means the registry answered that the
-# manifest does not exist, and nothing else. A source is "unsigned" only if
-# all three are absent. Material that is present is classified with cosign,
-# by digest, keylessly under any identity. A source recorded as signed with a
-# static key (cert-manager) is checked three ways, each independently: under
-# its published key with the recorded digest algorithm, under the key with
-# SHA-256, and keylessly; a cosign result other than a clean pass or a clean
-# mismatch is inconclusive, never a claim. With --mirror, the exact tag, with
-# any leading "v" stripped, is resolved on the home-operations charts-mirror
-# registry under the chart's own name, or under an alias from MIRROR_ALIASES;
-# the mirror's inventory is read only to refuse a name it lists more than
-# once. The registry also answers for packages the mirror has retired but
-# still serves.
-#
-# Output: one TSV line per source on stdout (file, ref, digest, class, detail),
-# plus one per mirror lookup. Findings and inconclusive checks are appended as
-# Markdown bullets to the files named by FINDINGS_OUT and ERRORS_OUT. Exit 0
-# unless the script itself fails, so the caller decides. Requires mise-managed
-# cosign, oras, and yq, plus git and curl.
+# Observe excluded chart sources and compare with their manifest declarations (#2145).
+# Discover legacy signature/attestation tags and direct OCI referrers at the pinned
+# digest. Verify certificates under their own identities; for verifier-gap only,
+# try the declared committed key with SHA-256 and SHA-512. Unknowns stay inconclusive.
+# Findings/errors go to FINDINGS_OUT/ERRORS_OUT; stdout is TSV (file, ref, digest,
+# result, detail). Exit 0 unless the script itself fails; the caller handles findings.
+# CHART_SIGNING_TOOLS and CHART_SIGNING_KEYS allow offline fixtures.
 set -euo pipefail
 
-MIRROR=0
-if [ "${1:-}" = "--mirror" ]; then MIRROR=1; shift; fi
-[ "$#" -gt 0 ] || { echo "usage: $0 [--mirror] FILE..." >&2; exit 64; }
+[ "$#" -gt 0 ] || { echo "usage: $0 FILE..." >&2; exit 64; }
 : "${FINDINGS_OUT:=/dev/null}" "${ERRORS_OUT:=/dev/null}"
+: "${CHART_SIGNING_KEYS:=.github/keys}"
 
-# Sources signed with a static key, recorded in #1894: file, key URL, recorded digest algorithm.
-KEYED='kubernetes/apps/cert-manager/cert-manager/app/ocirepository.yaml https://cert-manager.io/public-keys/cert-manager-pubkey-2021-09-20.pem sha512'
-# Mirror name overrides, "<chart>=<artifactName>", applied before the inventory is consulted.
-MIRROR_ALIASES=''
-MIRROR_REPO=https://github.com/home-operations/charts-mirror
-MIRROR_REGISTRY=ghcr.io/home-operations/charts-mirror
+ANNOTATION_REASON=home-ops/chart-verify-exclusion-reason
+ANNOTATION_KEY=home-ops/chart-verify-key-fingerprint
+REASONS='unsigned keyed-unpinned verifier-gap unverifiable'
+# Referrer types that are not signing material and are ignored.
+IGNORED_REFERRER_TYPES='application/spdx+json application/vnd.cyclonedx+json application/vnd.in-toto+json'
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-tool() { mise exec -- "$@"; }
+tool() {
+  if [ -n "${CHART_SIGNING_TOOLS:-}" ]; then "$CHART_SIGNING_TOOLS/$1" "${@:2}"; else mise exec -- "$@"; fi
+}
 # One line, no Markdown or delimiter-sensitive characters, at most 160 characters.
 esc() { printf '%s' "$1" | tr '\n\r\t' '   ' | tr -d '`<>[]()*_#|' | cut -c1-160; }
 finding() { printf -- '- %s\n' "$1" >> "$FINDINGS_OUT"; }
 inconclusive() { printf -- '- %s\n' "$1" >> "$ERRORS_OUT"; }
+row() { printf '%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" "$5"; }
 # The one registry answer that establishes absence: oras reporting the requested manifest as not found.
 absent_text() { grep -Eq '^Error response from registry: failed to (find |resolve digest: ).*: not found$'; }
 
@@ -63,46 +46,102 @@ lookup() {
   return 0
 }
 
-# verify NAME CMD... -> VERIFY=pass|mismatch|inconclusive; cosign's clean failure is a mismatch, anything else is not a result.
+# verify NAME CMD... -> VERIFY=pass|mismatch|inconclusive. Only a refusal cosign 3.1 was observed to emit for a
+# wrong key, a wrong algorithm or a wrong identity counts as a mismatch, matched on the last line; a generic
+# prefix such as "no matching signatures" wrapping an outage is not recognised and stays inconclusive.
 verify() {
   local name=$1; shift
   local err
+  VERIFY_ERR=""
   if err="$("$@" 2>&1 > /dev/null)"; then VERIFY=pass; return 0; fi
-  if printf '%s' "$err" | grep -q 'no matching signatures\|no signatures found'; then VERIFY=mismatch; return 0; fi
+  if printf '%s' "$err" | tail -1 | grep -Eq 'ecdsa: Invalid IEEE_P1363 encoded bytes$|crypto/rsa: verification error$|none of the expected identities matched what was in the certificate, got subjects \[[^]]*\]$|no matching CertificateIdentity found, last error: expected (SAN|issuer) value "[^"]*", got "[^"]*"$|accepted signatures do not match threshold, Found: [0-9]+, Expected [0-9]+$|expected key signature, not certificate$'; then
+    VERIFY=mismatch; return 0
+  fi
   VERIFY=inconclusive; VERIFY_ERR="$name: $(esc "$(printf '%s' "$err" | tail -1)")"
   return 0
 }
 
-if [ "$MIRROR" = 1 ]; then
-  if ! git clone -q --depth 1 "$MIRROR_REPO" "$work/mirror" 2> "$work/clone.err"; then
-    inconclusive "charts-mirror inventory could not be read: $(esc "$(tail -1 "$work/clone.err")")"
-    MIRROR=0
-  fi
-fi
+# fetch NAME FILE CMD... -> FETCH=ok|inconclusive with stdout in FILE; one retry.
+fetch() {
+  local name=$1 out=$2; shift 2
+  local attempt
+  FETCH=inconclusive; FETCH_ERR=""
+  for attempt in 1 2; do
+    if "$@" > "$out" 2> "$work/fetch.err"; then FETCH=ok; return 0; fi
+    FETCH_ERR="$name: $(esc "$(tail -1 "$work/fetch.err")")"
+    if [ "$attempt" = 1 ]; then sleep 5; fi
+  done
+  return 0
+}
+
+# Committed keys: "<fingerprint-hex> <path>" per line.
+KEYS=""
+for k in "$CHART_SIGNING_KEYS"/*.pem; do
+  [ -f "$k" ] || continue
+  fp="$(openssl pkey -pubin -in "$k" -outform DER 2> /dev/null | openssl dgst -sha256 | awk '{print $NF}')"
+  [ -n "$fp" ] || { inconclusive "committed key \`$k\` is not a readable public key"; continue; }
+  KEYS+="$fp $k"$'\n'
+done
+key_path() { printf '%s' "$KEYS" | awk -v f="$1" '$1 == f { print $2 }'; }
+hint_to_hex() { printf '%s' "$1" | base64 -d 2> /dev/null | od -An -tx1 | tr -d ' \n'; }
+
+# cert_identity FILE -> CERT_SAN, CERT_ISSUER (empty when unreadable). PEM or DER.
+cert_identity() {
+  local f=$1 text
+  CERT_SAN=""; CERT_ISSUER=""
+  text="$(openssl x509 -in "$f" -noout -text 2> /dev/null || openssl x509 -inform DER -in "$f" -noout -text 2> /dev/null)" || true
+  [ -n "$text" ] || return 0
+  CERT_SAN="$(printf '%s\n' "$text" | grep -o 'URI:[^,[:space:]]*' | head -1 | sed 's/^URI://')"
+  CERT_ISSUER="$(printf '%s\n' "$text" | grep -A1 '1\.3\.6\.1\.4\.1\.57264\.1\.1:' | tail -1 | sed 's/^[[:space:]]*//; s/^[^h]*http/http/')"
+  return 0
+}
 
 for file in "$@"; do
   [ -f "$file" ] || { inconclusive "$file: not a file"; continue; }
   url="$(tool yq -r '.spec.url' "$file" | sed 's#^oci://##')"
   tag="$(tool yq -r '.spec.ref.tag // ""' "$file")"
   digest="$(tool yq -r '.spec.ref.digest // ""' "$file")"
+  provider="$(tool yq -r '.spec.verify.provider // ""' "$file")"
+  reason="$(tool yq -r ".metadata.annotations[\"$ANNOTATION_REASON\"] // \"\"" "$file")"
+  declared_fp="$(tool yq -r ".metadata.annotations[\"$ANNOTATION_KEY\"] // \"\"" "$file" | sed 's/^sha256://')"
   ref="$url:${tag:-$digest}"
 
   if [ -z "$digest" ] && [ -z "$tag" ]; then
     inconclusive "\`$url\` pins neither a tag nor a digest; not checked (\`$file\`)"
-    printf '%s\t%s\t-\tinconclusive\tno pin\n' "$file" "$url"; continue
+    row "$file" "$url" - inconclusive "no pin"; continue
   fi
+
+  # Verified sources are checked under their pinned identity by the PR workflow.
+  if [ -n "$provider" ]; then
+    row "$file" "$ref" - verified "verify block present"; continue
+  fi
+  # Missing declarations still get discovery output to help choose a reason.
+  if [ -n "$reason" ] && ! printf '%s\n' "$REASONS" | tr ' ' '\n' | grep -Fqx -- "$reason"; then
+    inconclusive "\`$ref\` declares the unknown exclusion reason \`$(esc "$reason")\` (\`$file\`)"
+    row "$file" "$ref" - inconclusive "unknown exclusion reason"; continue
+  fi
+  declared_key=""
+  if [ "$reason" = verifier-gap ]; then
+    declared_key="$(key_path "$declared_fp")"
+    if [ -z "$declared_key" ]; then
+      inconclusive "\`$ref\` names the key fingerprint \`$declared_fp\` but no key under \`$CHART_SIGNING_KEYS\` matches it (\`$file\`)"
+      row "$file" "$ref" - inconclusive "declared key not committed"; continue
+    fi
+  fi
+
+  # Resolve.
   if [ -z "$digest" ]; then
-    reason=""
+    resolve_reason=""
     for attempt in 1 2; do
       digest="$(tool oras resolve "$ref" 2> "$work/resolve.err" | tr -d '[:space:]')" && [ -n "$digest" ] && break
       digest=""
-      if absent_text < "$work/resolve.err"; then reason="the tag does not exist"; break; fi
-      reason="resolve: $(esc "$(tail -1 "$work/resolve.err")")"
+      if absent_text < "$work/resolve.err"; then resolve_reason="the tag does not exist"; break; fi
+      resolve_reason="resolve: $(esc "$(tail -1 "$work/resolve.err")")"
       if [ "$attempt" = 1 ]; then sleep 5; fi
     done
     if [ -z "$digest" ]; then
-      inconclusive "\`$ref\` could not be resolved: $reason (\`$file\`)"
-      printf '%s\t%s\t-\tinconclusive\tresolve\n' "$file" "$ref"; continue
+      inconclusive "\`$ref\` could not be resolved: $resolve_reason (\`$file\`)"
+      row "$file" "$ref" - inconclusive "resolve"; continue
     fi
   fi
   hex="${digest#sha256:}"
@@ -110,101 +149,148 @@ for file in "$@"; do
   # Discover.
   state=""; material=""
   lookup "legacy signature tag" tool oras manifest fetch --descriptor "$url:sha256-$hex.sig"
-  [ "$LOOKUP" = present ] && material+="legacy-signature "
+  legacy_sig=$LOOKUP; [ "$LOOKUP" = present ] && material+="legacy-signature "
   [ "$LOOKUP" = inconclusive ] && state="$LOOKUP_ERR"
   lookup "legacy attestation tag" tool oras manifest fetch --descriptor "$url:sha256-$hex.att"
-  [ "$LOOKUP" = present ] && material+="legacy-attestation "
+  legacy_att=$LOOKUP; [ "$LOOKUP" = present ] && material+="legacy-attestation "
   [ "$LOOKUP" = inconclusive ] && state="${state:-$LOOKUP_ERR}"
-  count=""
-  for attempt in 1 2; do
-    if json="$(tool oras discover --depth 1 --format json "$url@$digest" 2> "$work/discover.err")"; then
-      count="$(printf '%s' "$json" | tool yq -r '.referrers | length')"
-      types="$(printf '%s' "$json" | tool yq -r '[.referrers[]?.artifactType // "untyped"] | join(",")')"
-      break
-    fi
-    if [ "$attempt" = 1 ]; then sleep 5; fi
-  done
-  if [ -z "$count" ]; then
-    state="${state:-referrers: $(esc "$(tail -1 "$work/discover.err")")}"
-  elif [ "$count" != 0 ]; then
-    material+="referrers:$types "
-  fi
-  if [ -n "$state" ]; then
-    inconclusive "\`$ref\` (\`$digest\`): $state (\`$file\`)"
-    printf '%s\t%s\t%s\tinconclusive\t%s\n' "$file" "$ref" "$digest" "$state"; continue
-  fi
-
-  # Classify.
-  keyed="$(printf '%s\n' "$KEYED" | awk -v f="$file" '$1 == f { print $2, $3 }')"
-  class=""; detail=""
-  if [ -n "$keyed" ]; then
-    keyurl="${keyed%% *}"; algo="${keyed##* }"
-    if [ -z "$material" ]; then
-      class="keyed-gone"; detail="recorded static-key signature is no longer present"
-      finding "\`$ref\` (\`$digest\`) no longer carries the static-key signature recorded in #1894 (\`$file\`)."
-    elif ! curl -fsSL -o "$work/key.pem" "$keyurl" 2> "$work/key.err"; then
-      state="published key could not be fetched: $(esc "$(tail -1 "$work/key.err")")"
-    else
-      verify "keyed $algo" tool cosign verify --key "$work/key.pem" --signature-digest-algorithm "$algo" --insecure-ignore-tlog "$url@$digest"; recorded=$VERIFY
-      verify "keyed sha256" tool cosign verify --key "$work/key.pem" --insecure-ignore-tlog "$url@$digest"; readable=$VERIFY
-      verify "keyless" tool cosign verify --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*' "$url@$digest"; keyless=$VERIFY
-      if [ "$recorded" = inconclusive ] || [ "$readable" = inconclusive ] || [ "$keyless" = inconclusive ]; then
-        state="$VERIFY_ERR"
-      elif [ "$readable" = pass ]; then
-        class="keyed-sha256"; detail="verifies under the published key with SHA-256; Flux's keyed verifier can read it"
-        finding "\`$ref\` (\`$digest\`) verifies under its published key with SHA-256; re-validate and add a keyed verify block (\`$file\`)."
-      elif [ "$keyless" = pass ]; then
-        class="keyless-added"; detail="keyless signature verifies alongside the static key ($material)"
-        finding "\`$ref\` (\`$digest\`) carries a keyless signature that verifies; re-validate the identity and add a verify block (\`$file\`)."
-      elif [ "$recorded" = pass ]; then
-        class="keyed-known"; detail="verifies under the published key with $algo only, as recorded ($material)"
-      else
-        class="keyed-changed"; detail="signing material present ($material) but the recorded key no longer verifies it"
-        finding "\`$ref\` (\`$digest\`): the recorded static key no longer verifies this artifact; the signing material changed ($(esc "$material")) (\`$file\`)."
-      fi
-    fi
-  elif [ -z "$material" ]; then
-    class="unsigned"; detail="no signature tag, no attestation tag, no direct referrers"
+  referrers=""
+  fetch "referrers" "$work/discover.json" tool oras discover --depth 1 --format json "$url@$digest"
+  if [ "$FETCH" = ok ]; then
+    referrers="$(tool yq -r '.referrers[]? | .digest + " " + (.artifactType // "untyped")' "$work/discover.json")"
+    [ -n "$referrers" ] && material+="referrers:$(printf '%s\n' "$referrers" | awk '{print $2}' | paste -sd, -) "
   else
-    verify "keyless" tool cosign verify --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*' "$url@$digest"
+    state="${state:-$FETCH_ERR}"
+  fi
+  if [ -n "$state" ]; then
+    inconclusive "\`$ref\` (\`$digest\`): $state (\`$file\`)"
+    row "$file" "$ref" "$digest" inconclusive "$state"; continue
+  fi
+
+  # Parse: signature certificates to $work/certs/N, keyed hints to $keyed_hints, keyed legacy layers to
+  # $keyed_legacy. Attestations (.att) are parsed for shape only and counted in $att_layers: they are not
+  # signatures the verifier reads, so they are never verified here.
+  rm -rf "$work/certs"; mkdir -p "$work/certs"; ncert=0; keyed_hints=""; keyed_legacy=0; att_layers=0
+  parse_legacy() { # kind manifest-file -> certificates and keyed layers, or a recorded inconclusive
+    local kind=$1 file=$2 n i cert
+    n="$(tool yq -r '[.layers[]? | select(.mediaType == "application/vnd.dev.cosign.simplesigning.v1+json" or .mediaType == "application/vnd.dsse.envelope.v1+json")] | length' "$file")"
+    if [ "$n" = 0 ]; then state="${state:-legacy $kind manifest carries no signature layer this check recognises}"; return 0; fi
+    for i in $(seq 0 $((n - 1))); do
+      cert="$(tool yq -r "[.layers[]? | select(.mediaType == \"application/vnd.dev.cosign.simplesigning.v1+json\" or .mediaType == \"application/vnd.dsse.envelope.v1+json\")][$i].annotations[\"dev.sigstore.cosign/certificate\"] // \"\"" "$file")"
+      if [ "$kind" = att ]; then
+        att_layers=$((att_layers + 1))
+      elif [ -n "$cert" ]; then
+        printf '%s\n' "$cert" > "$work/certs/$ncert"; ncert=$((ncert + 1))
+      else
+        keyed_legacy=1
+      fi
+    done
+  }
+  for kind in sig att; do
+    [ "$( [ "$kind" = sig ] && echo "$legacy_sig" || echo "$legacy_att")" = present ] || continue
+    fetch "legacy $kind manifest" "$work/legacy-$kind.json" tool oras manifest fetch "$url:sha256-$hex.$kind"
+    if [ "$FETCH" = ok ]; then parse_legacy "$kind" "$work/legacy-$kind.json"; else state="${state:-$FETCH_ERR}"; fi
+  done
+  while read -r rdigest rtype; do
+    [ -n "$rdigest" ] || continue
+    if printf '%s\n' "$IGNORED_REFERRER_TYPES" | tr ' ' '\n' | grep -Fqx -- "$rtype"; then continue; fi
+    fetch "referrer $rtype" "$work/referrer.json" tool oras manifest fetch "$url@$rdigest"
+    [ "$FETCH" = ok ] || { state="${state:-$FETCH_ERR}"; continue; }
+    bundle_layer="$(tool yq -r '[.layers[] | select(.mediaType | test("^application/vnd\\.dev\\.sigstore\\.bundle")) | .digest] | .[0] // ""' "$work/referrer.json")"
+    if [ -z "$bundle_layer" ]; then
+      state="${state:-referrer $(esc "$rtype") ($rdigest) is not a signing bundle this check recognises}"; continue
+    fi
+    fetch "bundle blob" "$work/bundle.json" tool oras blob fetch --output - "$url@$bundle_layer"
+    [ "$FETCH" = ok ] || { state="${state:-$FETCH_ERR}"; continue; }
+    raw="$(tool yq -r '.verificationMaterial.certificate.rawBytes // ""' "$work/bundle.json")"
+    hint="$(tool yq -r '.verificationMaterial.publicKey.hint // ""' "$work/bundle.json")"
+    if [ -n "$raw" ]; then
+      printf '%s' "$raw" | base64 -d > "$work/certs/$ncert" 2> /dev/null && ncert=$((ncert + 1)) || state="${state:-bundle certificate could not be decoded}"
+    elif [ -n "$hint" ]; then
+      keyed_hints+="$(hint_to_hex "$hint") "
+    else
+      state="${state:-bundle at $rdigest carries neither a certificate nor a public-key hint}"
+    fi
+  done <<< "$referrers"
+  if [ -n "$state" ]; then
+    inconclusive "\`$ref\` (\`$digest\`): $state (\`$file\`)"
+    row "$file" "$ref" "$digest" inconclusive "$state"; continue
+  fi
+
+  # Verify certificates under their own exact identity.
+  keyless_pass=""; keyless_mismatch=0
+  for c in "$work"/certs/*; do
+    [ -f "$c" ] || continue
+    cert_identity "$c"
+    if [ -z "$CERT_SAN" ] || [ -z "$CERT_ISSUER" ]; then state="${state:-a certificate in the signing material could not be read}"; continue; fi
+    verify "keyless $CERT_SAN" tool cosign verify --certificate-identity "$CERT_SAN" --certificate-oidc-issuer "$CERT_ISSUER" "$url@$digest"
     case $VERIFY in
-      pass) class="keyless-verified"; detail="keyless signature verifies under some identity ($material)"
-            finding "\`$ref\` (\`$digest\`) carries a keyless signature that verifies; re-validate the identity and add a verify block (\`$file\`)." ;;
-      mismatch) class="material-present"; detail="signing material present ($material) but not keyless-verifiable"
-            finding "\`$ref\` (\`$digest\`) carries signing material this check cannot verify keylessly ($(esc "$material")); look at it (\`$file\`)." ;;
-      *) state="$VERIFY_ERR" ;;
+      pass) keyless_pass="${keyless_pass:-$CERT_SAN}" ;;
+      mismatch) keyless_mismatch=1 ;;
+      *) state="${state:-$VERIFY_ERR}" ;;
+    esac
+  done
+  # Only a verifier-gap declaration authorizes a key for this source.
+  keyed_present=0; keyed_sha256=""; keyed_sha512=""
+  [ -n "$keyed_hints" ] || [ "$keyed_legacy" = 1 ] && keyed_present=1
+  if [ "$keyed_present" = 1 ] && [ -n "$declared_key" ]; then
+    verify "keyed sha256 $declared_fp" tool cosign verify --key "$declared_key" --insecure-ignore-tlog "$url@$digest"
+    case $VERIFY in
+      pass) keyed_sha256="$declared_fp" ;;
+      inconclusive) state="${state:-$VERIFY_ERR}" ;;
+      mismatch)
+        verify "keyed sha512 $declared_fp" tool cosign verify --key "$declared_key" --signature-digest-algorithm sha512 --insecure-ignore-tlog "$url@$digest"
+        case $VERIFY in pass) keyed_sha512="$declared_fp" ;; inconclusive) state="${state:-$VERIFY_ERR}" ;; esac ;;
     esac
   fi
   if [ -n "$state" ]; then
     inconclusive "\`$ref\` (\`$digest\`): $state (\`$file\`)"
-    printf '%s\t%s\t%s\tinconclusive\t%s\n' "$file" "$ref" "$digest" "$state"; continue
+    row "$file" "$ref" "$digest" inconclusive "$state"; continue
   fi
-  printf '%s\t%s\t%s\t%s\t%s\n' "$file" "$ref" "$digest" "$class" "$detail"
 
-  # Mirror.
-  [ "$MIRROR" = 1 ] || continue
-  if [ -z "$tag" ]; then
-    printf '%s\t%s\t%s\tmirror-skipped\tdigest pin, no tag to look up\n' "$file" "$ref" "$digest"; continue
+  # Observe, a passing verification first.
+  if [ -n "$keyless_pass" ]; then
+    observed=keyless-verifies; detail="keyless signature verifies under $keyless_pass ($material)"
+  elif [ -n "$keyed_sha256" ]; then
+    observed=keyed-verifies; detail="verifies under committed key $keyed_sha256 with SHA-256 ($material)"
+  elif [ -n "$keyed_sha512" ]; then
+    observed=verifier-gap; detail="verifies under committed key $keyed_sha512 with SHA-512 only ($material)"
+  elif [ "$keyed_present" = 1 ] && [ -n "$declared_key" ]; then
+    observed=key-mismatch; detail="keyed signing material present but committed key $declared_fp does not verify it ($material)"
+  elif [ "$keyed_present" = 1 ]; then
+    hints="${keyed_hints%% }"; observed=keyed-unpinned; detail="keyed signing material present (${hints:-legacy layer}) and no key is declared for this source ($material)"
+  elif [ "$ncert" -gt 0 ] && [ "$keyless_mismatch" = 1 ]; then
+    observed=unverifiable; detail="certificate-based signing material is refused under its own identity ($material)"
+  elif [ "$att_layers" -gt 0 ]; then
+    observed=unverifiable; detail="attestation-only material, which is not a signature the verifier reads ($material)"
+  elif [ -z "$material" ]; then
+    observed=unsigned; detail="no signature tag, no attestation tag, no direct referrers"
+  else
+    observed=unsigned; detail="referrers present but none is signing material ($material)"
   fi
-  chart="${url##*/}"
-  artifact="$(printf '%s\n' "$MIRROR_ALIASES" | tr ' ' '\n' | awk -F= -v c="$chart" '$1 == c { print $2 }')"
-  if [ -z "$artifact" ]; then
-    matches="$( { grep -lx "artifactName: $chart" "$work"/mirror/apps/*/metadata.yaml 2> /dev/null || true; } | wc -l | tr -d ' ')"
-    case "$matches" in
-      0) artifact="$chart" ;;
-      1) artifact="$chart" ;;
-      *) inconclusive "charts-mirror lists \`$chart\` more than once; add a mirror alias (\`$file\`)"
-         printf '%s\t%s\t%s\tinconclusive\tmirror: ambiguous\n' "$file" "$ref" "$digest"; continue ;;
+
+  # Compare with the declared reason.
+  if [ -z "$reason" ]; then
+    inconclusive "\`$ref\` (\`$digest\`) has neither a verify block nor a \`$ANNOTATION_REASON\` annotation; observed \`$observed\`: $(esc "$detail") (\`$file\`)"
+    row "$file" "$ref" "$digest" inconclusive "no exclusion reason declared; observed $observed: $detail"; continue
+  fi
+  same=0
+  if [ "$observed" = "$reason" ]; then
+    same=1
+    [ "$observed" = verifier-gap ] && [ "$keyed_sha512" != "$declared_fp" ] && same=0
+  fi
+  row "$file" "$ref" "$digest" "$observed" "declared $reason; $detail"
+  if [ "$same" = 0 ]; then
+    case $observed in
+      keyless-verifies) finding "\`$ref\` (\`$digest\`) carries a keyless signature that verifies under \`$(esc "$keyless_pass")\`; declared \`$reason\`. Re-validate the identity under ADR-0003 and add a verify block (\`$file\`)." ;;
+      keyed-verifies) finding "\`$ref\` (\`$digest\`) verifies under the committed key \`$keyed_sha256\` with SHA-256, which the deployed verifier reads; declared \`$reason\`. Re-validate and add a keyed verify block (\`$file\`)." ;;
+      verifier-gap) finding "\`$ref\` (\`$digest\`) verifies under the committed key \`$keyed_sha512\` with SHA-512 only; declared \`$reason\` with key \`$declared_fp\`. Correct the declaration (\`$file\`)." ;;
+      key-mismatch) finding "\`$ref\` (\`$digest\`): the committed key \`$declared_fp\` no longer verifies this artifact; the signing material changed ($(esc "$material")) (\`$file\`)." ;;
+      keyed-unpinned) finding "\`$ref\` (\`$digest\`) carries keyed signing material with no key declared for this source; declared \`$reason\`. Look for a published key, or declare \`keyed-unpinned\` (\`$file\`)." ;;
+      unverifiable) finding "\`$ref\` (\`$digest\`) carries signing material nothing here can verify ($(esc "$detail")); declared \`$reason\`. Look at it, or declare \`unverifiable\` (\`$file\`)." ;;
+      unsigned) finding "\`$ref\` (\`$digest\`) carries no signing material; declared \`$reason\`, so the signature recorded has disappeared (\`$file\`)." ;;
     esac
   fi
-  mirror_ref="$MIRROR_REGISTRY/$artifact:${tag#v}"
-  lookup "mirror tag" tool oras resolve "$mirror_ref"
-  case $LOOKUP in
-    present) printf '%s\t%s\t%s\tmirror-present\t%s\n' "$file" "$ref" "$digest" "$mirror_ref"
-             finding "charts-mirror serves \`$mirror_ref\`, a candidate for a mirror-custody identity (\`$file\`)." ;;
-    absent)  printf '%s\t%s\t%s\tmirror-absent\t%s not published\n' "$file" "$ref" "$digest" "$mirror_ref" ;;
-    *)       inconclusive "\`$mirror_ref\` could not be resolved: $LOOKUP_ERR (\`$file\`)"
-             printf '%s\t%s\t%s\tinconclusive\tmirror\n' "$file" "$ref" "$digest" ;;
-  esac
+
 done
 exit 0

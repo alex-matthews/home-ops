@@ -2,17 +2,10 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Chart Signing Watch
 
-# Child 3 (#2018) of the artifact trust umbrella (#1893, ADR-0003). A source
-# without a verify block is excluded for a reason the exclusions inventory
-# (#1894) records once, and nothing else re-checks it. This runs
-# .github/scripts/chart-signing-check.sh weekly, or on demand, over every such
-# source: discovery of signing material at the pinned digest, classification
-# of what exists, and an exact-tag lookup on charts-mirror. A finding opens or
-# updates the one issue this workflow owns and fails the run. A lookup that
-# could not complete, or a source the script did not account for, fails the
-# run and writes nothing. A clean run comments once on an open findings issue.
-# The fix is a verify block, added only after the identity is re-validated
-# under ADR-0003.
+# Weekly discovery for excluded chart sources (#2018, #2145, ADR-0003).
+# Compare signing material with each manifest's reason; only the declared key
+# is tried for verifier-gap. Findings update one issue; inconclusive runs fail
+# without posting. The step summary includes the manifest-derived inventory.
 on:
   workflow_dispatch:
   schedule:
@@ -48,8 +41,7 @@ jobs:
 
       # Anonymous lookups on ghcr.io answer "denied" for a package that does not
       # exist, which the script rightly treats as inconclusive. Authenticated
-      # lookups answer "not found", which is the conclusive absence the mirror
-      # check needs.
+      # lookups answer "not found", which establishes absence of signing material.
       - name: Log in to ghcr.io
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,21 +49,23 @@ jobs:
         run: |
           printf '%s' "$GH_TOKEN" | mise exec -- oras login ghcr.io --username "$GH_ACTOR" --password-stdin
 
-      - name: Check every source without a verify block
+      - name: Check every excluded source
         id: check
         shell: bash
         run: |
-          : > excluded.txt
+          : > selected.txt
           for file in $(find kubernetes -name ocirepository.yaml | sort); do
-            mise exec -- yq -e '.spec.verify.provider' "$file" > /dev/null 2>&1 || echo "$file" >> excluded.txt
+            if ! mise exec -- yq -e '.spec.verify.provider' "$file" > /dev/null 2>&1; then
+              echo "$file" >> selected.txt
+            fi
           done
           : > findings.md
           : > errors.md
           : > results.tsv
           FINDINGS_OUT=findings.md ERRORS_OUT=errors.md \
-            xargs -r .github/scripts/chart-signing-check.sh --mirror < excluded.txt > results.tsv
+            xargs -r .github/scripts/chart-signing-check.sh < selected.txt > results.tsv
           cat results.tsv
-          expected="$(wc -l < excluded.txt | tr -d ' ')"
+          expected="$(wc -l < selected.txt | tr -d ' ')"
           accounted="$(cut -f1 results.tsv | sort -u | wc -l | tr -d ' ')"
           if [ "$accounted" != "$expected" ]; then
             echo "- the script accounted for $accounted of $expected sources; the run cannot be trusted" >> errors.md
@@ -95,8 +89,10 @@ jobs:
             if [ -s findings.md ]; then echo "### Findings"; echo; cat findings.md; echo; fi
             if [ -s errors.md ]; then echo "### Lookups that did not complete"; echo; cat errors.md; echo; fi
             if [ ! -s findings.md ] && [ ! -s errors.md ]; then
-              echo "Every source was accounted for, every lookup answered, and no signing state changed."
+              echo "Every source was accounted for, every lookup answered, and nothing observed differs from what the manifests declare."
+              echo
             fi
+            .github/scripts/chart-signing-inventory.sh
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open or update the findings issue
@@ -109,7 +105,7 @@ jobs:
         run: |
           title="Chart signing watch: findings"
           block="$(printf '<!-- chart-signing-watch:findings -->\n%s\n<!-- /chart-signing-watch:findings -->' "$FINDINGS")"
-          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach needs the identity re-validated and recorded in #1894 before a verify block lands (ADR-0003). Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
+          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach finding is a difference between what a manifest declares and what the run observed, or a regression in its declared signing key. Act on it in a pull request: a verify block after the identity is re-validated under ADR-0003, or a corrected exclusion reason on the manifest. Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
           number="$(gh issue list --state open --limit 100 --search "\"$title\" in:title" --json number,body,author \
             --jq '[.[] | select((.author.login == "app/github-actions" or .author.login == "github-actions") and (.body | contains("<!-- chart-signing-watch -->")))][0].number // ""')"
           if [ -z "$number" ]; then
@@ -139,7 +135,7 @@ jobs:
             --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(contains("<!-- chart-signing-watch"))) | last')"
           case "$last" in
             *"<!-- chart-signing-watch:clean -->"*) echo "already recorded" ;;
-            *) gh issue comment "$number" --body "$(printf '<!-- chart-signing-watch:clean -->\nThis run found no changed signing state: every source accounted for, every lookup answered. Close this issue once the findings above are recorded in #1894.\n\nRun: %s' "$RUN_URL")" ;;
+            *) gh issue comment "$number" --body "$(printf '<!-- chart-signing-watch:clean -->\nThis run found nothing that differs from what the manifests declare: every source accounted for, every lookup answered. Close this issue once the findings above are acted on.\n\nRun: %s' "$RUN_URL")" ;;
           esac
 
       - name: Fail on findings or incomplete checks

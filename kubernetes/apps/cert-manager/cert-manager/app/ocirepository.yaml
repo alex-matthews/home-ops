@@ -4,6 +4,9 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: cert-manager
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
 spec:
   interval: 15m
   layerSelector:

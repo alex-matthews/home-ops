@@ -1,0 +1,106 @@
+=== c01-unsigned-declared-unsigned
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	declared unsigned; no signature tag, no attestation tag, no direct referrers
+=== c02-unsigned-declared-keyed-unpinned
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries no signing material; declared `keyed-unpinned`, so the signature recorded has disappeared (`ocirepository.yaml`).
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: keyed-unpinned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	declared keyed-unpinned; no signature tag, no attestation tag, no direct referrers
+=== c24-ignored-referrer-only
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/spdx+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	unsigned	declared unsigned; referrers present but none is signing material (referrers:application/spdx+json )

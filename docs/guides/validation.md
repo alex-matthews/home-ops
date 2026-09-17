@@ -17,6 +17,13 @@ mise exec --no-deps -- zizmor --offline .github/workflows
 mise exec --no-deps -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
 ```
 
+Shell scripts and their offline fixtures:
+
+```sh
+mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' 'tests/chart-signing/bin/_fake')
+tests/chart-signing/run.sh
+```
+
 Flux and Kubernetes rendering:
 
 ```sh
@@ -207,81 +214,84 @@ fragility, not a local rule error.
 
 CI runs tools directly. Do not route everything through `just`.
 
+A script that CI runs, and any script that is not an operator recipe, is
+bash: `set -euo pipefail`, external tools called through one wrapper
+function so fixtures can stand them in, `shellcheck` clean at warning level,
+and its branches exercised by offline fixtures under `tests/`. The chart
+signing scripts under `.github/scripts/` are the pattern.
+
 `just` is for local/operator workflows: diagnostics, rendering helpers, live
 cluster actions, bootstrap, Talos, and restore operations. Changes to Justfiles
 are formatted by Lefthook. Image Pull currently filters on `kubernetes/**/*`,
 so changes under `kubernetes/` can trigger it even when the touched file is
 local/operator tooling rather than rendered cluster state.
 
-The `Chart Verify` workflow runs on pull requests that touch an
-`ocirepository.yaml`, in two jobs that answer different questions. Both are
-advisory, not required checks, and read only public registries and
-Sigstore. Read their annotations, not their colour.
+The `Chart Verify` workflow has three jobs. Coverage runs offline on every
+pull request and is intended to be required after the owner adds it to the
+repository's required checks. Every `OCIRepository` under `kubernetes/`
+must live in `ocirepository.yaml` and carry exactly one of `spec.verify` or
+`home-ops/chart-verify-exclusion-reason`:
 
-Signatures asks whether the chart bytes verify: it re-runs cosign at the
-new pinned tag under each changed manifest's own identity regexes. A
-`verified` line in the log proves only that the chart artifact matched the
-identity in its manifest. It says nothing about the container images the
-chart deploys,
-and a source with no `verify` block, a non-cosign provider, or no tag pin
-does not fail the job; each is reported as a notice or warning and the job
-stays green. On a bump of a source with no `verify` block, it runs the
-discovery described below on the new tag. A signature that verifies, or
-signing material it cannot verify, is a warning. An inconclusive lookup, or
-a conclusive absence, is a notice.
+| Reason           | What the check observes                                                               |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `unsigned`       | No signing material discovered at the referenced artifact.                            |
+| `keyed-unpinned` | Keyed signing material, with no key declared for this source.                         |
+| `verifier-gap`   | The declared key verifies with SHA-512 but not SHA-256.                               |
+| `unverifiable`   | Attestation-only material, or a certificate signature refused under its own identity. |
 
-Coverage asks whether verification policy changed: it diffs each changed
-manifest's `verify` block against the base branch. A new source with a
-block passes, a new source without one gets a notice, and a removed block
-or changed identity fails unless the pull request carries the
-`verify/declared` label. The label is read from the event that triggered
-the run, so after adding it push a fresh commit (a rebase is enough);
-re-running the old job replays the original event and does not see the
-label. A signer that changed is a policy
-decision under ADR-0003, never a regex to loosen, and the label is for
-declared policy changes, not for a result that looks wrong: the first added
-source with a `verify` block (#2081) was misreported as an identity change
-by a sentinel bug in the workflow, and was fixed rather than declared.
+Only `verifier-gap` also carries `home-ops/chart-verify-key-fingerprint`, the
+SHA-256 of the DER-encoded public key committed under `.github/keys/`.
+Coverage rejects missing, conflicting or invalid declarations and unknown
+key fingerprints. It also guards verification removal and identity changes,
+matching moved sources by name and URL, then by path. These changes require
+the `verify/declared` pull request label and the rationale under ADR-0003;
+adding an exclusion annotation does not bypass the guard. After labelling,
+push a fresh commit: rerunning an old job uses its original event labels.
 
-The `Chart Signing Watch` workflow runs weekly, and on demand, over every
-source without a `verify` block. Both workflows call
-`.github/scripts/chart-signing-check.sh`. It takes the pinned digest, or
-resolves the pinned tag to one, then looks up the legacy signature tag, the
-legacy attestation tag, and the direct OCI referrers. A lookup is absent only
-if the registry answered that the manifest does not exist, and a source
-counts as unsigned only if all three lookups are absent. It checks material
-that exists by digest with cosign, keylessly under any identity, and treats
-any cosign result other than a clean pass or a clean mismatch as
-inconclusive. It checks cert-manager three ways, each on its own: under the
-published static key with SHA-512, the recorded state; under that key with
-SHA-256, which Flux's keyed verifier can read; and keylessly. A change in
-any of the three is a finding. On the watch it also resolves the exact tag,
-with any leading `v` stripped, on the mirror registry under the chart's own
-name, or under an alias the script carries, and reads charts-mirror's
-inventory only to refuse a name it lists more than once. The mirror registry
-also answers for packages the mirror has retired but still serves. On the
-watch, a finding opens or updates the one issue the workflow
-owns, found by title, marker, and author, and fails the run; do not rename
-that issue. A lookup that could not complete, or a source the script did not
-account for, fails the run and writes nothing, so a green run means every
-source was accounted for and every lookup answered. A clean run comments
-once on an open findings issue, and you close it once #1894 records the
-findings. Neither workflow adds a `verify` block. Add one only after you
-re-validate the identity and record it in #1894, as ADR-0003 requires.
+Signatures is advisory. Changed verified sources are checked with cosign
+under their manifest's identity regexes at the pinned tag. This proves
+chart signer identity, not the images or content the chart deploys. Changed
+excluded sources use the same discovery as the weekly watch: a difference
+from the declared reason is a warning, and an inconclusive check is a
+notice. Fixtures runs the offline tests when scripts, keys, fixtures or
+chart workflows change.
 
-Three limits apply. The check does not discover a signature stored in a
-repository other than the chart's own. A source pinned by neither tag nor
-digest is reported as inconclusive rather than checked. `mirror.gcr.io` is a
-pull-through cache of Docker Hub with no documented signer of its own, so a
-source pinned there is checked at its cache path like any other and the
-upstream publisher is not watched through it. Two procedures go with the
-watch. After the first run on `main`, and after any run that reports a
-finding, record the dated outcome in the exclusions inventory in #1894, even
-if nothing changed. On a bump of `flux-instance` or `flux-operator`, read
-source-controller's release notes for changes to keyed verification and
-record in #1894 the version reviewed and whether cert-manager's SHA-512
-signature is still unreadable; a release that reads it brings cert-manager
-into scope for re-validation.
+`Chart Signing Watch` runs weekly and on demand over excluded sources. The
+check resolves the manifest's tag or uses its digest, discovers legacy
+signature/attestation tags and direct OCI referrers, and inspects the signing
+material. It verifies certificates under their own identities and tries
+only a `verifier-gap` source's declared key. Matching observations are
+silent; newly signed artifacts, missing signing material, failed declared
+keys and newly usable signatures produce findings. Registry errors,
+unsupported material and unrecognised verification failures are
+inconclusive, never evidence that a chart is unsigned.
+
+Run the same commands locally:
+
+```sh
+.github/scripts/chart-signing-inventory.sh
+.github/scripts/chart-signing-check.sh kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
+FINDINGS_OUT=findings.md ERRORS_OUT=errors.md .github/scripts/chart-signing-check.sh <manifest>...
+```
+
+The inventory is derived from manifests and appears in each watch summary.
+Mirror sources keep their pinned `spec.verify` identity and no exclusion
+annotation. The inventory recognizes that signer as “verified — mirror
+custody”; it does not infer upstream authenticity. The watch opens or
+updates one findings issue only when every lookup completes, and fails on
+findings or inconclusive results. Do not rename that issue: it is located
+by title, marker and author. A clean run comments once; close the issue
+after addressing its findings. Neither workflow changes declarations or
+trust automatically; re-validate a proposed signer under ADR-0003.
+
+Discovery covers the referenced chart in its own registry repository.
+It does not search newer releases, other signature locations, mirror
+availability/retirement, or extra signatures on verified sources. A
+publisher authenticating a key out of band is also invisible to these
+lookups. For `mirror.gcr.io`, only the configured cache path is inspected.
+On `flux-instance` or `flux-operator` bumps, check source-controller release
+notes for SHA-512 key support or identity-matcher changes; CLI results do
+not establish the deployed verifier's capabilities.
 
 The `Render` workflow is a GitHub-hosted post-merge alarm, not a required pull
 request check. It runs Flate on `main` after changes under `kubernetes/` so

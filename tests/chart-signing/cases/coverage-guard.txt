@@ -1,0 +1,296 @@
+=== v04-verify-removed-reason-added-no-label
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+1
+--- expected
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+--- head .keep
+--- head kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+=== v05-verify-removed-with-label
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+true
+--- exit
+0
+--- expected
+::warning file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed (declared with the verify/declared label)
+--- head .keep
+--- head kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+=== v06-identity-changed-no-label
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+1
+--- expected
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify identity changed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+--- head .keep
+--- head kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/other/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+=== v07-moved-with-block-dropped
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+1
+--- expected
+::error file=kubernetes/apps/demo/other/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+--- head .keep
+--- head kubernetes/apps/demo/other/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+=== v13-verify-added-reason-removed
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- declared
+false
+--- exit
+0
+--- expected
+verify block added: kubernetes/apps/demo/app/ocirepository.yaml
+--- head .keep
+--- head kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+=== v14-source-removed
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+0
+--- expected
+source removed: kubernetes/apps/demo/app/ocirepository.yaml (demo)
+--- head .keep
+=== v16-moved-unchanged
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+0
+--- expected
+--- head .keep
+--- head kubernetes/apps/demo/other/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+=== v20-renamed-source-with-block-dropped
+--- base .keep
+--- base kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://token.actions.githubusercontent.com$"
+        subject: "^https://github\\.com/example/charts/\\.github/workflows/release\\.yaml@refs/tags/v[0-9]+$"
+--- declared
+false
+--- exit
+1
+--- expected
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+--- head .keep
+--- head kubernetes/apps/demo/app/ocirepository.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo-renamed
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo-renamed

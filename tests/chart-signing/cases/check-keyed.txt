@@ -1,0 +1,366 @@
+=== c03-keyed-bundle-declared-keyed-unpinned
+--- args
+
+--- response bundle0.json
+@material/memini-bundle.json
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+--- findings
+--- keys memini.pem
+@material/memini.pem
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: keyed-unpinned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	keyed-unpinned	declared keyed-unpinned; keyed signing material present (9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df) and no key is declared for this source (referrers:application/vnd.dev.sigstore.bundle.v0.3+json )
+=== c04-keyed-bundle-declared-unsigned
+--- args
+
+--- response bundle0.json
+@material/memini-bundle.json
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) carries keyed signing material with no key declared for this source; declared `unsigned`. Look for a published key, or declare `keyed-unpinned` (`ocirepository.yaml`).
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	keyed-unpinned	declared unsigned; keyed signing material present (9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df) and no key is declared for this source (referrers:application/vnd.dev.sigstore.bundle.v0.3+json )
+=== c05-keyed-bundle-declared-key-sha256-verifies
+--- args
+
+--- response bundle0.json
+@material/memini-bundle.json
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) verifies under the committed key `9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df` with SHA-256, which the deployed verifier reads; declared `verifier-gap`. Re-validate and add a keyed verify block (`ocirepository.yaml`).
+--- keys .keep
+--- keys memini.pem
+@material/memini.pem
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+cosign|verify --key *keys/memini.pem --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|verified|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	keyed-verifies	declared verifier-gap; verifies under committed key 9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df with SHA-256 (referrers:application/vnd.dev.sigstore.bundle.v0.3+json )
+=== c06-legacy-keyed-sha512-declared-verifier-gap
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+--- findings
+--- keys .keep
+--- keys cert-manager.pem
+@material/cert-manager.pem
+--- response legacy-sig.json
+@material/cert-manager-legacy-sig.json
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+cosign|verify --key *keys/cert-manager.pem --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|12||error during command execution: no matching signatures: crypto/rsa: verification error
+cosign|verify --key *keys/cert-manager.pem --signature-digest-algorithm sha512 --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|verified|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	verifier-gap	declared verifier-gap; verifies under committed key 20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa with SHA-512 only (legacy-signature )
+=== c07-legacy-keyed-neither-verifies-declared-verifier-gap
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): the committed key `20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa` no longer verifies this artifact; the signing material changed (legacy-signature ) (`ocirepository.yaml`).
+--- keys .keep
+--- keys cert-manager.pem
+@material/cert-manager.pem
+--- response legacy-sig.json
+@material/cert-manager-legacy-sig.json
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+cosign|verify --key *keys/cert-manager.pem --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|12||error during command execution: no matching signatures: crypto/rsa: verification error
+cosign|verify --key *keys/cert-manager.pem --signature-digest-algorithm sha512 --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|12||error during command execution: no matching signatures: crypto/rsa: verification error
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	key-mismatch	declared verifier-gap; keyed signing material present but committed key 20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa does not verify it (legacy-signature )
+=== c26-keyed-bundle-declared-verifier-gap-key-mismatch
+--- args
+
+--- response bundle0.json
+@material/memini-bundle.json
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+--- findings
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): the committed key `9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df` no longer verifies this artifact; the signing material changed (referrers:application/vnd.dev.sigstore.bundle.v0.3+json ) (`ocirepository.yaml`).
+--- keys .keep
+--- keys memini.pem
+@material/memini.pem
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+cosign|verify --key *keys/memini.pem --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|1||error during command execution: no matching attestations: failed to verify signature: could not verify envelope: accepted signatures do not match threshold, Found: 0, Expected 1
+cosign|verify --key *keys/memini.pem --signature-digest-algorithm sha512 --insecure-ignore-tlog registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|1||error during command execution: no matching attestations: failed to verify signature: could not verify envelope: accepted signatures do not match threshold, Found: 0, Expected 1
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	key-mismatch	declared verifier-gap; keyed signing material present but committed key 9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df does not verify it (referrers:application/vnd.dev.sigstore.bundle.v0.3+json )

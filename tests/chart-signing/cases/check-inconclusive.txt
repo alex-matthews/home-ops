@@ -1,0 +1,482 @@
+=== c12-bundle-without-cert-or-hint
+--- args
+
+--- response bundle0.json
+{
+  "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "verificationMaterial": { "tlogEntries": [] }
+}
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): bundle at sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd carries neither a certificate nor a public-key hint (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	bundle at sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd carries neither a certificate nor a public-key hint
+=== c13-unrecognised-referrer-type
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.example.unknown+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): referrer application/vnd.example.unknown+json (sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd) is not a signing bundle this check recognises (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.example.unknown+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/octet-stream",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	referrer application/vnd.example.unknown+json (sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd) is not a signing bundle this check recognises
+=== c14-lookup-error
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): legacy signature tag: Error response from registry: 503 Service Unavailable (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: 503 Service Unavailable
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	legacy signature tag: Error response from registry: 503 Service Unavailable
+=== c15-unresolvable-tag
+--- args
+
+--- errors
+- `registry.example.test/charts/demo:1.2.3` could not be resolved: the tag does not exist (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|1||Error response from registry: failed to resolve digest: registry.example.test/charts/demo:1.2.3: not found
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	resolve
+=== c16-unknown-reason
+--- args
+
+--- errors
+- `registry.example.test/charts/demo:1.2.3` declares the unknown exclusion reason `signed-maybe` (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: signed-maybe
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	unknown exclusion reason
+=== c17-declared-key-not-committed
+--- args
+
+--- errors
+- `registry.example.test/charts/demo:1.2.3` names the key fingerprint `20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa` but no key under `keys` matches it (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
+    home-ops/chart-verify-key-fingerprint: sha256:20a9d8524b982644a958d6a301dcc9296671bc76e924334f28cd7231d8f2e8fa
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	declared key not committed
+=== c25-no-reason-declared
+--- args
+
+--- response bundle0.json
+@material/memini-bundle.json
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": [
+    {
+      "reference": "registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "size": 500,
+      "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "referrers": []
+    }
+  ]
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`) has neither a verify block nor a `home-ops/chart-verify-exclusion-reason` annotation; observed `keyed-unpinned`: keyed signing material present 9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df and no key is declared for this source referrers:application/vnd (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- response referrer0.json
+{
+  "schemaVersion": 2,
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "layers": [
+    {
+      "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "digest": "sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "size": 100
+    }
+  ],
+  "subject": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:abababababababababababababababababababababababababababababababab",
+    "size": 100
+  }
+}
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig: not found
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+oras|manifest fetch registry.example.test/charts/demo@sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd|0|referrer0.json|
+oras|blob fetch --output - registry.example.test/charts/demo@sha256:efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef|0|bundle0.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	no exclusion reason declared; observed keyed-unpinned: keyed signing material present (9caa8e91f0354b87aec8b280e02e76307b1019f01b1dca241e34b047d15cb2df) and no key is declared for this source (referrers:application/vnd.dev.sigstore.bundle.v0.3+json )
+=== c27-keyless-verify-error-is-inconclusive
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: getting Rekor public keys: dial tcp: i/o timeout (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- response legacy-sig.json
+@material/app-template-legacy-sig.json
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+cosign|verify --certificate-identity https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|1||error during command execution: getting Rekor public keys: dial tcp: i/o timeout
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: getting Rekor public keys: dial tcp: i/o timeout
+=== c29-reason-is-a-regex
+--- args
+
+--- errors
+- `registry.example.test/charts/demo:1.2.3` declares the unknown exclusion reason `.` (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: .*
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	unknown exclusion reason
+=== c30-legacy-manifest-without-layers
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): legacy sig manifest carries no signature layer this check recognises (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- response legacy-sig.json
+{ "schemaVersion": 2, "mediaType": "application/vnd.oci.image.manifest.v1+json", "layers": [] }
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	legacy sig manifest carries no signature layer this check recognises
+=== c34-outage-wrapped-in-refusal-prefix
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: no matching signatures: fetching Rekor proof: connection timed out (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- response legacy-sig.json
+@material/app-template-legacy-sig.json
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+cosign|verify --certificate-identity https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|1||error during command execution: no matching signatures: fetching Rekor proof: connection timed out
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: no matching signatures: fetching Rekor proof: connection timed out
+=== c38-outage-appended-to-refusal
+--- args
+
+--- response discover.json
+{
+  "reference": "registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab",
+  "digest": "sha256:abababababababababababababababababababababababababababababababab",
+  "referrers": []
+}
+--- errors
+- `registry.example.test/charts/demo:1.2.3` (`sha256:abababababababababababababababababababababababababababababababab`): keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: no matching signatures: none of the expected identities matched what was in the certificate, got subjects x: fetching Rekor proo (`ocirepository.yaml`)
+--- findings
+--- keys .keep
+--- response legacy-sig.json
+@material/app-template-legacy-sig.json
+--- manifest
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  interval: 15m
+  ref:
+    tag: 1.2.3
+  url: oci://registry.example.test/charts/demo
+--- responses
+oras|resolve registry.example.test/charts/demo:1.2.3|0|sha256:abababababababababababababababababababababababababababababababab|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|{}|
+oras|manifest fetch registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.sig|0|legacy-sig.json|
+oras|manifest fetch --descriptor registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att|1||Error response from registry: failed to find "registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att": registry.example.test/charts/demo:sha256-abababababababababababababababababababababababababababababababab.att: not found
+oras|discover --depth 1 --format json registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|0|discover.json|
+cosign|verify --certificate-identity https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main --certificate-oidc-issuer https://token.actions.githubusercontent.com registry.example.test/charts/demo@sha256:abababababababababababababababababababababababababababababababab|1||error during command execution: no matching signatures: none of the expected identities matched what was in the certificate, got subjects x: fetching Rekor proof: connection timed out
+--- results
+ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:abababababababababababababababababababababababababababababababab	inconclusive	keyless https://github.com/bjw-s-labs/helm-charts/.github/workflows/chart-release-steps.yaml@refs/heads/main: error during command execution: no matching signatures: none of the expected identities matched what was in the certificate, got subjects x: fetching Rekor proo

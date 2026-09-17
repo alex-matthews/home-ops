@@ -11,9 +11,14 @@ cluster see [`cluster-model.md`](cluster-model.md); for validation commands see
 - `.agents/skills/`: task recipes such as `add-app` and
   `maintenance-window`.
 - `.github/actionlint.yaml`: actionlint configuration.
+- `.github/keys/`: public keys committed for chart sources whose signatures
+  the deployed verifier cannot read, named from the manifest by fingerprint.
 - `.github/labels.yaml`: label definitions synced by CI.
+- `.github/scripts/`: the bash scripts CI runs, with their offline fixtures
+  under `tests/`.
 - `.github/workflows/`: Lint, Image Pull, Chart Verify, the post-merge
-  Render alarm, Renovate, Renovate PR Review, and Label Sync.
+  Render alarm, Chart Signing Watch, Renovate, Renovate PR Review, and Label
+  Sync.
 - `.mise/`: repo-pinned tools and local environment — `config.toml` (tools
   plus the default read-only identities), `config.admin.toml` (administrative
   profile), and `mise.lock` (committed checksum lockfile).

@@ -100,8 +100,20 @@ recyclarr's `configMapGenerator` block (name `<app>-configmap`, one entry per
 Copy atuin's. The chart is `oci://ghcr.io/bjw-s-labs/helm/app-template`; use
 the same chart tag as nearby apps (Renovate bumps it). Keep atuin's `verify`
 block verbatim — it pins the app-template signing identity. For any other
-chart, derive the identity per ADR-0003 (or omit `verify` and record the
-source as unverified); never copy another chart's identity.
+chart, first see what the registry shows:
+
+```sh
+.github/scripts/chart-signing-check.sh kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
+```
+
+Then either derive the identity per ADR-0003 and add a `verify` block, or
+declare why the source is excluded with the annotation
+`home-ops/chart-verify-exclusion-reason` set to what the check observed:
+`unsigned`, `keyed-unpinned`, `verifier-gap` or `unverifiable`. The Coverage
+check refuses the merge with neither, and with both. Never copy another
+chart's identity, and never declare a reason the check did not observe; a
+signature that verifies is a reason to re-validate, not to exclude
+(`docs/guides/validation.md`).
 
 ### app/helmrelease.yaml
 
