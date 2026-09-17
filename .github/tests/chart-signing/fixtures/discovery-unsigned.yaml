@@ -1,0 +1,9 @@
+kind: OCIRepository
+metadata:
+  name: demo
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
+spec:
+  url: oci://registry.example.test/charts/demo
+  ref:
+    tag: 1.2.3
