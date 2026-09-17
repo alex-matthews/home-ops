@@ -1,6 +1,6 @@
 === d01-unsigned
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -35,7 +35,7 @@ ocirepository.yaml	registry.example.test/charts/demo@sha256:abababababababababab
 --- errors
 === d03-legacy-signature
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -50,7 +50,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d04-legacy-attestation
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -65,7 +65,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d05-sigstore-referrer
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[{"artifactType":"application/vnd.dev.sigstore.bundle.v0.3+json"}]}
 --- responses
@@ -80,7 +80,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d06-unknown-referrer
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[{"artifactType":"application/vnd.example.unknown"}]}
 --- responses
@@ -95,7 +95,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d07-ignored-sboms
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[{"artifactType":"application/spdx+json"},{"artifactType":"application/vnd.cyclonedx+json"}]}
 --- responses
@@ -109,7 +109,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d08-untyped-referrer
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[{},{"artifactType":""}]}
 --- responses
@@ -124,7 +124,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d09-attestation-beside-sbom
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[{"artifactType":"application/spdx+json"},{"artifactType":"application/vnd.in-toto+json"}]}
 --- responses
@@ -139,7 +139,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 --- errors
 === d10-lookup-error-overrides-material
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -154,7 +154,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 - `registry.example.test/charts/demo:1.2.3`: legacy .sig tag: Error response from registry: 503 Service Unavailable (`ocirepository.yaml`)
 === d11-denied-is-not-absence
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -169,7 +169,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 - `registry.example.test/charts/demo:1.2.3`: legacy .sig tag: Error response from registry: denied (`ocirepository.yaml`)
 === d12-discovery-error
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -184,7 +184,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 - `registry.example.test/charts/demo:1.2.3`: referrers: connection timed out (`ocirepository.yaml`)
 === d13-malformed-response
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {}
 --- responses
@@ -199,7 +199,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	sha256:ababababababab
 - `registry.example.test/charts/demo:1.2.3`: invalid referrer response (`ocirepository.yaml`)
 === d14-missing-tag
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
@@ -211,7 +211,7 @@ ocirepository.yaml	registry.example.test/charts/demo:1.2.3	-	inconclusive	the ta
 - `registry.example.test/charts/demo:1.2.3`: the tag does not exist (`ocirepository.yaml`)
 === d15-invalid-digest
 --- manifest
-@fixtures/discovery-unsigned.yaml
+@fixtures/unsigned.yaml
 --- response discover.json
 {"referrers":[]}
 --- responses
