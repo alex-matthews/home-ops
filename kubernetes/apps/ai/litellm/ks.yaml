@@ -7,11 +7,16 @@ metadata:
 spec:
   components:
     - ../../../../components/dragonfly
+  dependsOn:
+    - name: litellm-operator
   interval: 1h
   path: ./kubernetes/apps/ai/litellm/app
   postBuild:
     substitute:
       APP: litellm
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   prune: true
   sourceRef:
     kind: GitRepository

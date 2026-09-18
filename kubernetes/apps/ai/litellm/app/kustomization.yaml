@@ -5,11 +5,6 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./externalsecret-db.yaml
-  - ./helmrelease.yaml
-  - ./ocirepository.yaml
-configMapGenerator:
-  - name: litellm-configmap
-    files:
-      - config.yaml=./resources/config.yaml
-generatorOptions:
-  disableNameSuffixHash: true
+  - ./litellmproxy.yaml
+  - ./litellmmodels.yaml
+  - ./servicemonitor.yaml
