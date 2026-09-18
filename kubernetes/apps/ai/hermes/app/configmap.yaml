@@ -30,6 +30,12 @@ data:
         tools:
           prompts: false
           resources: false
+    auxiliary:
+      # The chatgpt provider serves only the Responses API, and LiteLLM's
+      # non-streaming bridge onto it returns an empty output, so auxiliary
+      # calls 500. Interactive chat already streams and is unaffected.
+      stream_only_base_urls:
+        - litellm.ai.svc.cluster.local
     compression:
       enabled: true
       threshold: 0.50
