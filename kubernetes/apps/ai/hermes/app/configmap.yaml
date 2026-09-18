@@ -5,17 +5,17 @@ metadata:
   name: hermes-config
 data:
   config.yaml: |
-    _config_version: 38
+    _config_version: 44
     providers:
       litellm:
         name: LiteLLM
         base_url: http://litellm.ai.svc.cluster.local:4000/v1
         key_env: LITELLM_MASTER_KEY
         transport: chat_completions
-        default_model: minimax/MiniMax-M3
+        default_model: chatgpt/gpt-5.6-luna
     model:
       provider: litellm
-      default: minimax/MiniMax-M3
+      default: chatgpt/gpt-5.6-luna
     toolsets:
       - hermes-cli
       - mcp-toolhive
