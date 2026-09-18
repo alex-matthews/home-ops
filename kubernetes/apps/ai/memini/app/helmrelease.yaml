@@ -25,7 +25,7 @@ spec:
               MEMINI_EMBED_DIMS: "384"
               MEMINI_EMBED_QUERY_PREFIX: "Represent this sentence for searching relevant passages: "
               # Locks the client defaults; the UI cannot change them.
-              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":false,"auto_save":false,"session_digest":false}'
+              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":false,"auto_save":true,"session_digest":false}'
               # Keep captured history separate from explicitly authored lessons.
               MEMINI_DISTILL_ON_WRITE: "false"
               MEMINI_PROMOTE_INTERVAL: "0s"
