@@ -73,12 +73,21 @@ and HTTPRoute, and one `LiteLLMModel` per model supplies the model list. The
 proxy runs in the operator's `file` apply mode, so the rendered `config.yaml`
 carries the model list and a model change rolls the Deployment.
 
-The gateway currently declares no models. The MiniMax subscription lapsed, so
-those two definitions were removed rather than left pointing at an endpoint that
-rejects us; `model_list` renders as an empty list, which the proxy accepts.
-Hermes names `chatgpt/gpt-5.6-luna` as its default ahead of that model existing,
-so the workbench has no working model until the ChatGPT subscription provider is
-wired up. Nothing else depends on it.
+The gateway declares `chatgpt/gpt-5.6-luna`, `-terra` and `-sol`, reached through
+the ChatGPT subscription rather than an API key. Luna is Hermes's default; the
+other two are selectable. Of the 140 providers LiteLLM ships, only `chatgpt` and
+`github_copilot` authenticate a subscription, which is why a subscription-only
+workbench takes this route and the costs that come with it.
+
+The provider publishes no model list. Check a name with
+`codex exec -m <model> --skip-git-repo-check` before declaring it: one that does
+not exist registers fine and fails at request time. The LiteLLM UI's health check
+returns 400 for these models; that is cosmetic.
+
+Registering a `chatgpt` model before its credentials exist is not inert: the
+proxy blocks on a device-code request during startup until the liveness probe
+restarts it. Land the token storage and complete the login below before adding
+or restoring a `chatgpt` model.
 
 `general_settings.store_model_in_db` is set, so the LiteLLM UI can still add a
 model. Such a model is not Git-managed: it exists only in PostgreSQL, and
