@@ -1,0 +1,105 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmproxy_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: litellm
+spec:
+  image: ghcr.io/berriai/litellm:v1.101.0@sha256:d295634e09c648dcdb72c4cc2dd226f5fb87823a73e88cbbed6f205e4deb044b
+  applyMode: api
+  apiAccess:
+    masterKeyRef:
+      name: litellm-secret
+      key: LITELLM_MASTER_KEY
+  env:
+    - name: LITELLM_LOG
+      value: INFO
+    - name: LITELLM_MODE
+      value: PRODUCTION
+    - name: PROXY_BASE_URL
+      value: http://litellm.ai.svc.cluster.local:4000
+    - name: REDIS_HOST
+      value: litellm-dragonfly
+    - name: REDIS_PORT
+      value: "6379"
+    - name: STORE_MODEL_IN_DB
+      value: "True"
+  envFrom:
+    - secretRef:
+        name: litellm-secret
+    - secretRef:
+        name: litellm-db-secret
+  generalSettings:
+    health_check_endpoint: /v1/health
+  routerSettings:
+    redis_host: os.environ/REDIS_HOST
+    redis_port: os.environ/REDIS_PORT
+    routing_strategy: simple-shuffle
+  litellmSettings:
+    prometheus_adapter: true
+    require_auth_for_metrics_endpoint: false
+    cache: true
+    cache_params:
+      type: redis
+      host: os.environ/REDIS_HOST
+      port: os.environ/REDIS_PORT
+    drop_params: true
+    set_verbose: false
+    telemetry: false
+    request_timeout: 3600
+    num_retries: 1
+  callbacks:
+    callbacks:
+      - prometheus
+    success:
+      - prometheus
+    failure:
+      - prometheus
+  # The operator exposes no startupProbe, so the liveness initial delay carries
+  # the startup budget the previous startupProbe provided for Prisma migrations.
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 4000
+    initialDelaySeconds: 300
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 5
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 4000
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+  resources:
+    requests:
+      cpu: 50m
+      memory: 1.5Gi
+    limits:
+      memory: 2Gi
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: ["ALL"] }
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  service:
+    port: 4000
+  volumes:
+    - name: cache
+      emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+  volumeMounts:
+    - name: cache
+      mountPath: /app/cache
+    - name: tmp
+      mountPath: /tmp

@@ -24,7 +24,9 @@ Cluster
   │    ├─ Grafana MCP
   │    └─ Context7 MCP
   ├─ Hermes
+  ├─ litellm-operator
   ├─ LiteLLM, internal-only
+  │    ├─ PostgreSQL proxy state, shared cluster
   │    └─ Dragonfly cache/router state
   ├─ future OpenClaw assistant
   ├─ future scheduled triage workers
@@ -59,9 +61,23 @@ a single client. Durable tasks and decisions stay in GitHub and the repo.
 Hermes is the interactive client. It uses the internal LiteLLM gateway by
 default and reaches tools through the ToolHive vMCP surface.
 
-LiteLLM runs as a single internal-only replica with no public route and no
-PostgreSQL, backed by a non-persistent Dragonfly instance for Redis-compatible
-cache and router state.
+LiteLLM runs as a single internal-only replica with no public route, backed by
+the shared PostgreSQL cluster in the `database` namespace for durable proxy
+state and by a non-persistent Dragonfly instance for Redis-compatible cache and
+router state.
+
+The proxy is owned by `litellm-operator`, not by a Helm release: a
+`LiteLLMProxy` renders the config and owns the Deployment, Service, and
+ConfigMap, and one `LiteLLMModel` per model supplies the model list. The proxy
+runs in `applyMode: api`, so the operator pushes models to the DB-backed admin
+API without restarting the proxy, and `store_model_in_db` stays on.
+
+Only models the operator created carry `model_info.managed_by:
+litellm-operator`, and it reconciles those alone. A model added through the
+LiteLLM UI is therefore left untouched — and is not Git-managed: it lives only
+in PostgreSQL, is not restored by a rebuild, and should be treated as an
+experiment, not a durable surface. Removing a `LiteLLMModel` from Git deletes
+that model from the database.
 
 The Hermes dashboard is exposed through the internal Envoy Gateway route. For
 non-loopback binds, Hermes requires a dashboard auth provider; this deployment

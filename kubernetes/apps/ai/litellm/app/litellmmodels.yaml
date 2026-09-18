@@ -1,0 +1,38 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: minimax-m3
+spec:
+  modelName: minimax/MiniMax-M3
+  params:
+    model: minimax/MiniMax-M3
+    apiKeyRef:
+      name: litellm-secret
+      key: MINIMAX_API_KEY
+  info:
+    mode: chat
+    maxInputTokens: 1000000
+    supportsFunctionCalling: true
+    supportsPromptCaching: true
+    supportsVision: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: minimax-m2-7
+spec:
+  modelName: minimax/MiniMax-M2.7
+  params:
+    model: minimax/MiniMax-M2.7
+    apiKeyRef:
+      name: litellm-secret
+      key: MINIMAX_API_KEY
+  info:
+    mode: chat
+    maxInputTokens: 204800
+    supportsFunctionCalling: true
+    supportsPromptCaching: true
+    supportsVision: false

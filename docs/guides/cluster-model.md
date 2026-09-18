@@ -78,6 +78,9 @@ CRDs):
 - `toolhive-config → toolhive-operator` — MCPGroup, VirtualMCPServer.
 - `context7-mcp`, `flux-mcp`, `github-mcp`, `grafana-mcp`,
   `konflate-mcp → toolhive-operator` — MCPServer and registry entries.
+- `litellm → litellm-operator` — LiteLLMProxy and LiteLLMModel; the
+  proxy's Deployment, Service and ConfigMap are the operator's product,
+  so the workload does not exist until the operator does.
 - `kopiur-repositories → kopiur` — ClusterRepositories.
 - `tuppr-upgrades → tuppr` — TalosUpgrade, KubernetesUpgrade.
 - `silence-operator-silences → silence-operator` — Silences.
