@@ -6,4 +6,5 @@ resources:
   - ./externalsecret.yaml
   - ./externalsecret-db.yaml
   - ./litellmproxy.yaml
+  - ./pvc.yaml
   - ./servicemonitor.yaml

@@ -20,6 +20,8 @@ spec:
       value: litellm-dragonfly
     - name: REDIS_PORT
       value: "6379"
+    - name: CHATGPT_TOKEN_DIR
+      value: /app/chatgpt_tokens
   envFrom:
     - secretRef:
         name: litellm-secret
@@ -91,8 +93,13 @@ spec:
   service:
     port: 4000
   volumes:
+    - name: chatgpt-tokens
+      persistentVolumeClaim:
+        claimName: litellm-chatgpt
     - name: tmp
       emptyDir: {}
   volumeMounts:
+    - name: chatgpt-tokens
+      mountPath: /app/chatgpt_tokens
     - name: tmp
       mountPath: /tmp
