@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: litellm-chatgpt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # Node-local on purpose. The PV's node affinity keeps a surge pod on the node
+  # already holding the volume, which is what makes a rollout safe: the operator
+  # exposes no Deployment strategy, so the proxy rolls rather than recreates.
+  storageClassName: openebs-hostpath

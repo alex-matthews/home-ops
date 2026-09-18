@@ -93,6 +93,75 @@ unauthenticated `/metrics/` endpoint. Those metrics carry model names and usage
 counters, not credentials. Internal routing is not authentication: the UI and
 API are protected by the LiteLLM master key, not by the gateway.
 
+### ChatGPT subscription authentication
+
+The `chatgpt` provider authenticates a ChatGPT subscription over an OAuth device
+flow rather than an API key. It stores its credentials at
+`/app/chatgpt_tokens/auth.json` on the `litellm-chatgpt` PVC, and rewrites that
+file whenever it refreshes a token. The file must therefore be writable and must
+survive restarts; a read-only Secret mount cannot work, because the proxy would
+re-read a permanently stale token and refresh on every request.
+
+That PVC is deliberately node-local (`openebs-hostpath`). Its node affinity keeps
+a surge pod on the node already holding the volume, which is what lets the proxy
+roll: `LiteLLMProxy` exposes no Deployment strategy, so the workload uses
+RollingUpdate where the previous app-template chart defaulted to Recreate.
+
+Do not run the device flow with `kubectl exec` against the Deployment. On a
+fresh volume LiteLLM requests a device code during startup, the liveness probe
+can restart the pod before the flow finishes, and `exec deploy/litellm` may
+select a pod that is already crashlooping. Repeated starts also share the
+provider's device-code cooldown.
+
+Run it in a one-off pod instead, with the proxy's pinned image, the same volume,
+the same identity, and no probes. This needs the administrative identity,
+because creating a pod is a write:
+
+```sh
+mise exec -- kubectl --kubeconfig ./kubeconfig apply -f - <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: litellm-chatgpt-login
+  namespace: ai
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: login
+      image: ghcr.io/berriai/litellm:v1.101.0@sha256:d295634e09c648dcdb72c4cc2dd226f5fb87823a73e88cbbed6f205e4deb044b
+      command:
+        - python
+        - -u
+        - -c
+        - "from litellm.llms.chatgpt.authenticator import Authenticator; Authenticator().get_access_token(); print('saved', flush=True)"
+      env:
+        - name: CHATGPT_TOKEN_DIR
+          value: /app/chatgpt_tokens
+      volumeMounts:
+        - name: chatgpt-tokens
+          mountPath: /app/chatgpt_tokens
+  volumes:
+    - name: chatgpt-tokens
+      persistentVolumeClaim:
+        claimName: litellm-chatgpt
+EOF
+```
+
+Follow the verification URL and enter the code printed in its logs, wait for
+`saved`, then delete the pod. The identity matters: `_write_auth_file` swallows
+its errors, so a file written under the wrong uid makes later refreshes stop
+persisting silently rather than failing.
+
+The volume is not backed up. A node-local PV has no CSI snapshots, and the
+Kopiur component's snapshot policy targets `ceph-block`. Recovery after losing
+the volume is re-running this flow, so a rebuild needs someone present to
+complete it.
+
 Hermes pins `_config_version` in its ConfigMap to the schema its image expects.
 The config is mounted read-only, so the image's startup migration can never
 rewrite it: a mismatch logs a failed migration on every start. Pin the version
