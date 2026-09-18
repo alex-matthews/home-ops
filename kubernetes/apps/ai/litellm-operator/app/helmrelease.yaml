@@ -9,3 +9,10 @@ spec:
     kind: OCIRepository
     name: litellm-operator
   interval: 1h
+  values:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 96Mi
+      limits:
+        memory: 192Mi
