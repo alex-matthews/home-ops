@@ -171,6 +171,12 @@ Kopiur component's snapshot policy targets `ceph-block`. Recovery after losing
 the volume is re-running this flow, so a rebuild needs someone present to
 complete it.
 
+Hermes's `model.provider` must be `custom:<name>`, not the bare provider name.
+Its resolver accepts only `custom`, `custom:<name>`, or a name in its own
+provider registry; a bare custom name falls through to "no provider configured"
+and the dashboard parks every session on the setup wizard. The name after the
+colon matches the key under `providers:`.
+
 Hermes pins `_config_version` in its ConfigMap to the schema its image expects.
 The config is mounted read-only, so the image's startup migration can never
 rewrite it: a mismatch logs a failed migration on every start. Pin the version
