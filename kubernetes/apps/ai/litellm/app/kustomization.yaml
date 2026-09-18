@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./externalsecret-db.yaml
+  - ./litellmmodels.yaml
   - ./litellmproxy.yaml
   - ./pvc.yaml
   - ./servicemonitor.yaml
