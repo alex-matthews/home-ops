@@ -171,6 +171,12 @@ Kopiur component's snapshot policy targets `ceph-block`. Recovery after losing
 the volume is re-running this flow, so a rebuild needs someone present to
 complete it.
 
+Hermes sends auxiliary calls (title generation, compression, vision) without
+streaming, which LiteLLM's Responses bridge answers with an empty output and a 500. `auxiliary.stream_only_base_urls` puts those calls on the streaming path
+and re-aggregates them client-side; interactive chat already streams. This is a
+Hermes-side fix, so a second gateway consumer would need its own answer — the
+peer repositories patch LiteLLM itself for that reason.
+
 Hermes's `model.provider` must be `custom:<name>`, not the bare provider name.
 Its resolver accepts only `custom`, `custom:<name>`, or a name in its own
 provider registry; a bare custom name falls through to "no provider configured"
