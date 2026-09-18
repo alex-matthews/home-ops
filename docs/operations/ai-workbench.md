@@ -73,6 +73,13 @@ and HTTPRoute, and one `LiteLLMModel` per model supplies the model list. The
 proxy runs in the operator's `file` apply mode, so the rendered `config.yaml`
 carries the model list and a model change rolls the Deployment.
 
+The gateway currently declares no models. The MiniMax subscription lapsed, so
+those two definitions were removed rather than left pointing at an endpoint that
+rejects us; `model_list` renders as an empty list, which the proxy accepts.
+Hermes names `chatgpt/gpt-5.6-luna` as its default ahead of that model existing,
+so the workbench has no working model until the ChatGPT subscription provider is
+wired up. Nothing else depends on it.
+
 `general_settings.store_model_in_db` is set, so the LiteLLM UI can still add a
 model. Such a model is not Git-managed: it exists only in PostgreSQL, and
 nothing in this repository recreates it. It is not lost on a rebuild — it is
@@ -85,6 +92,14 @@ The internal route reaches the whole proxy surface, which includes the
 unauthenticated `/metrics/` endpoint. Those metrics carry model names and usage
 counters, not credentials. Internal routing is not authentication: the UI and
 API are protected by the LiteLLM master key, not by the gateway.
+
+Hermes pins `_config_version` in its ConfigMap to the schema its image expects.
+The config is mounted read-only, so the image's startup migration can never
+rewrite it: a mismatch logs a failed migration on every start. Pin the version
+deliberately when bumping the image, and read the migration steps in
+`hermes_cli/config_migrations.py` for that range first. Do not set
+`HERMES_SKIP_CONFIG_MIGRATION` — the failure is the only signal that a bump
+needs review.
 
 The Hermes dashboard is exposed through the internal Envoy Gateway route. For
 non-loopback binds, Hermes requires a dashboard auth provider; this deployment
