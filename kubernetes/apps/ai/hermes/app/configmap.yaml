@@ -14,7 +14,7 @@ data:
         transport: chat_completions
         default_model: chatgpt/gpt-5.6-luna
     model:
-      provider: litellm
+      provider: custom:litellm
       default: chatgpt/gpt-5.6-luna
     toolsets:
       - hermes-cli
