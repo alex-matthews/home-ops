@@ -24,7 +24,9 @@ Cluster
   │    ├─ Grafana MCP
   │    └─ Context7 MCP
   ├─ Hermes
+  ├─ litellm-operator
   ├─ LiteLLM, internal-only
+  │    ├─ PostgreSQL proxy state, shared cluster
   │    └─ Dragonfly cache/router state
   ├─ future OpenClaw assistant
   ├─ future scheduled triage workers
@@ -59,9 +61,30 @@ a single client. Durable tasks and decisions stay in GitHub and the repo.
 Hermes is the interactive client. It uses the internal LiteLLM gateway by
 default and reaches tools through the ToolHive vMCP surface.
 
-LiteLLM runs as a single internal-only replica with no public route and no
-PostgreSQL, backed by a non-persistent Dragonfly instance for Redis-compatible
-cache and router state.
+LiteLLM runs as a single replica with no public route, backed by the shared
+PostgreSQL cluster in the `database` namespace for durable proxy state and by a
+non-persistent Dragonfly instance for Redis-compatible cache and router state.
+Its UI and API are reachable on the internal Envoy Gateway route; Hermes keeps
+using the cluster Service.
+
+The proxy is owned by `litellm-operator`, not by a Helm release: a
+`LiteLLMProxy` renders the config and owns the Deployment, Service, ConfigMap,
+and HTTPRoute, and one `LiteLLMModel` per model supplies the model list. The
+proxy runs in the operator's `file` apply mode, so the rendered `config.yaml`
+carries the model list and a model change rolls the Deployment.
+
+`general_settings.store_model_in_db` is set, so the LiteLLM UI can still add a
+model. Such a model is not Git-managed: it exists only in PostgreSQL, and
+nothing in this repository recreates it. It is not lost on a rebuild — it is
+carried by the PostgreSQL backups described in
+[`storage-and-backups.md`](storage-and-backups.md) — but restoring it means
+restoring the database, not reconciling Git. Treat a UI-added model as an
+experiment and promote anything worth keeping to a `LiteLLMModel`.
+
+The internal route reaches the whole proxy surface, which includes the
+unauthenticated `/metrics/` endpoint. Those metrics carry model names and usage
+counters, not credentials. Internal routing is not authentication: the UI and
+API are protected by the LiteLLM master key, not by the gateway.
 
 The Hermes dashboard is exposed through the internal Envoy Gateway route. For
 non-loopback binds, Hermes requires a dashboard auth provider; this deployment
