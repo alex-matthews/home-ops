@@ -23,3 +23,7 @@ spec:
     podSecurityContext:
       fsGroup: ${KOPIUR_PGID:=100}
       fsGroupChangePolicy: OnRootMismatch
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi

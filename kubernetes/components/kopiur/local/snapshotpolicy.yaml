@@ -35,6 +35,10 @@ spec:
       metadataCacheSizeMb: 1024
       mode: Persistent
       storageClassName: ceph-block
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
   # Two tiers, decided in #1985. Quick reads repository blobs and a small
   # share of file content daily; deep restores the latest snapshot into
   # node-ephemeral scratch monthly (no capacity, so an emptyDir). Both land

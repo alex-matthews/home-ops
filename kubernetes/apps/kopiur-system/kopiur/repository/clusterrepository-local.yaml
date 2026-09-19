@@ -34,6 +34,11 @@ spec:
       namespace: kopiur-system
       key: KOPIA_PASSWORD
   maintenance:
+    mover:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1Gi
     schedule:
       # Both blocks are required once schedule is set. Quick runs hourly so
       # each one-hour index epoch closes and compacts on time; full moves out
@@ -52,6 +57,10 @@ spec:
   # Finished mover Jobs and their pods self-delete after 15 minutes instead
   # of the one-hour default; VictoriaLogs keeps the mover logs.
   moverDefaults:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
     ttlSecondsAfterFinished: 900
   scheduleDefaults:
     timezone: Pacific/Auckland
