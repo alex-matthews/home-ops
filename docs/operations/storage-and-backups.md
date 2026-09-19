@@ -233,19 +233,21 @@ Both policies carry kopiur's built-in verification (#1985): the local
 policy runs a quick blob check daily with 5% of file content read in full
 and a deep scratch restore of the latest snapshot monthly into
 node-ephemeral storage; the remote policy runs the quick check weekly on
-the default blob check only. A tier passes when the verified snapshot has
-files and no errors. The chart ships no verification alert, so
-`kopiur-verification` in `kopiur-system` alerts on a stale verified
+the default blob check only. Quick verification requires no errors; deep
+verification additionally requires a nonzero restored file count. The chart
+ships no verification alert, so `kopiur-verification` in `kopiur-system`
+alerts on a stale verified
 timestamp and on a policy with backups but no verification at all. Kopiur
 runs the first due slot as soon as verification is added to a policy that
 already has a backup, so a merge that adds a tier starts Jobs immediately.
 
-Every policy mover, backup and verify, shares a 5 Gi cache claim, and
-kopia's default content and metadata cache budgets are 5000 MiB each, more
-than the claim holds; both policies cap them at 2048 MiB and 1024 MiB.
-Without the cap a deep verify of plex fills the claim and fails with no
-space left on device (observed 2026-09-05). Restore movers set no cache and
-run on a node emptyDir, so they are unaffected either way.
+Each policy's backup mover reuses a persistent 5 Gi cache claim. Verification
+uses a separate per-run ephemeral 5 Gi `ceph-block` volume, even though the
+policy's cache mode is `Persistent`. Both use the policy's cache budgets:
+2048 MiB for content and 1024 MiB for metadata, capped below kopia's defaults
+of 5000 MiB each so they fit in the volume. Deep verification's restored
+files go to a separate node `emptyDir`; that scratch volume is not the kopia
+cache. Restore movers configure no cache volume and use an `emptyDir`.
 
 `kubernetes/components/kopiur/secrets` holds the repository credentials and is
 included at namespace level in both `default` and `kopiur-system`, not per app.
@@ -280,10 +282,37 @@ Maintenance is required operational work, not cleanup polish. Quick maintenance
 keeps repository metadata healthy; full maintenance reclaims storage after
 snapshot expiration.
 
-Both repositories run quick maintenance 6-hourly and full maintenance daily,
-staggered so the local and remote full runs do not overlap each other or the
-remote snapshot window. Watch duration, failure count, repository size, and
-restore-test outcomes. Do not disable maintenance.
+Local quick maintenance runs hourly with up to 10 minutes of jitter, paired
+with a one-hour index epoch. Remote quick maintenance runs six-hourly with
+up to 30 minutes of jitter. Full maintenance runs daily at `H 4` locally and
+`H 5` remotely, after the `H 3` remote snapshot window. All inherit
+`Pacific/Auckland`. These start times stagger work but do not prevent long
+runs from overlapping. Do not disable maintenance.
+
+Use `status.quick.lastRunAt` and `status.full.lastRunAt` with the mover's
+`maintenance run succeeded` log to confirm actual work. A successful Job
+can also mean the mover yielded the lease without running maintenance.
+Finished maintenance Jobs and their pods expire after the configured
+900 seconds; VictoriaLogs retains their logs. Prometheus retains historical
+Job samples, but an instant `kube_job_status_succeeded` query stops returning
+a deleted Job. To find successful maintenance Jobs in the last day:
+
+```promql
+max_over_time(kube_job_status_succeeded{
+  namespace="kopiur-system",
+  job_name=~"(local|remote)-(q|f)-.*"
+}[24h]) > 0
+```
+
+From 0.10.9, `lastContentReclaimedBytes` reports measured reclamation for the
+mode that ran: zero means a measured zero, and an absent field means no
+measurement. A full run also advances the quick timestamp and clears the
+quick reclamation figure. Post-run measurements are best-effort; their
+failure does not fail successful maintenance. A zero left by an older mover
+is not evidence of a new measurement. The controller updates
+`kopiur_maintenance_last_reclaimed_bytes` when the full-run field is present,
+but does not clear the gauge when that field disappears. Check the CR field
+and timestamp before treating the gauge as the latest run's measurement.
 
 ## Cluster-Scoped Resources
 
@@ -310,9 +339,11 @@ interval 30m) a repository moves to `Degraded`, and snapshots, maintenance,
 replication, and restores against it park until a connect succeeds. Parked
 work is deferred, not lost — schedules default to `Forbid`, so at most one
 snapshot per policy waits, and it fires once on recovery. Recovery is
-automatic: while open, the repository retries its connect on a 120s–600s
-backoff, so it heals within minutes of the backend returning. `Degraded` maps
-to kstatus `Reconciling`, so Flux waits rather than failing the Kustomization.
+automatic: while open, connect retries back off through 120, 240, 480, 960
+and 1800 seconds, then stay capped at 1800 seconds. After the backend returns,
+the next connect attempt may therefore wait up to 30 minutes. `Degraded` maps
+to kstatus `Reconciling`, so a Flux readiness wait does not treat it as a
+terminal failure.
 
 Neither `ClusterRepository` sets `spec.health.probe`; the defaults are
 deliberate. `onFailure: Alert` restores the pre-0.9.3 alert-only behaviour and
@@ -320,11 +351,14 @@ deliberate. `onFailure: Alert` restores the pre-0.9.3 alert-only behaviour and
 
 Operationally this means `<repo>-discovery` connect Jobs appear in
 `kopiur-system` every 30 minutes per repository, repositories can leave
-`Ready` without a spec change, and a backend outage of 15+ minutes fires both
-`KopiurRepositoryBreakerOpen` (warning) and `KopiurRepositoryNotReady`
-(critical) from the chart's PrometheusRule. During an outage, parked snapshots
-sit `Pending` rather than failing, so backup-failure signals stay quiet; watch
-the repository phase and breaker metrics instead.
+`Ready` without a spec change, and the chart alerts when the breaker stays
+open (`KopiurRepositoryBreakerOpen`, warning) or the repository stays
+Degraded/Failed (`KopiurRepositoryNotReady`, critical) for 15 minutes. That
+hold starts when the alert expression becomes true, not when the backend
+first fails; probe timing and the failure threshold affect detection.
+During an outage, parked snapshots sit `Pending` rather than failing, so
+backup-failure signals stay quiet; watch the repository phase and breaker
+metrics instead.
 
 A backend wiped after its repository went Ready is not recreated. From kopiur
 0.10.8 the `ClusterRepository` parks at `Failed` with reason
@@ -337,49 +371,50 @@ backend loss takes here.
 
 ## Known Quirks
 
-Rechecked on 2026-09-02 against 0.10.6 source. The live rollout verified
-repository, policy, schedule and backup paths; maintenance and restore quirks
-below remain source-verified rather than re-exercised. Re-test runtime
-observations after upgrades and file upstream if one still bites.
+Kopiur behavior rechecked on 2026-09-20 against 0.10.9 source and the deployed
+manifests, status, logs and metrics. All four maintenance run timestamps
+matched success logs, but those runs predated the upgrade. New maintenance
+measurements and verification cache handling were source-verified; restore
+and failure paths were not re-exercised. Re-test runtime observations after
+upgrades and file upstream if one still bites.
 
-- Repository-level movers take their identity from
-  `spec.moverDefaults.securityContext`, not from any `SnapshotPolicy`. Left
-  unset they run as UID 65532.
-- `Maintenance` CR status is incomplete even though maintenance runs correctly.
-  `lastRunAt` is not a reliable success authority either: on 0.10.6 both
-  repositories' full maintenance Jobs succeeded on the 2026-09-03 rebuild and
-  the field stayed absent on both fresh CRs. `lastHandledAt` is a yield
-  marker and stays absent on a healthy repository (unchanged in 0.10.0 — do
-  not wait for it to appear). `nextScheduledAt` and `consecutiveFailures`
-  have no writers, and `lastContentReclaimedBytes` is hard-coded to zero, as
-  is the gauge mirroring it. There are no maintenance success or duration
-  metrics, and mover metrics are OTLP-push-only and not exported here. Verify
-  from Job history — `kube_job_status_succeeded` keeps it after the Job
-  self-reaps one hour after finishing.
+- Repository-level movers use `spec.moverDefaults.securityContext` as their
+  identity baseline, independently of any `SnapshotPolicy`. Maintenance's
+  own mover configuration can override that baseline. With neither set,
+  the shipped mover image runs as UID 65532.
+- `Maintenance` status remains incomplete: `nextScheduledAt` and
+  `consecutiveFailures` have no writers. `lastHandledAt` records a handled
+  successful Job, including a yield, and can remain absent on a healthy
+  repository. It does not prove maintenance ran. There are no maintenance
+  success or duration metrics, and mover metrics are OTLP-push-only and not
+  exported here. Use the timestamps, logs and historical Job query in
+  [Kopia Maintenance](#kopia-maintenance).
 - `Restore` exposes `status.progress`, but the mover deliberately does not
-  populate it as of 0.10.0, and terminal status carries no stats. Verify a
-  restore from the target PVC's contents, not from CR counters.
-- A repository whose `<repo>-discovery` Job exhausted `backoffLimit` on a
+  populate it as of 0.10.9, and terminal status carries no file/byte stats.
+  Verify a restore from the target PVC's contents, not from CR counters.
+- An S3 repository whose `<repo>-discovery` Job exhausted `backoffLimit` on a
   terminal-class failure (bad credentials, locked repository) parks
   `Failed`/`Stalled`. From 0.10.0, a spec edit changes the repository generation
   and immediately recycles a stale generation-stamped Job. A Secret-only
   credential fix does not change the generation and still waits for the
-  finished Job's TTL, one hour by default; deleting the Job retries
-  immediately. One terminal Job created before the 0.10.0 upgrade has no
-  generation stamp and can behave the old way once. From 0.9.3, outage-class
-  failures instead recycle automatically into the `Degraded` retry loop and
-  need no intervention.
-- Persistent mover-cache PVCs are create-only. Changing `mover.cache.capacity`
+  finished Job's TTL, configured here as 15 minutes rather than the one-hour
+  default; deleting the Job permits an immediate retry. Outage-class failures
+  instead recycle automatically into the `Degraded` retry loop and need no
+  intervention.
+- Persistent backup-cache PVCs are create-only. Changing `mover.cache.capacity`
   affects new claims only; expand an existing cache through the PVC and expect
   `FileSystemResizePending` until the next mover mount completes the resize. A
   Ready `SnapshotPolicy` does not prove its cache matches configured capacity.
 - Deleting a `SnapshotPolicy`/`SnapshotSchedule`, including via Flux prune,
-  cascades only to `Snapshot` CRs (`onPolicyDelete`/`onScheduleDelete`, default
-  `Retain`). Repository-side deletions route through the mass-deletion circuit
-  breaker (`deletionProtection.threshold`, default 10); ten or more
+  defaults to removing `Snapshot` CRs while retaining repository snapshots
+  (`onPolicyDelete`/`onScheduleDelete: Retain`). With `Delete`, the resulting
+  repository deletions count as external deletions for the mass-deletion
+  circuit breaker (`deletionProtection.threshold`, default 10); ten or more
   unacknowledged external deletions hold the snapshots with `DeletionHeld=True`
   and surface `MassDeletionHeld=True` on the repository until it is annotated
-  `kopiur.home-operations.com/allow-mass-deletion=<RFC3339>`.
+  `kopiur.home-operations.com/allow-mass-deletion=<RFC3339>`. Normal GFS
+  retention is controller-authorized pruning and does not count toward that
+  external-deletion threshold.
 - A mover pod that cannot start within
   `spec.failurePolicy.podStartupDeadlineSeconds` (300 by default) fails its
   run, and a failed `Restore` is never retried. On a cold cluster the
@@ -392,8 +427,10 @@ observations after upgrades and file upstream if one still bites.
   `origin=adopted` Snapshot CRs (policy reference and identity labels set,
   no schedule ownership), applies GFS retention to them immediately, and
   starts full maintenance on both repositories while restores are in
-  flight. All of it is safe — kopia maintenance only reclaims content nothing
-  references — and all of it is noise to expect, not a fault.
+  flight. Kopia maintenance only reclaims unreferenced content, but GFS
+  retention can delete snapshots outside the configured retention set. These
+  concurrent paths are expected cold-start behavior; the 2026-09-03 drill
+  record below documents the restore outcome observed here.
 - `kubectl kopiur ls`, `cat`, `download`, and `browse` derive the credential
   Secret's namespace from the repository's `secretRef`, and refuse a session
   pod in any other namespace even when the secrets component projects the

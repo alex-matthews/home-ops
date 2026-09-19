@@ -50,9 +50,9 @@ spec:
         cron: "H 4 * * *"
   parameters:
     epoch:
-      # Hourly snapshots from 19 apps write about 77 index blobs an hour. An
-      # epoch closes only when a maintenance run finds it older than this, so
-      # the epoch and the quick schedule are sized together.
+      # Hourly app snapshots accumulate index blobs. An epoch closes only when
+      # a maintenance run finds it older than this, so the epoch and the quick
+      # schedule are sized together.
       minDuration: 1h
   # Finished mover Jobs and their pods self-delete after 15 minutes instead
   # of the one-hour default; VictoriaLogs keeps the mover logs.
