@@ -16,12 +16,11 @@ spec:
     - 0.0.0.0:8000
     - --allowed-hosts
     - "*"
-    - --disable-admin
-    - --disable-incident
-    - --disable-oncall
-    - --disable-provisioning
-    - --disable-rendering
-    - --disable-sift
+    # The category allowlist replaces the ToolHive MCPToolConfig filter, whose
+    # proxy middleware strips the 2026-07-28 envelope from tools/list and makes
+    # the vMCP health check fail (stacklok/toolhive#6684).
+    - --enabled-tools
+    - search,datasource,prometheus,loki,dashboard,folder,navigation,annotations,config
     - --disable-write
   env:
     - name: GRAFANA_URL
@@ -37,7 +36,5 @@ spec:
     limits:
       cpu: 250m
       memory: 256Mi
-  toolConfigRef:
-    name: grafana
   groupRef:
     name: mcp-tools
