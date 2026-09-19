@@ -41,9 +41,10 @@ spec:
         memory: 1Gi
   # Two tiers, decided in #1985. Quick reads repository blobs and a small
   # share of file content daily; deep restores the latest snapshot into
-  # node-ephemeral scratch monthly (no capacity, so an emptyDir). Both land
-  # after the H 3 remote snapshot and the H 4 / H 5 full maintenance runs;
-  # timezone inherits from the repository.
+  # node-ephemeral scratch monthly (no capacity, so an emptyDir). Quick starts
+  # at H 7, after the H 3 remote snapshot and H 4 / H 5 full maintenance;
+  # deep starts at H 1 on the first of the month, with up to one hour jitter.
+  # Timezone inherits from the repository.
   verification:
     quick:
       schedule:
