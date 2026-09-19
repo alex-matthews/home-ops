@@ -147,36 +147,37 @@ jobs:
           head_sha="$(jq -r '.head.sha' "${review_meta}")"
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
 
-          pr_patch_ids="$(
-            gh pr diff "${PR}" --repo "${GITHUB_REPOSITORY}" --patch |
-              git patch-id --stable |
-              awk '{print $1}' |
-              sort
+          pr_diff="${RUNNER_TEMP}/renovate-review-pr.diff"
+          gh pr diff "${PR}" --repo "${GITHUB_REPOSITORY}" > "${pr_diff}"
+
+          # Key the review on what the pull request changes, never on where those changes sit.
+          # `git patch-id` hashes each hunk's context lines as well as its changed lines, so an
+          # unrelated commit landing near this pull request's edit re-keyed the review, and a
+          # plain Renovate rebase then bought a second identical review. Keep the file identity
+          # and the changed lines; drop the `@@` headers, the `---`/`+++` headers, and context.
+          pr_change_id="$(
+            awk '
+              /^diff --git /    { print; next }
+              /^(--- |\+\+\+ )/ { next }
+              /^[+-]/           { print }
+            ' "${pr_diff}" | sha256sum | cut -d " " -f 1
           )"
 
-          if [ -z "${pr_patch_ids}" ]; then
-            echo "::notice::PR diff produced no stable patch ids; using an empty patch marker"
-            pr_patch_ids="empty"
-          fi
-
-          pr_patch_id="$(printf "%s\n" "${pr_patch_ids}" | sha256sum | cut -d " " -f 1)"
-
           jq --arg policy_version "${policy_version}" \
-            --arg pr_patch_id "${pr_patch_id}" \
+            --arg pr_change_id "${pr_change_id}" \
             --slurpfile files "${review_file_paths}" \
             '{
               title,
               files: ($files[0] | sort),
-              renovateTable: ((.body // "") | split("---")[0]),
               policyVersion: $policy_version,
-              stablePrPatchId: $pr_patch_id
+              prChangeId: $pr_change_id
             }' \
             "${review_meta}" > "${review_input}"
 
           fingerprint="$(sha256sum "${review_input}" | cut -d " " -f 1)"
           echo "fingerprint=${fingerprint}" >> "$GITHUB_OUTPUT"
           echo "started_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
-          echo "::notice::Prepared Renovate review key policy=${policy_version} head=${head_sha} pr_patch=${pr_patch_id} fingerprint=${fingerprint}"
+          echo "::notice::Prepared Renovate review key policy=${policy_version} head=${head_sha} pr_change=${pr_change_id} fingerprint=${fingerprint}"
 
           gh api --paginate --slurp \
             "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" |
