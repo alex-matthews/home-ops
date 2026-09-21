@@ -31,7 +31,7 @@ just = "1.58.0"
 kubectl = "1.37.0"
 kustomize = "5.8.1"
 lefthook = "2.1.14"
-oxfmt = "0.68.0"
+oxfmt = "0.70.0"
 # Lints the bash scripts CI runs (.github/scripts, tests); run via `mise exec -- shellcheck`.
 shellcheck = "0.11.0"
 sops = "3.13.3"
