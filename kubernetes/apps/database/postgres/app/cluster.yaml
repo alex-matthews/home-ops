@@ -74,4 +74,4 @@ spec:
       # Immich requires pgvector below 0.9.
       - name: vector
         image:
-          reference: ghcr.io/cloudnative-pg/pgvector:0.8.6-18-trixie@sha256:e34760aa297241decfa10c83bd2a46cf41fbc413c92925a4f9515e7990fbc262
+          reference: ghcr.io/cloudnative-pg/pgvector:0.8.6-18-trixie@sha256:a5725c5d7a243f1bf43178c2a7e5479f964b46dbab0324b59eb7de57ea308110
