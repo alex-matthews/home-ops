@@ -291,7 +291,7 @@ jobs:
       - name: Review Renovate PR
         id: claude
         if: ${{ steps.config.outputs.enabled == 'true' && steps.scope.outputs.skip != 'true' && steps.review.outputs.skip != 'true' }}
-        uses: anthropics/claude-code-action@2261fcfc88e7de1b55f179edd588805e12de71f2 # v1.0.228
+        uses: anthropics/claude-code-action@a4f54ef2c58884867281bd8e2f8d63352ad019a9 # v1.0.229
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ env.PR_NUMBER }}
