@@ -93,14 +93,16 @@ Renovate PR. On kopiur 0.9.1 it caught a new default-on cluster-scoped
 [`../operations/storage-and-backups.md`](../operations/storage-and-backups.md).
 
 Its comment opens with a machine-readable line — recommendation, confidence,
-Konflate coverage, scope, and the count of unexplained rendered resources —
-for an agent triaging a backlog. A run that fails before posting leaves a stub
-comment with `recommendation:unavailable` and a link to the run; that pull
-request is unreviewed. Read the Konflate diff yourself, or re-run the review
-from the workflow's manual trigger with the pull request number. The classes
-Renovate automerges — trusted digests, weekly `kube-prometheus-stack` minors
-and patches, non-0.x Action updates — merge on CI status alone, so there the
-review lands after the fact.
+Konflate coverage, scope, and the count of Unknowns, which the prompt defines —
+for an agent triaging a backlog. The model holds a read-only token and writes
+the review to a file; a later step posts it as the Renovate bot's one comment
+on the pull request, edited in place. A review that fails or is malformed turns
+that comment into a stub with `recommendation:unavailable` and a link to the
+run; that pull request is unreviewed. Read the Konflate diff yourself, or
+re-run the review from the workflow's manual trigger with the pull request
+number. The classes Renovate automerges — trusted digests, weekly
+`kube-prometheus-stack` minors and patches, non-0.x Action updates — merge on
+CI status alone, so there the review lands after the fact.
 
 That merge path exists only because `.renovaterc.json5` sets
 `automergeType: "pr"` at the top level. The preset extends `:automergeBranch`,
@@ -113,8 +115,8 @@ class then stalled silently for nine days. The dependency dashboard's
 
 Treat its blocker-level findings as high-priority signals rather than
 advisory. If it flags something this repo documents as intentional, fix the
-reviewer's prompt — it is inline in `.github/workflows/renovate-review.yaml` —
-rather than learning to skip the comment.
+reviewer's prompt, `.github/renovate-review-prompt.md`, rather than learning
+to skip the comment.
 
 ## CRD lifecycle in this cluster
 
