@@ -25,6 +25,9 @@ spec:
   env:
     - name: GRAFANA_URL
       value: http://grafana-service.observability.svc.cluster.local:3000
+    # Usage reporting to Grafana Labs is on by default.
+    - name: GRAFANA_USAGE_STATS
+      value: disabled
   secrets:
     - name: grafana-mcp-secret
       key: GRAFANA_SERVICE_ACCOUNT_TOKEN
