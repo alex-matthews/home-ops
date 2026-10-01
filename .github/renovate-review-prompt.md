@@ -135,7 +135,8 @@ Write the public comment to `.renovate-review/review.md`.
   groups, other for the rest. The workflow adds the review key and the Konflate
   status itself.
 
-Use this structure:
+Use this structure. A short review leaves out the Rendered, Upstream, and Not
+reached bullets.
 
 ```markdown
 recommendation:safe|human-review|changes-recommended confidence:high|medium|low scope:image|chart|chart-crds|talos|kubernetes|other unknowns:<count>
