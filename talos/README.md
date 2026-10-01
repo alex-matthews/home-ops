@@ -76,15 +76,14 @@ top-level `machine:` and `cluster:` block), and each stays there for a reason.
 Do not migrate one of these fields on its own. Read its reason first, because
 several rows depend on each other.
 
-| Field                                                                                           | Why it stays                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `machine.kubelet`                                                                               | `KubeletConfig` has no `extraMounts`, and the `/var/openebs/local` bind mount backs the `openebs-hostpath` storage class                                   |
-| `machine.ca`, `cluster.ca`, `cluster.aggregatorCA`, `cluster.etcd.ca`, `cluster.serviceAccount` | The document forms take raw PEM, and the stored values are base64 that `op inject` passes through undecoded                                                |
-| `machine.token`, `cluster.token`                                                                | No document form exists                                                                                                                                    |
-| `cluster.clusterName`, `cluster.controlPlane.endpoint`                                          | `KubeClusterConfig` must move together with `KubeServiceAccountConfig` (Talos's `machined` panics otherwise), and the CA row blocks that                   |
-| `cluster.etcd` (`advertisedSubnets`, `extraArgs`)                                               | Talos 1.14 has no etcd document                                                                                                                            |
-| `machine.features` (`rbac`, `apidCheckExtKeyUsage`, `diskQuotaSupport`)                         | Not deprecated                                                                                                                                             |
-| `machine.network.interfaces` (one DHCP link selected by MAC prefix)                             | Deferred to a networking change of its own, because a wrong link document strands a node until someone is on site (the nodes have no remote power control) |
+| Field                                                                                           | Why it stays                                                                                                                             |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `machine.kubelet`                                                                               | `KubeletConfig` has no `extraMounts`, and the `/var/openebs/local` bind mount backs the `openebs-hostpath` storage class                 |
+| `machine.ca`, `cluster.ca`, `cluster.aggregatorCA`, `cluster.etcd.ca`, `cluster.serviceAccount` | The document forms take raw PEM, and the stored values are base64 that `op inject` passes through undecoded                              |
+| `machine.token`, `cluster.token`                                                                | No document form exists                                                                                                                  |
+| `cluster.clusterName`, `cluster.controlPlane.endpoint`                                          | `KubeClusterConfig` must move together with `KubeServiceAccountConfig` (Talos's `machined` panics otherwise), and the CA row blocks that |
+| `cluster.etcd` (`advertisedSubnets`, `extraArgs`)                                               | Talos 1.14 has no etcd document                                                                                                          |
+| `machine.features` (`rbac`, `apidCheckExtKeyUsage`, `diskQuotaSupport`)                         | Not deprecated                                                                                                                           |
 
 ## Gotchas
 
