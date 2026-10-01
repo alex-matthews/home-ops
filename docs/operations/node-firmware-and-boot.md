@@ -34,8 +34,9 @@ the three together:
 - The state that still deserves attention: the variable naming a UKI the
   installer has since removed. sd-boot keeps two UKIs, so a variable two or
   more behind points at a file that no longer exists. m3 entered its
-  2026-08-21 hang in that state (a v1.13.5-era entry, long gone), and m2 has
-  been in it since the 2026-09-04 install removed `Talos-v1.13.8.efi`. Whether
+  2026-08-21 hang in that state (a v1.13.5-era entry, long gone), and m2
+  carried it from the 2026-09-04 install until the 2026-10-01 cold boots
+  cleared it on every node. Whether
   that state alone causes a hang, or whether the trigger is a kexec that
   falls back to a firmware reboot, is not established.
 - A cold boot refreshes the variable to the running entry (observed on m3
@@ -59,15 +60,17 @@ refreshes the stale variable. Afterwards follow the failed-rollout recovery
 order in [`node-upgrades.md`](node-upgrades.md) — uncordon, Ceph
 `HEALTH_OK`, tuppr reset.
 
-There is no remote fix: the hang precedes the OS, so watchdogs never arm,
-and Wake-on-LAN does nothing to a machine that is on but hung.
+Nothing in the OS can fix it: the hang precedes the OS, so watchdogs never
+arm, and Wake-on-LAN does nothing to a machine that is on but hung. The
+remote fix is the node's smart plug: switch it off, wait ten seconds, switch
+it on.
 
 ## BIOS hardening
 
-On every node: set After Power Failure to Power On. Combined with a smart
-plug per node, that converts a firmware hang from an on-site visit into a
-30-second remote power cycle — the only insurance that works at this failure
-stage.
+Every node has After Power Failure set to Power On and its own smart plug
+(since 2026-10-01, each proven by a plug-driven cold boot). Together they
+turn a firmware hang from an on-site visit into a 30-second remote power
+cycle, the only insurance that works at this failure stage.
 
 Do not reach for `talosctl reboot -m powercycle` or `talosctl upgrade -m
 powercycle` on these nodes as a workaround: powercycle mode has left them
@@ -78,11 +81,21 @@ default reboot mode for that reason.
 On a unit that has shown the removed-entry marker or hung: check the vendor
 for a newer BIOS build (a flash typically rebuilds the NVRAM store), load
 setup defaults to clear accumulated variable state, delete stale boot
-entries, and disable Fast Boot, UEFI PXE, and CSM. Secure Boot stays off —
+entries, and disable Fast Boot, UEFI PXE, and CSM. Loading setup defaults
+turns Secure Boot on (seen on BIOS 0080), so set it off again before saving:
 the UKIs are unsigned. If the variable re-freezes after this treatment, the
 NVRAM flash itself is failing and the board is on borrowed time.
 
-The BIOS update and this hardening are tracked in #872.
+The update to BIOS 0080 and this hardening were done on all three nodes on
+2026-10-01 (#872). For the next update:
+
+- Flash only a package whose BIOS ID matches DMI `bios_version`, which begins
+  `TNTGL357` on these boards. It comes from the ASUS NUC11TNHi5 support page;
+  the NUC11TNKv7 page that #872 links carries the vPro build `TNTGLV57`.
+- Enter the firmware through the Power Button Menu (from off, hold power
+  about three seconds until the LED turns yellow, then release): F2 and F7 at
+  POST did not register on 2026-10-01. A wireless keyboard works there only
+  through a USB receiver it is paired with, so bring a wired one.
 
 ## Node-level log noise: kernel audit spam
 
