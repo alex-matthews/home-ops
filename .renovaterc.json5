@@ -64,6 +64,21 @@
       minimumGroupSize: 2,
     },
     {
+      description: "CNPG Postgres Group: weekly digest bumps of the operand, pgvector and vchord images",
+      groupName: "cnpg-postgres",
+      matchDatasources: ["docker"],
+      matchPackageNames: [
+        "ghcr.io/cloudnative-pg/postgresql",
+        "ghcr.io/cloudnative-pg/pgvector",
+        "ghcr.io/tensorchord/vchord-scratch",
+      ],
+      matchUpdateTypes: ["digest"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      schedule: ["before 6am on Monday"],
+    },
+    {
       description: "Flux Operator Group",
       groupName: "flux-operator",
       matchDatasources: ["docker"],
@@ -129,7 +144,17 @@
     },
     {
       description: "Strip the v prefix from group titles whose members disagree on it",
-      matchPackageNames: ["/flux-operator/", "/flux-instance/", "siderolabs/talos"],
+      matchPackageNames: [
+        "/flux-operator/",
+        "/flux-instance/",
+        "siderolabs/talos",
+        "/kube-apiserver/",
+        "/kube-controller-manager/",
+        "/kube-proxy/",
+        "/kube-scheduler/",
+        "/kubelet/",
+        "kubernetes/kubernetes",
+      ],
       matchUpdateTypes: ["major", "minor", "patch"],
       commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
     },
