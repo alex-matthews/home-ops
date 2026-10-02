@@ -24,9 +24,6 @@ releases:
   - name: cloudflare-dns
     namespace: network
 
-  - name: dragonfly-operator
-    namespace: database
-
   - name: envoy-gateway
     namespace: network
 

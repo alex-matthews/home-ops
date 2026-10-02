@@ -60,7 +60,10 @@ numerous. Supporting defaults:
   the bootstrap apps phase, or platform/machine bootstrap (currently
   `talos.dev`, installed by Talos machine configuration). Flux/Helm keep
   CRD upgrade ownership. Coverage was manually verified at #1887; no
-  automated check enforces it.
+  automated check enforces it. A consumer that only directly applies the
+  CRs needs neither, because its failed dry-run self-heals at the retry
+  interval (below): Dragonfly, whose sole consumer is `litellm`, was
+  dropped from bootstrap on that evidence.
 - Exceptions require demonstrated evidence of a stored-release Helm failure
   with bounded remediation.
 
