@@ -158,6 +158,20 @@
       matchUpdateTypes: ["major", "minor", "patch"],
       commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
     },
+    // Versions
+    {
+      description: "Hold PostgreSQL to 18: a new major needs extension images and paths built for it in the same change",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/cloudnative-pg/postgresql"],
+      allowedVersions: "/^18\\./",
+    },
+    {
+      description: "Hold vchord-scratch to PostgreSQL 18 builds: the preset's versioning ranks pg<N> builds of one release as equal; matchCurrentValue spares the Database pin",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/tensorchord/vchord-scratch"],
+      matchCurrentValue: "/^pg\\d+-v/",
+      allowedVersions: "/^pg18-v/",
+    },
     // Labels: update type
     {
       matchUpdateTypes: ["major"],

@@ -48,7 +48,11 @@ spec:
   owner: memini
   databaseReclaimPolicy: retain
   extensions:
+    # Renovate moves the vchord pin with its image; move vector's by hand
+    # when the pgvector tag changes (storage note, PostgreSQL section).
     - name: vector
       ensure: present
+      version: "0.8.6"
     - name: vchord
       ensure: present
+      version: "1.1.1"

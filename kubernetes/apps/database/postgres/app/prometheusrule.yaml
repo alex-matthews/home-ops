@@ -33,6 +33,14 @@ spec:
             summary: "Replica {{ $labels.pod }} is over 5 minutes behind the primary"
           labels:
             severity: warning
+        - alert: PostgresExtensionBehindImage
+          expr: |-
+            max by (datname, extname) (cnpg_pg_extensions_update_available) > 0
+          for: 1h
+          annotations:
+            summary: "Extension {{ $labels.extname }} in database {{ $labels.datname }} trails its image; move its Database version pin"
+          labels:
+            severity: warning
         - alert: PostgresDown
           expr: |-
             cnpg_collector_up == 0
