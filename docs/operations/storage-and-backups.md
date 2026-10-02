@@ -202,6 +202,17 @@ are declared on its `Database`, so the operator creates them as superuser
 and the application role never needs `CREATE EXTENSION`. Consumers: LiteLLM,
 Memini.
 
+An extension upgrade reaches a database through its `Database`, not through
+the image. A new extension image restarts the instances with the new library
+on disk, but each database keeps its installed version until its `Database`
+pins a different `version`: the operator runs `ALTER EXTENSION ... UPDATE TO`
+only when the pin differs from what is installed. The `cnpg` Renovate preset
+moves a `vchord` pin in the same pull request as the `vchord-scratch` tag;
+any other pin moves by hand. A pin that lands before the primary runs the new
+image fails, leaves the `Database` not applied, and is retried every 30
+seconds until it succeeds. `PostgresExtensionBehindImage` fires when a
+database's installed version has trailed its image's default for an hour.
+
 ## Intentional Non-Coverage
 
 Observability PVCs — Prometheus, Alertmanager, Grafana, the Gatus sidecar,

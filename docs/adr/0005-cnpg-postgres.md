@@ -110,8 +110,11 @@ run Immich apart did so because it once needed the custom
   incompatibility is handled by holding the operator at its current
   version and raising it upstream; if the operator cannot run on the
   cluster's Kubernetes at all, this decision is revisited.
-- The PostgreSQL image and the two extension images are pinned by digest
-  in the `Cluster` spec, which Renovate does not track today; bumps are
-  manual until a rule is added.
+- The PostgreSQL image and the two extension images are pinned by tag and
+  digest in the `Cluster` spec, and the `cnpg` Renovate preset tracks them.
+  Renovate is held to PostgreSQL 18 builds, because a new major needs
+  extension images and library paths built for it in the same change. An
+  extension upgrade reaches a database only through the `version` pinned
+  on its `Database`, as the storage note describes.
 - System-SSD write wear on m2 and m3 becomes a tracked metric against the
   drives' 300 TBW rating. Wear figures are scenarios until measured.
