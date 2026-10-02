@@ -92,6 +92,29 @@ spec:
         matchLabels:
           dashboards: grafana
     additionalPrometheusRulesMap:
+      disk-performance-rules:
+        groups:
+          - name: disk-performance
+            rules:
+              # Reads are left out: the weekly fstrim stalls them for seconds.
+              # 10ms is 2.5x the worst hourly average seen over 14 days.
+              - alert: NodeDiskWriteLatencyHigh
+                annotations:
+                  summary: Average write latency on {{ $labels.device }} at {{ $labels.instance }} has been above 10ms over the last hour
+                expr: rate(node_disk_write_time_seconds_total{device=~"sda|nvme0n1"}[1h]) / rate(node_disk_writes_completed_total{device=~"sda|nvme0n1"}[1h]) > 0.01
+                for: 30m
+                labels:
+                  severity: warning
+              # 16ms is a bucket boundary, so this is exact: over 1% of the
+              # hour's WAL fsyncs were slower than 16ms. etcd's 10ms guidance
+              # falls inside the 8-16ms bucket and is only interpolated.
+              - alert: EtcdWalFsyncSlow
+                annotations:
+                  summary: etcd WAL fsync p99 on {{ $labels.instance }} has been above 16ms over the last hour
+                expr: histogram_quantile(0.99, sum by (instance, le) (rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="kube-etcd"}[1h]))) > 0.016
+                for: 30m
+                labels:
+                  severity: warning
       dockerhub-rules:
         groups:
           - name: dockerhub

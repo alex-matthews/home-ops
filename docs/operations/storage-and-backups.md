@@ -111,8 +111,9 @@ local to m2 and m3 and outside Kopiur. Its backup is the Barman Cloud
 plugin: continuous WAL archiving and a daily base backup to the `cnpg` R2
 bucket under the archive name `postgres-v1`, 14 days of retention. A node
 loss fails over to the other instance; the archive is for restore, not
-availability. Write wear on the m2 and m3 system SSDs is watched by the
-existing `SmartDeviceEnduranceConsumed` alert.
+availability. Wear and media errors on the m2 and m3 system SSDs are watched
+by the `smartctl-exporter` rules, and their write latency by
+`NodeDiskWriteLatencyHigh` and `EtcdWalFsyncSlow`.
 
 The Cluster bootstraps with `recovery` from that same archive, and the
 `cnpg.io/skipEmptyWalArchiveCheck` annotation lets it archive into the

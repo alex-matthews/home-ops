@@ -8,13 +8,23 @@ spec:
   groups:
     - name: smartctl-exporter.rules
       rules:
+        # SATA drives report no percentage_used. Samsung documents attribute
+        # 177's normalised value as the percentage of rated P/E cycles left,
+        # so 100 minus it puts both kinds of drive on the same scale.
+        - record: smartctl:endurance_used:percent
+          expr: |-
+            max by (node, device) (
+              smartctl_device_percentage_used
+              or (100 - smartctl_device_attribute{attribute_name="Wear_Leveling_Count", attribute_value_type="value"})
+            )
+
         - alert: SmartDeviceHighTemperature
           expr: |-
             smartctl_device_temperature{temperature_type="current"} > 65
           for: 5m
           annotations:
             summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has exceeded 65°C
+              Drive {{ $labels.device }} on {{ $labels.node }} has exceeded 65°C
           labels:
             severity: critical
 
@@ -24,7 +34,7 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              SMART test failed for drive {{ $labels.device }} on {{ $labels.instance }}
+              SMART test failed for drive {{ $labels.device }} on {{ $labels.node }}
           labels:
             severity: critical
 
@@ -34,49 +44,42 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has a SMART critical warning
+              Drive {{ $labels.device }} on {{ $labels.node }} has a SMART critical warning
           labels:
             severity: critical
 
-        - alert: SmartDeviceMediaErrors
+        # Fires for a day when an error counter rises or the spare falls, so a
+        # drive kept in service after an event does not stay firing.
+        - alert: SmartDeviceDegrading
           expr: |-
-            smartctl_device_media_errors != 0
-          for: 5m
+            max by (node, device, attribute_name) (
+              label_replace(smartctl_device_media_errors, "attribute_name", "media_errors", "", "")
+              or smartctl_device_attribute{attribute_value_type="raw", attribute_name=~"Reallocated_Sector_Ct|Runtime_Bad_Block|Program_Fail_Cnt_Total|Erase_Fail_Count_Total|Uncorrectable_Error_Cnt|CRC_Error_Count"}
+            )
+            > max by (node, device, attribute_name) (
+              label_replace(smartctl_device_media_errors offset 1d, "attribute_name", "media_errors", "", "")
+              or smartctl_device_attribute{attribute_value_type="raw", attribute_name=~"Reallocated_Sector_Ct|Runtime_Bad_Block|Program_Fail_Cnt_Total|Erase_Fail_Count_Total|Uncorrectable_Error_Cnt|CRC_Error_Count"} offset 1d
+            )
+            or
+            label_replace(max by (node, device) (smartctl_device_available_spare), "attribute_name", "available_spare", "", "")
+            < label_replace(max by (node, device) (smartctl_device_available_spare offset 1d), "attribute_name", "available_spare", "", "")
           annotations:
             summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has reported media errors
-          labels:
-            severity: critical
-
-        - alert: SmartDeviceEnduranceConsumed
-          expr: |-
-            smartctl_device_percentage_used >= 95
-          for: 5m
-          annotations:
-            summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has consumed {{ $value }}% of its rated write endurance; plan replacement
+              Drive {{ $labels.device }} on {{ $labels.node }}: {{ $labels.attribute_name }} changed for the worse in the last day
           labels:
             severity: warning
 
-        - alert: SmartDeviceSpareDegrading
+        # Fires for a day on each 5-point step from 90, not continuously, so a
+        # worn drive awaiting replacement does not stay firing.
+        - alert: SmartDeviceEnduranceCrossed
           expr: |-
-            smartctl_device_available_spare < 95
-          for: 5m
+            smartctl:endurance_used:percent >= 90
+            and floor(smartctl:endurance_used:percent / 5) > floor(smartctl:endurance_used:percent offset 1d / 5)
           annotations:
             summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} available spare has dropped to {{ $value }}%, an early wear-failure precursor
+              Drive {{ $labels.device }} on {{ $labels.node }} has used {{ $value }}% of its rated endurance
           labels:
             severity: warning
-
-        - alert: SmartDeviceAvailableSpareUnderThreshold
-          expr: |-
-            smartctl_device_available_spare_threshold > smartctl_device_available_spare
-          for: 5m
-          annotations:
-            summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has low available spare capacity
-          labels:
-            severity: critical
 
         - alert: SmartDeviceInterfaceSlow
           expr: |-
@@ -84,6 +87,6 @@ spec:
           for: 5m
           annotations:
             summary: >-
-              Drive {{ $labels.device }} on {{ $labels.instance }} has a slower interface speed than expected
+              Drive {{ $labels.device }} on {{ $labels.node }} has a slower interface speed than expected
           labels:
             severity: critical
