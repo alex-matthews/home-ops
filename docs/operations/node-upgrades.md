@@ -128,9 +128,10 @@ rather than looping: a workload may hop more than once while the fleet
 re-levels, but each eviction hits a fresh replacement pod, and the burst
 ends once every node is inside the bands.
 
-Rebalancing toward a returning node cannot begin while tuppr's cordon holds:
-the descheduler never targets an unschedulable node, and tuppr uncordons
-only once the node's health checks pass. Its
+Rebalancing toward a returning node cannot begin while its upgrade cordon
+holds: the descheduler never targets an unschedulable node. The cordon lifts
+when the node's upgrade Job finishes, before tuppr runs the health checks for
+the next node. tuppr's
 `tuppr.home-operations.com/outdated` taint is `PreferNoSchedule` — invisible
 to the descheduler, but scored against by the scheduler, which biases
 replacement placement away from not-yet-upgraded nodes. An "underutilized
@@ -183,3 +184,12 @@ six-day 2026-08-21 outage:
   Snapshot phases, not that panel.
 - The descheduler idles with no under-band target available — correct
   behaviour, not a stuck controller.
+
+A node can also return Kubernetes `Ready` with its etcd member unhealthy (m2
+after its kexec reboot to v1.14.2 on 2026-09-30; seen once, cause not
+established). Talos `MachineStatus` then stays at `booting` with `etcd not
+healthy`, the upgrade Job keeps running and the node stays cordoned.
+`talosctl service etcd restart` is refused by the API. A cold boot
+(`talosctl shutdown`, then power on) cleared it within seconds: if etcd is not
+healthy about three minutes after the Talos API returns, cold boot the node
+rather than wait out the Job's 30-minute timeout.
