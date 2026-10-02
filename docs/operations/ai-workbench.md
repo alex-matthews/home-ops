@@ -73,11 +73,12 @@ and HTTPRoute, and one `LiteLLMModel` per model supplies the model list. The
 proxy runs in the operator's `file` apply mode, so the rendered `config.yaml`
 carries the model list and a model change rolls the Deployment.
 
-The gateway declares `chatgpt/gpt-5.6-luna`, `-terra` and `-sol`, reached through
-the ChatGPT subscription rather than an API key. Luna is Hermes's default; the
-other two are selectable. Of the 140 providers LiteLLM ships, only `chatgpt` and
-`github_copilot` authenticate a subscription, which is why a subscription-only
-workbench takes this route and the costs that come with it.
+The gateway declares `chatgpt/gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol` and
+`gpt-6-astra`, reached through the ChatGPT subscription rather than an API key.
+`gpt-6.1-sol` is Hermes's default; the others are selectable. Of the 140
+providers LiteLLM ships, only `chatgpt` and `github_copilot` authenticate a
+subscription, which is why a subscription-only workbench takes this route and
+the costs that come with it.
 
 The provider publishes no model list. Check a name with
 `codex exec -m <model> --skip-git-repo-check` before declaring it: one that does
