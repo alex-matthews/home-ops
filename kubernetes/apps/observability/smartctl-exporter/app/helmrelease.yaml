@@ -13,5 +13,10 @@ spec:
     fullnameOverride: *app
     serviceMonitor:
       enabled: true
+      # The pod IP in instance changes on every restart; rules compare a
+      # disk with itself a day earlier, so they key on the node instead.
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
     prometheusRules:
       enabled: false
