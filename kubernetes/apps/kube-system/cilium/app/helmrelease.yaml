@@ -15,7 +15,9 @@ spec:
       enabled: true
       bbr: true
     bpf:
-      datapathMode: netkit
+      # Changing this needs every node rebooted: an agent will not start while
+      # pods on its node still use the other mode.
+      datapathMode: veth
       masquerade: true
       preallocateMaps: true
     bpfClockProbe: true
