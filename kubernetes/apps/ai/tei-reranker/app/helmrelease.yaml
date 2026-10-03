@@ -25,6 +25,10 @@ spec:
               - --port
               - "8080"
               - --auto-truncate
+              # Caps each input at 1,024 tokens. Without it, TEI warms up on one
+              # sequence at the model's 8,192-token limit and is OOM-killed.
+              - --max-batch-tokens
+              - "1024"
             env:
               HOME: /data
               HF_HOME: /data
