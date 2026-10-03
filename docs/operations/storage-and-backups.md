@@ -227,6 +227,10 @@ the workbench design changes.
 `chaski` runs in `default` with no PVC and no Kopiur component. It is stateless
 by design.
 
+`kritika-postgres`, kritika's own CloudNativePG cluster in `kritika`, has no
+backup and one instance on m1, by the exception recorded in
+[ADR-0005](../adr/0005-cnpg-postgres.md).
+
 ## Components
 
 `kubernetes/components/kopiur` composes three concerns, and every protected app

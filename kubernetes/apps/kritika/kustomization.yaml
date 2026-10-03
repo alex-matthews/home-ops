@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kritika
+components:
+  - ../../components/sops
+resources:
+  # Only the Alertmanager half of the alerts component: the github-status
+  # half ships Flux's status token, which kritika's Role could read.
+  - ../../components/alerts/alertmanager
+  - ./namespace.yaml
+  - ./kritika/ks.yaml

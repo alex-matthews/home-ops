@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/database_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: kritika
+spec:
+  cluster:
+    name: kritika-postgres
+  name: kritika
+  owner: kritika
+  databaseReclaimPolicy: retain
+  extensions:
+    # vector follows the image's bundled pgvector; Renovate moves the vchord
+    # pin with its image (storage note, PostgreSQL section).
+    - name: vector
+      ensure: present
+    - name: vchord
+      ensure: present
+      version: "1.1.1"
