@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: litellm
+spec:
+  groups:
+    - name: litellm.rules
+      rules:
+        - alert: KritikaBudgetWarning
+          expr: |-
+            litellm_remaining_api_key_budget_metric{api_key_alias="kritika"} < 5.61
+          annotations:
+            summary: "kritika has spent over half its weekly LiteLLM budget"
+          labels:
+            severity: warning
+        # Every kritika review is refused from here until the budget resets.
+        - alert: KritikaBudgetSpent
+          expr: |-
+            litellm_remaining_api_key_budget_metric{api_key_alias="kritika"} <= 0
+          annotations:
+            summary: "kritika's weekly LiteLLM budget is spent"
+          labels:
+            severity: critical
