@@ -16,3 +16,15 @@ spec:
   maxBudget: "11.22"
   budgetDuration: 7d
   maxParallelRequests: 4
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmvirtualkey_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMVirtualKey
+metadata:
+  name: memini
+spec:
+  proxyRef: litellm
+  keyAlias: memini
+  secretName: memini-litellm-key
+  models:
+    - tei/gte-reranker-modernbert-base

@@ -106,3 +106,18 @@ spec:
       key: OPENROUTER_API_KEY
   info:
     mode: embedding
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: tei-gte-reranker-modernbert-base
+spec:
+  modelName: tei/gte-reranker-modernbert-base
+  # The huggingface provider translates memini's Cohere-style rerank request
+  # into TEI's /rerank shape, which memini cannot call directly.
+  params:
+    model: huggingface/Alibaba-NLP/gte-reranker-modernbert-base
+    apiBase: http://tei-reranker.ai.svc.cluster.local:8080
+  info:
+    mode: rerank
