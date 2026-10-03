@@ -28,9 +28,10 @@ Cluster
   ├─ LiteLLM, internal-only
   │    ├─ PostgreSQL proxy state, shared cluster
   │    └─ Dragonfly cache/router state
+  ├─ Memini memory service, shared PostgreSQL
+  ├─ text-embeddings-inference, Memini's embeddings
   ├─ future OpenClaw assistant
-  ├─ future scheduled triage workers
-  └─ future shared memory service
+  └─ future scheduled triage workers
 
 External services
   ├─ GitHub
@@ -48,13 +49,12 @@ External services
 | Backlog                | GitHub Issues, optionally GitHub Projects                    |
 | Architecture decisions | ADRs under `docs/adr/`                                       |
 | Scratch planning       | Issue drafts                                                 |
-| Assistant memory       | Hermes-local or future shared memory, non-authoritative      |
+| Assistant memory       | Hermes-local or Memini, non-authoritative                    |
 | Secrets                | 1Password, SOPS, External Secrets, and cluster secret stores |
 
 Assistant memory may retain summaries, observations, and references, but it is
-not a source of truth. Hermes-local memory is acceptable for proving behaviour;
-a shared backend such as Memini can be considered later to avoid tying recall to
-a single client. Durable tasks and decisions stay in GitHub and the repo.
+not a source of truth. Memini is the deployed shared backend, so recall is not
+tied to a single client. Durable tasks and decisions stay in GitHub and the repo.
 
 ## Current Surface
 
@@ -81,8 +81,9 @@ subscription, which is why a subscription-only workbench takes this route and
 the costs that come with it.
 
 The provider publishes no model list. Check a name with
-`codex exec -m <model> --skip-git-repo-check` before declaring it: one that does
-not exist registers fine and fails at request time. The LiteLLM UI's health check
+`codex exec -m <model> --skip-git-repo-check` before declaring it, on a current
+Codex CLI: 0.154.0 refused names that 0.160.0 accepted. One that does not exist
+registers fine and fails at request time. The LiteLLM UI's health check
 returns 400 for these models; that is cosmetic.
 
 Registering a `chatgpt` model before its credentials exist is not inert: the
@@ -143,7 +144,7 @@ spec:
     fsGroup: 1000
   containers:
     - name: login
-      image: ghcr.io/berriai/litellm:v1.101.0@sha256:d295634e09c648dcdb72c4cc2dd226f5fb87823a73e88cbbed6f205e4deb044b
+      image: ghcr.io/berriai/litellm:v1.103.2@sha256:f63fb81b831b170ec16851e23c36ac5bf52ef106b271406429524a2ed730bbfd
       command:
         - python
         - -u
@@ -323,9 +324,7 @@ form: a short operations note, a narrow guide under `docs/guides/`, or a new
 `.agents/skills/<name>/SKILL.md`.
 
 Before relying on Hermes self-improvement, persist `/opt/data`, keep generated
-memory non-authoritative, and review generated skill diffs before reuse. A
-shared backend such as Memini should wait until more than one client needs the
-same recall surface and the storage/security model is clear.
+memory non-authoritative, and review generated skill diffs before reuse.
 
 ## Known Hermes Runtime Caveats
 
