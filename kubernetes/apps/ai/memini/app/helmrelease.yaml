@@ -29,6 +29,28 @@ spec:
               # Keep captured history separate from explicitly authored lessons.
               MEMINI_DISTILL_ON_WRITE: "false"
               MEMINI_PROMOTE_INTERVAL: "0s"
+              MEMINI_RERANK: http://litellm.ai.svc.cluster.local:4000
+              MEMINI_RERANK_MODEL: tei/gte-reranker-modernbert-base
+              MEMINI_RERANK_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini-litellm-key
+                    key: key
+                    # The operator mints this key after the proxy is ready.
+                    # Without it memini still starts, and recall keeps the
+                    # composite order until the next restart picks it up.
+                    optional: true
+              MEMINI_RERANK_POOL: "20"
+              # Twenty documents at the 2,048-character cap in one request;
+              # the default splits them into serial requests.
+              MEMINI_RERANK_MAX_BATCH_CHARS: "48000"
+              MEMINI_RERANK_MAX_CONCURRENCY: "1"
+              # Below the clients' 30 s budget. No score floor, so a timeout
+              # falls back to the composite order instead of an empty result.
+              MEMINI_RERANK_TIMEOUT: 20s
+              # Per-prompt hook recalls skip the CPU reranker; explicit recalls
+              # use it.
+              MEMINI_RERANK_PROMPT: "false"
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
