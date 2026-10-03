@@ -7,5 +7,4 @@ resources:
   - ./helmrelease.yaml
   - ./httproute.yaml
   - ./networking.yaml
-  - ./nodeconfig.yaml
   - ./ocirepository.yaml
