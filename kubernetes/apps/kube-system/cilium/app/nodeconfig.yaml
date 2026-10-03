@@ -1,0 +1,14 @@
+---
+# Temporary, for the move from netkit to veth. A node switches to veth at
+# its next reboot once it carries the label. Delete this file after
+# bpf.datapathMode in helmrelease.yaml says veth.
+apiVersion: cilium.io/v2
+kind: CiliumNodeConfig
+metadata:
+  name: datapath-veth
+spec:
+  nodeSelector:
+    matchLabels:
+      home-ops/cilium-datapath: veth
+  defaults:
+    datapath-mode: veth
