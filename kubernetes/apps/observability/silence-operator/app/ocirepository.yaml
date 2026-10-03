@@ -4,11 +4,13 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: silence-operator
+  annotations:
+    home-ops/chart-verify-exclusion-reason: unsigned
 spec:
   interval: 15m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 0.20.1
+    tag: 0.21.0
   url: oci://gsoci.azurecr.io/charts/giantswarm/silence-operator

@@ -4,8 +4,13 @@
     "github>home-operations/renovate-presets#8.1.0",
     "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#8.1.0",
     "github>home-operations/renovate-presets//apps/talosFactory.json5#8.1.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#8.1.0",
     ":timezone(Pacific/Auckland)",
   ],
+  // Override, not a default: the preset extends :automergeBranch, and a branch
+  // never gets checks here because every required workflow triggers only on
+  // pull_request, so branch automerge waits forever (#1990 dropped this).
+  automergeType: "pr",
   lockFileMaintenance: {
     enabled: true,
     schedule: ["before 6am on the first day of the month"],
@@ -47,13 +52,6 @@
       matchUpdateTypes: ["minor", "patch"],
       automerge: false,
     },
-    // Version holds
-    {
-      description: "Hold coredns chart at 1.46.2: CoreDNS >=1.14.3 breaks autopath during cache prefetch, https://www.github.com/coredns/coredns/issues/8390",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["/coredns/"],
-      allowedVersions: "<=1.46.2",
-    },
     // Groups
     {
       description: "Actions Runner Controller Group",
@@ -64,6 +62,21 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
+    },
+    {
+      description: "CNPG Postgres Group: weekly digest bumps of the operand, pgvector and vchord images",
+      groupName: "cnpg-postgres",
+      matchDatasources: ["docker"],
+      matchPackageNames: [
+        "ghcr.io/cloudnative-pg/postgresql",
+        "ghcr.io/cloudnative-pg/pgvector",
+        "ghcr.io/tensorchord/vchord-scratch",
+      ],
+      matchUpdateTypes: ["digest"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      schedule: ["before 6am on Monday"],
     },
     {
       description: "Flux Operator Group",
@@ -131,9 +144,33 @@
     },
     {
       description: "Strip the v prefix from group titles whose members disagree on it",
-      matchPackageNames: ["/flux-operator/", "/flux-instance/", "siderolabs/talos"],
+      matchPackageNames: [
+        "/flux-operator/",
+        "/flux-instance/",
+        "siderolabs/talos",
+        "/kube-apiserver/",
+        "/kube-controller-manager/",
+        "/kube-proxy/",
+        "/kube-scheduler/",
+        "/kubelet/",
+        "kubernetes/kubernetes",
+      ],
       matchUpdateTypes: ["major", "minor", "patch"],
       commitMessageExtra: "({{{replace '^v' '' currentVersion}}} ➔ {{{replace '^v' '' newVersion}}})",
+    },
+    // Versions
+    {
+      description: "Hold PostgreSQL to 18: a new major needs extension images and paths built for it in the same change",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/cloudnative-pg/postgresql"],
+      allowedVersions: "/^18\\./",
+    },
+    {
+      description: "Hold vchord-scratch to PostgreSQL 18 builds: the preset's versioning ranks pg<N> builds of one release as equal; matchCurrentValue spares the Database pin",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/tensorchord/vchord-scratch"],
+      matchCurrentValue: "/^pg\\d+-v/",
+      allowedVersions: "/^pg18-v/",
     },
     // Labels: update type
     {

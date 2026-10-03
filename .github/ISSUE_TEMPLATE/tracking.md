@@ -5,7 +5,7 @@ about: Track a programme or a decision's delivery while the work lands elsewhere
 
 <!--
 One line per paragraph; let the browser wrap. Delete any section that does not apply.
-Writing standards, template routing, and the public-safety checklist: docs/guides/pr-and-issue-writing.md.
+Writing standards, template routing, and the public-safety checklist: docs/guides/writing.md.
 -->
 
 <!-- Lead paragraph, no heading: the bare mandate — what this issue tracks and where the policy or evidence lives. Status rots here; keep it in Current state. -->

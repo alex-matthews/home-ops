@@ -1,6 +1,6 @@
 # Cluster Rebuild
 
-**When to use:** Full rebuild, cold start, teardown, `reset-cluster`, bootstrap sequence, what Flux and kopiur do on an empty cluster, restore drill, rebuild evidence.
+**When to use:** Full rebuild, cold start, teardown, `reset-cluster`, bootstrap sequence, what Flux, kopiur and CloudNativePG do on an empty cluster, restore drill, rebuild evidence.
 
 How a full teardown and rebuild of this cluster runs, what the control loop
 does on a cold start, and which guards make the destructive steps safe. The
@@ -48,6 +48,13 @@ fails closed.
   snapshot younger than 24 hours with non-zero size on both repositories.
   Any app missing one on either repository stops the window. Run it at GO
   time, not earlier; the earlier run is evidence, not the gate.
+- **PostgreSQL guard, before teardown.** A completed base backup younger
+  than 24 hours (`kubectl -n database get backup`), the `ObjectStore`
+  status reporting a recovery window for `postgres-v1`, every consumer
+  scaled to zero with no client connections on the primary, and the last
+  segment forced out with `SELECT pg_switch_wal()` and reported by
+  `pg_stat_archiver` as archived. The archive holds only what reached it;
+  a segment still on the primary's disk is lost with the node.
 - **Drain before reset.** Concurrent resets wipe the Ceph monitors on the
   first nodes to finish while a slower node is still unmounting RBD volumes;
   that node's unmount then blocks in the kernel and only a power cycle
@@ -120,6 +127,18 @@ they apply.
   Unauthorized until `just kube readonly-token` mints a new one. The
   read-only Talos identity, signed by the persistent machine CA, keeps
   working.
+- **PostgreSQL recovers itself.** The `postgres` Cluster bootstraps with
+  `recovery` from its own archive (#2141), so a fresh cluster restores the
+  newest base backup and replays WAL to the last archived segment. It
+  resumes archiving under the same archive name on a new timeline.
+  Rehearsed on 2026-09-17 by deleting the live Cluster three times; the
+  storage note's drill record holds the figures. LiteLLM and Memini
+  declare no dependency on it, so on a rebuild they are expected to start
+  before it is Ready and retry until it is (not observed: the rehearsal
+  held them at zero). An empty archive blocks the recovery instead
+  of starting an empty database; that is the one cold-start case needing
+  two Git steps, `initdb` once and then the recovery configuration
+  reinstated after the first base backup completes.
 
 ## Verifying the restores
 
@@ -142,3 +161,13 @@ un-checkpointed log, applied and truncated at first start.
 
 Content checks the operator does through the application UIs stay the last
 word on the apps that matter most.
+
+For PostgreSQL the records are the base backup the recovery selected, the
+timeline it opened, and rows written before teardown. The recovery job logs
+`Target backup found` with `backup.backup_id` and the backup label; the job
+is garbage-collected minutes after it completes, so read it from
+VictoriaLogs (`kubernetes.pod_name:~"postgres-1-full-recovery"`), not `kubectl
+logs`. Check `status.timelineID` on the Cluster, `pg_available_extensions`
+for `vchord` and `vector`, the consumer roles and databases, the
+`DatabaseRole` and `Database` objects at `applied: true`, and
+`ContinuousArchiving=True` with a fresh segment in `pg_stat_archiver`.

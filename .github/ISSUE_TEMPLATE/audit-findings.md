@@ -5,7 +5,7 @@ about: Record what an audit or inventory found and what inherits the findings.
 
 <!--
 One line per paragraph; let the browser wrap. Delete any section that does not apply.
-Writing standards, template routing, and the public-safety checklist: docs/guides/pr-and-issue-writing.md.
+Writing standards, template routing, and the public-safety checklist: docs/guides/writing.md.
 -->
 
 <!-- Lead paragraph, no heading: what was audited, and where detail that cannot be public lives. Findings that enumerate permissions, credentials, or internals stay in private notes; this issue records categories and conclusions. -->

@@ -22,7 +22,9 @@ every candidate) found **27 artifacts verifiable, covering 50 of the 65
 sources**, across 13 distinct GitHub-Actions signing identities. One
 artifact (cert-manager) is signed with a SHA-512 static key that the
 deployed source-controller cannot verify — its public-key verifier
-hardcodes SHA-256 — and 14 artifacts are unsigned.
+hardcodes SHA-256 — and 14 artifacts had no discovered Cosign signatures.
+That survey did not inspect embedded Helm PGP provenance; its presence does
+not make a chart verifiable by Flux.
 
 Three structural facts shape the policy more than any preference:
 
@@ -121,8 +123,9 @@ publisher's actual signing practice supports. Version components in tag
 refs use strict patterns (for example `v[0-9]+\.[0-9]+\.[0-9]+$`), never
 loose character classes. Should a keyed source become verifiable, the same
 rule applies to its key: pinned, and validated against the artifact before
-adoption. The observed identity for each verified source is recorded in
-implementation issue #1894 at adoption time, and each trusted workflow is
+adoption. The pinned identity for each verified source is in its
+`OCIRepository`; adoption records to 2026-09-16 are in closed issue #1894,
+which has no successor. Each trusted workflow is
 checked for `workflow_call` reachability and untrusted-trigger paths before
 its class is assigned.
 
@@ -165,9 +168,9 @@ the exclusions inventory rather than being silently dropped.
 
 ## Consequences
 
-- 50 of 65 sources become verifiable; 15 remain excluded (14 unsigned, one
-  signed-but-incompatible). The exclusions inventory is the honest
-  statement of that boundary.
+- 50 of 65 sources become verifiable; 15 remain excluded (14 without discovered
+  Cosign signatures, one signed-but-incompatible). The exclusions inventory is
+  the honest statement of that boundary.
 - Coverage concentrates in identities: one reusable-workflow identity
   covers 23 sources (bjw-s app-template). A signer change there freezes
   chart updates for all of them at once — surfaced by the existing Flux →

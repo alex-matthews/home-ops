@@ -5,17 +5,17 @@ metadata:
   name: hermes-config
 data:
   config.yaml: |
-    _config_version: 38
+    _config_version: 44
     providers:
       litellm:
         name: LiteLLM
         base_url: http://litellm.ai.svc.cluster.local:4000/v1
         key_env: LITELLM_MASTER_KEY
         transport: chat_completions
-        default_model: minimax/MiniMax-M3
+        default_model: chatgpt/gpt-6.1-sol
     model:
-      provider: litellm
-      default: minimax/MiniMax-M3
+      provider: custom:litellm
+      default: chatgpt/gpt-6.1-sol
     toolsets:
       - hermes-cli
       - mcp-toolhive
@@ -30,6 +30,12 @@ data:
         tools:
           prompts: false
           resources: false
+    auxiliary:
+      # The chatgpt provider serves only the Responses API, and LiteLLM's
+      # non-streaming bridge onto it returns an empty output, so auxiliary
+      # calls 500. Interactive chat already streams and is unaffected.
+      stream_only_base_urls:
+        - litellm.ai.svc.cluster.local
     compression:
       enabled: true
       threshold: 0.50

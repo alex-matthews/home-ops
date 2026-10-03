@@ -4,11 +4,13 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: kube-prometheus-stack
+  annotations:
+    home-ops/chart-verify-exclusion-reason: verifier-gap
 spec:
   interval: 15m
   layerSelector:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 90.0.0
+    tag: 91.7.1
   url: oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack

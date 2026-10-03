@@ -5,7 +5,7 @@ about: Investigate observed operational behaviour and track evidence-led correct
 
 <!--
 One line per paragraph; let the browser wrap. Delete any section that does not apply.
-Writing standards, template routing, and the public-safety checklist: docs/guides/pr-and-issue-writing.md.
+Writing standards, template routing, and the public-safety checklist: docs/guides/writing.md.
 -->
 
 <!-- Lead paragraph, no heading: one to three sentences stating what was observed and, once known, what this issue changes. An open investigation can start with the Problem section alone and grow the rest as diagnosis lands. -->

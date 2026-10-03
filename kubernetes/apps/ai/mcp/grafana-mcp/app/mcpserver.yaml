@@ -5,7 +5,7 @@ kind: MCPServer
 metadata:
   name: grafana
 spec:
-  image: docker.io/grafana/mcp-grafana:1.4.1@sha256:cfcf06863c23b2db64c41b0379d1efe95703aca4ba5434d90674f72ec0b7d810
+  image: docker.io/grafana/mcp-grafana:2.0.0@sha256:2ed63c4d9d67557c8ea6cc6988743ddd9008e248bd9842e760fec378a0b61062
   transport: streamable-http
   proxyPort: 8080
   mcpPort: 8000
@@ -16,16 +16,18 @@ spec:
     - 0.0.0.0:8000
     - --allowed-hosts
     - "*"
-    - --disable-admin
-    - --disable-incident
-    - --disable-oncall
-    - --disable-provisioning
-    - --disable-rendering
-    - --disable-sift
+    # The category allowlist replaces the ToolHive MCPToolConfig filter, whose
+    # proxy middleware strips the 2026-07-28 envelope from tools/list and makes
+    # the vMCP health check fail (stacklok/toolhive#6684).
+    - --enabled-tools
+    - search,datasource,prometheus,loki,dashboard,folder,navigation,annotations,config
     - --disable-write
   env:
     - name: GRAFANA_URL
       value: http://grafana-service.observability.svc.cluster.local:3000
+    # Usage reporting to Grafana Labs is on by default.
+    - name: GRAFANA_USAGE_STATS
+      value: disabled
   secrets:
     - name: grafana-mcp-secret
       key: GRAFANA_SERVICE_ACCOUNT_TOKEN
@@ -37,7 +39,5 @@ spec:
     limits:
       cpu: 250m
       memory: 256Mi
-  toolConfigRef:
-    name: grafana
   groupRef:
     name: mcp-tools

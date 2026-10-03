@@ -23,13 +23,7 @@ machine:
           - bind
           - rshared
           - rw
-    image: ghcr.io/siderolabs/kubelet:v1.37.0
-  network:
-    interfaces:
-      - deviceSelector:
-          hardwareAddr: 48:21:0b:*
-        mtu: 1500
-        dhcp: true
+    image: ghcr.io/siderolabs/kubelet:v1.37.1
   token: op://kubernetes/talos/MACHINE_TOKEN
 cluster:
   ca:
@@ -60,7 +54,7 @@ labels:
 apiVersion: v1alpha1
 kind: UnattendedInstallConfig
 installer:
-  image: factory.talos.dev/metal-installer/{{ schematic }}:v1.14.0
+  image: factory.talos.dev/metal-installer/{{ schematic }}:v1.14.2
 provisioning:
   diskSelector:
     match: disk.model == "Samsung SSD 870"
@@ -146,3 +140,22 @@ apiVersion: v1alpha1
 kind: WatchdogTimerConfig
 device: /dev/watchdog0
 timeout: 5m
+---
+apiVersion: v1alpha1
+kind: LinkAliasConfig
+name: net0
+selector:
+  match: link.driver == "igc" && mac(link.permanent_addr).startsWith("48:21:0b:")
+---
+apiVersion: v1alpha1
+kind: LinkConfig
+name: net0
+mtu: 1500
+---
+apiVersion: v1alpha1
+kind: DHCPv4Config
+name: net0
+# Any link document turns off Talos's default DHCP, so without this one the
+# nodes get no address. The router's leases were issued with no client
+# identifier; sending one risks a different address.
+clientIdentifier: none

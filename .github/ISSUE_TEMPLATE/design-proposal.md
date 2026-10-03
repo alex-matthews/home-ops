@@ -5,7 +5,7 @@ about: Decide policy, architecture, or new systems when alternatives and trade-o
 
 <!--
 One line per paragraph; let the browser wrap. Delete any section that does not apply.
-Writing standards, template routing, and the public-safety checklist: docs/guides/pr-and-issue-writing.md.
+Writing standards, template routing, and the public-safety checklist: docs/guides/writing.md.
 -->
 
 <!-- Lead paragraph, no heading: one to three sentences stating the decision to be made and the recommended direction. -->

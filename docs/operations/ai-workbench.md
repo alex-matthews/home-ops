@@ -24,11 +24,14 @@ Cluster
   │    ├─ Grafana MCP
   │    └─ Context7 MCP
   ├─ Hermes
+  ├─ litellm-operator
   ├─ LiteLLM, internal-only
+  │    ├─ PostgreSQL proxy state, shared cluster
   │    └─ Dragonfly cache/router state
+  ├─ Memini memory service, shared PostgreSQL
+  ├─ text-embeddings-inference, Memini's embeddings
   ├─ future OpenClaw assistant
-  ├─ future scheduled triage workers
-  └─ future shared memory service
+  └─ future scheduled triage workers
 
 External services
   ├─ GitHub
@@ -46,22 +49,149 @@ External services
 | Backlog                | GitHub Issues, optionally GitHub Projects                    |
 | Architecture decisions | ADRs under `docs/adr/`                                       |
 | Scratch planning       | Issue drafts                                                 |
-| Assistant memory       | Hermes-local or future shared memory, non-authoritative      |
+| Assistant memory       | Hermes-local or Memini, non-authoritative                    |
 | Secrets                | 1Password, SOPS, External Secrets, and cluster secret stores |
 
 Assistant memory may retain summaries, observations, and references, but it is
-not a source of truth. Hermes-local memory is acceptable for proving behaviour;
-a shared backend such as Memini can be considered later to avoid tying recall to
-a single client. Durable tasks and decisions stay in GitHub and the repo.
+not a source of truth. Memini is the deployed shared backend, so recall is not
+tied to a single client. Durable tasks and decisions stay in GitHub and the repo.
 
 ## Current Surface
 
 Hermes is the interactive client. It uses the internal LiteLLM gateway by
 default and reaches tools through the ToolHive vMCP surface.
 
-LiteLLM runs as a single internal-only replica with no public route and no
-PostgreSQL, backed by a non-persistent Dragonfly instance for Redis-compatible
-cache and router state.
+LiteLLM runs as a single replica with no public route, backed by the shared
+PostgreSQL cluster in the `database` namespace for durable proxy state and by a
+non-persistent Dragonfly instance for Redis-compatible cache and router state.
+Its UI and API are reachable on the internal Envoy Gateway route; Hermes keeps
+using the cluster Service.
+
+The proxy is owned by `litellm-operator`, not by a Helm release: a
+`LiteLLMProxy` renders the config and owns the Deployment, Service, ConfigMap,
+and HTTPRoute, and one `LiteLLMModel` per model supplies the model list. The
+proxy runs in the operator's `file` apply mode, so the rendered `config.yaml`
+carries the model list and a model change rolls the Deployment.
+
+The gateway declares `chatgpt/gpt-6-luna`, `gpt-6-sol`, `gpt-6.1-sol` and
+`gpt-6-astra`, reached through the ChatGPT subscription rather than an API key.
+`gpt-6.1-sol` is Hermes's default; the others are selectable. Of the 140
+providers LiteLLM ships, only `chatgpt` and `github_copilot` authenticate a
+subscription, which is why a subscription-only workbench takes this route and
+the costs that come with it.
+
+The provider publishes no model list. Check a name with
+`codex exec -m <model> --skip-git-repo-check` before declaring it, on a current
+Codex CLI: 0.154.0 refused names that 0.160.0 accepted. One that does not exist
+registers fine and fails at request time. The LiteLLM UI's health check
+returns 400 for these models; that is cosmetic.
+
+Registering a `chatgpt` model before its credentials exist is not inert: the
+proxy blocks on a device-code request during startup until the liveness probe
+restarts it. Land the token storage and complete the login below before adding
+or restoring a `chatgpt` model.
+
+`general_settings.store_model_in_db` is set, so the LiteLLM UI can still add a
+model. Such a model is not Git-managed: it exists only in PostgreSQL, and
+nothing in this repository recreates it. It is not lost on a rebuild — it is
+carried by the PostgreSQL backups described in
+[`storage-and-backups.md`](storage-and-backups.md) — but restoring it means
+restoring the database, not reconciling Git. Treat a UI-added model as an
+experiment and promote anything worth keeping to a `LiteLLMModel`.
+
+The internal route reaches the whole proxy surface, which includes the
+unauthenticated `/metrics/` endpoint. Those metrics carry model names and usage
+counters, not credentials. Internal routing is not authentication: the UI and
+API are protected by the LiteLLM master key, not by the gateway.
+
+### ChatGPT subscription authentication
+
+The `chatgpt` provider authenticates a ChatGPT subscription over an OAuth device
+flow rather than an API key. It stores its credentials at
+`/app/chatgpt_tokens/auth.json` on the `litellm-chatgpt` PVC, and rewrites that
+file whenever it refreshes a token. The file must therefore be writable and must
+survive restarts; a read-only Secret mount cannot work, because the proxy would
+re-read a permanently stale token and refresh on every request.
+
+That PVC is deliberately node-local (`openebs-hostpath`). Its node affinity keeps
+a surge pod on the node already holding the volume, which is what lets the proxy
+roll: `LiteLLMProxy` exposes no Deployment strategy, so the workload uses
+RollingUpdate where the previous app-template chart defaulted to Recreate.
+
+Do not run the device flow with `kubectl exec` against the Deployment. On a
+fresh volume LiteLLM requests a device code during startup, the liveness probe
+can restart the pod before the flow finishes, and `exec deploy/litellm` may
+select a pod that is already crashlooping. Repeated starts also share the
+provider's device-code cooldown.
+
+Run it in a one-off pod instead, with the proxy's pinned image, the same volume,
+the same identity, and no probes. This needs the administrative identity,
+because creating a pod is a write:
+
+```sh
+mise exec -- kubectl --kubeconfig ./kubeconfig apply -f - <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: litellm-chatgpt-login
+  namespace: ai
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: login
+      image: ghcr.io/berriai/litellm:v1.103.2@sha256:f63fb81b831b170ec16851e23c36ac5bf52ef106b271406429524a2ed730bbfd
+      command:
+        - python
+        - -u
+        - -c
+        - "from litellm.llms.chatgpt.authenticator import Authenticator; Authenticator().get_access_token(); print('saved', flush=True)"
+      env:
+        - name: CHATGPT_TOKEN_DIR
+          value: /app/chatgpt_tokens
+      volumeMounts:
+        - name: chatgpt-tokens
+          mountPath: /app/chatgpt_tokens
+  volumes:
+    - name: chatgpt-tokens
+      persistentVolumeClaim:
+        claimName: litellm-chatgpt
+EOF
+```
+
+Follow the verification URL and enter the code printed in its logs, wait for
+`saved`, then delete the pod. The identity matters: `_write_auth_file` swallows
+its errors, so a file written under the wrong uid makes later refreshes stop
+persisting silently rather than failing.
+
+The volume is not backed up. A node-local PV has no CSI snapshots, and the
+Kopiur component's snapshot policy targets `ceph-block`. Recovery after losing
+the volume is re-running this flow, so a rebuild needs someone present to
+complete it.
+
+Hermes sends auxiliary calls (title generation, compression, vision) without
+streaming, which LiteLLM's Responses bridge answers with an empty output and a 500. `auxiliary.stream_only_base_urls` puts those calls on the streaming path
+and re-aggregates them client-side; interactive chat already streams. This is a
+Hermes-side fix, so a second gateway consumer would need its own answer — the
+peer repositories patch LiteLLM itself for that reason.
+
+Hermes's `model.provider` must be `custom:<name>`, not the bare provider name.
+Its resolver accepts only `custom`, `custom:<name>`, or a name in its own
+provider registry; a bare custom name falls through to "no provider configured"
+and the dashboard parks every session on the setup wizard. The name after the
+colon matches the key under `providers:`.
+
+Hermes pins `_config_version` in its ConfigMap to the schema its image expects.
+The config is mounted read-only, so the image's startup migration can never
+rewrite it: a mismatch logs a failed migration on every start. Pin the version
+deliberately when bumping the image, and read the migration steps in
+`hermes_cli/config_migrations.py` for that range first. Do not set
+`HERMES_SKIP_CONFIG_MIGRATION` — the failure is the only signal that a bump
+needs review.
 
 The Hermes dashboard is exposed through the internal Envoy Gateway route. For
 non-loopback binds, Hermes requires a dashboard auth provider; this deployment
@@ -166,9 +296,8 @@ Promotion criteria:
 ## Hermes Skills And Memory
 
 Hermes UI skills are runtime state unless this repo adopts them. Repo-local
-skills live under `.agents/skills/<name>/SKILL.md` — `add-app`,
-`github-prose`, and `maintenance-window`. Narrow reusable conventions live in
-`docs/guides/`.
+skills live under `.agents/skills/<name>/SKILL.md` — `add-app` and
+`maintenance-window`. Narrow reusable conventions live in `docs/guides/`.
 
 Before relying on generated skills, confirm this guardrail posture in the
 Hermes config:
@@ -195,9 +324,7 @@ form: a short operations note, a narrow guide under `docs/guides/`, or a new
 `.agents/skills/<name>/SKILL.md`.
 
 Before relying on Hermes self-improvement, persist `/opt/data`, keep generated
-memory non-authoritative, and review generated skill diffs before reuse. A
-shared backend such as Memini should wait until more than one client needs the
-same recall surface and the storage/security model is clear.
+memory non-authoritative, and review generated skill diffs before reuse.
 
 ## Known Hermes Runtime Caveats
 

@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: database
 components:
   - ../../components/alerts
+  - ../../components/sops
 resources:
   - ./namespace.yaml
-  - ./dragonfly-operator/ks.yaml
+  - ./postgres/ks.yaml

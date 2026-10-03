@@ -60,7 +60,10 @@ numerous. Supporting defaults:
   the bootstrap apps phase, or platform/machine bootstrap (currently
   `talos.dev`, installed by Talos machine configuration). Flux/Helm keep
   CRD upgrade ownership. Coverage was manually verified at #1887; no
-  automated check enforces it.
+  automated check enforces it. A consumer that only directly applies the
+  CRs needs neither, because its failed dry-run self-heals at the retry
+  interval (below): Dragonfly, whose sole consumer is `litellm`, was
+  dropped from bootstrap on that evidence.
 - Exceptions require demonstrated evidence of a stored-release Helm failure
   with bounded remediation.
 
@@ -78,6 +81,9 @@ CRDs):
 - `toolhive-config → toolhive-operator` — MCPGroup, VirtualMCPServer.
 - `context7-mcp`, `flux-mcp`, `github-mcp`, `grafana-mcp`,
   `konflate-mcp → toolhive-operator` — MCPServer and registry entries.
+- `litellm → litellm-operator` — LiteLLMProxy and LiteLLMModel; the
+  proxy's Deployment, Service and ConfigMap are the operator's product,
+  so the workload does not exist until the operator does.
 - `kopiur-repositories → kopiur` — ClusterRepositories.
 - `tuppr-upgrades → tuppr` — TalosUpgrade, KubernetesUpgrade.
 - `silence-operator-silences → silence-operator` — Silences.

@@ -30,7 +30,7 @@ spec:
           # The cluster is SingleStack/IPv4, so an AAAA answer is unusable even
           # when upstream returns one. Answer AAAA locally with NODATA instead
           # of forwarding it. Plugin order comes from plugin.cfg, not this
-          # list: template(60) runs before kubernetes(67) and forward(73), so
+          # list: template(62) runs before kubernetes(69) and forward(75), so
           # AAAA never leaves the cluster.
           #
           # This is a `.`-wide blackhole with no fallthrough and it fails

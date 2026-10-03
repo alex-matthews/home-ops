@@ -1,48 +1,37 @@
 # Documentation
 
-This directory contains durable project documentation for the home-ops
-repository. Keep scratch notes, raw agent transcripts, and one-off prompt
-experiments out of this tree.
+Durable project documentation for the home-ops repository. Keep scratch
+notes, raw agent transcripts, and one-off prompt experiments out of this tree.
 
-## Map
+Routing lives in [`AGENTS.md`](../AGENTS.md): its task table names the
+document to read for each kind of work. This page describes the directories
+and records what was retired.
 
-| Need                                           | Read or update                                                                       |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Understand how a change reaches the cluster    | [Cluster Model](guides/cluster-model.md)                                             |
-| Find repo layout or add an app                 | [Layout and App Pattern](guides/app-pattern.md)                                      |
-| Validate a change or use a bypass merge        | [Validation and Tooling](guides/validation.md)                                       |
-| Compare against peer repositories              | [Peer Repositories](guides/peers.md)                                                 |
-| Write an issue, PR body, or comment            | [Issue and PR Writing](guides/pr-and-issue-writing.md)                               |
-| Order keys when editing YAML                   | [YAML Ordering](guides/yaml-ordering.md)                                             |
-| Understand the AI workbench architecture       | [ADR-0001: AI Home-Ops Workbench](adr/0001-ai-home-ops-workbench.md)                 |
-| Understand the backup storage decisions        | [ADR-0002: Kopiur Backend and Remote Shape](adr/0002-kopiur-backup-storage-shape.md) |
-| Operate or test the Hermes/ToolHive workbench  | [AI Workbench](operations/ai-workbench.md)                                           |
-| Understand backup posture or verify a restore  | [Storage and Backups](operations/storage-and-backups.md)                             |
-| Renew or replace appliance management TLS      | [Appliance TLS](operations/appliance-tls.md)                                         |
-| Run or watch a Talos/Kubernetes node rollout   | [Node Upgrades](operations/node-upgrades.md)                                         |
-| Change Talos machine configuration             | [Talos Machine Configuration](../talos/README.md)                                    |
-| Reach the cluster when DNS or the router fails | [Talos Access and Break-Glass](operations/talos-access-and-break-glass.md)           |
-| Rebuild the cluster or restore it cold         | [Cluster Rebuild](operations/cluster-rebuild.md)                                     |
-| Update node firmware or recover a node's boot  | [Node Firmware and Boot](operations/node-firmware-and-boot.md)                       |
-| Triage with metrics, logs, and alerts          | [Observability](operations/observability.md)                                         |
-| Check what is exposed publicly and how         | [Public Surfaces](operations/public-surfaces.md)                                     |
-| Understand the chart signing trust classes     | [ADR-0003: Chart Source Verification](adr/0003-helm-chart-source-verification.md)    |
-| Understand the controls on public services     | [ADR-0004: Per-Surface Controls](adr/0004-public-surface-controls.md)                |
-| Write prose a human will read                  | [Writing Style](guides/writing-style.md)                                             |
-
-## Placement Rule
+## Directories
 
 - `adr/`: why the repository, cluster, or operating model is shaped a certain
-  way.
+  way. A decision record holds the decision and its consequences only.
 - `guides/`: how to work in this repository or use its tooling.
 - `operations/`: how the live cluster is operated, restored, migrated, or
-  understood.
+  understood. Architecture reference and current-state inventories belong
+  here, where they can be corrected without rewriting a decision.
 
-A decision record holds the decision and its consequences only. Architecture
-reference and current-state inventories belong in `operations/`, where they can
-be corrected without rewriting a decision.
+The root `README.md` is the repository's front page, curated for a visitor,
+not an index of operational documents.
 
-The root `README.md` is the repository's front page, not an index. It is
-curated for a visitor trying to understand the repo, so operational and
-recovery docs belong in the map above rather than on the shopfront. Every doc
-belongs in that map.
+## Retired Documents
+
+Each row names the last commit that contained the document, so it can be
+read offline from a clone containing that commit: search with
+`git grep -n -e '<phrase>' <sha> -- docs .agents/skills` and read with
+`git show <sha>:<path>`.
+
+| Path                                                        | Last commit containing it | Replaced by                      |
+| ----------------------------------------------------------- | ------------------------- | -------------------------------- |
+| `docs/guides/pr-and-issue-writing.md`                       | `0becf529`                | `docs/guides/writing.md`         |
+| `docs/guides/writing-style.md`                              | `0becf529`                | `docs/guides/writing.md`         |
+| `.agents/skills/github-prose/SKILL.md`                      | `0becf529`                | `docs/guides/writing.md`         |
+| `.agents/skills/github-prose/references/issue-shapes.md`    | `0becf529`                | `docs/guides/writing-shapes.md`  |
+| `.agents/skills/github-prose/references/pr-shapes.md`       | `0becf529`                | `docs/guides/writing-shapes.md`  |
+| `.agents/skills/github-prose/references/review-contract.md` | `0becf529`                | `docs/guides/writing.md`, Verify |
+| `.agents/skills/github-prose/references/editor-briefs.md`   | `0becf529`                | retired without replacement      |

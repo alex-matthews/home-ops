@@ -36,6 +36,10 @@ spec:
       metadataCacheSizeMb: 1024
       mode: Persistent
       storageClassName: ceph-block
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
   # Quick tier only, weekly, on the default blob check (no file reads): the
   # cost is the household download, and deep verification of the same data
   # runs against the local repository (#1985).

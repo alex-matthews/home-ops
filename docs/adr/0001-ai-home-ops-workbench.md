@@ -29,8 +29,9 @@ observability/secrets tooling, and safe drafting of changes, issues, and ADRs.
 
 - **No local model inference.** Cluster nodes are not sized for local LLMs and
   there is no dedicated GPU or workstation-class inference node.
-- **No PostgreSQL dependency.** The cluster is not currently suited to run
-  CloudNativePG or equivalent.
+- **No PostgreSQL dependency.** The cluster was not then suited to run
+  CloudNativePG or equivalent. Superseded: LiteLLM and Memini now use the
+  shared cluster in [ADR-0005](0005-cnpg-postgres.md).
 - **Low operational burden.** Components copied from peers must be justified
   against this cluster's constraints rather than adopted wholesale.
 - **Spend control.** Cloud inference is acceptable, but provider choice,
@@ -66,8 +67,8 @@ Adopt a lightweight AI home-ops workbench in phases:
 - **Agent clients:** Hermes, future OpenClaw, CI reviewers, and scheduled
   triage jobs are all clients of the same trusted MCP surface.
 - **Model routing:** a small internal-only LiteLLM MVP for provider aliases,
-  metrics, and cache/router coordination — one replica, no public route, no
-  PostgreSQL, no durable LiteLLM state.
+  metrics, and cache/router coordination — one replica, no public route.
+  Durable proxy state has since moved to the shared PostgreSQL cluster.
 - **Memory:** evaluate Memini or similar only after the workbench is useful.
 - **Backlog:** GitHub Issues, optionally Projects, with ADRs for durable
   decisions.
