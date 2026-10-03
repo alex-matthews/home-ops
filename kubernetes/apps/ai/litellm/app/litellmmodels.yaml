@@ -74,3 +74,35 @@ spec:
     extra:
       input_cost_per_token: 0
       output_cost_per_token: 0
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-gpt-6-1-sol
+spec:
+  modelName: openrouter/gpt-6.1-sol
+  params:
+    model: openrouter/openai/gpt-6.1-sol
+    apiKeyRef:
+      name: litellm-openrouter-secret
+      key: OPENROUTER_API_KEY
+  # No cost fields: custom prices replace OpenRouter's stated cost, which is
+  # what the virtual keys' budgets should count.
+  info:
+    mode: chat
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-voyage-code-4
+spec:
+  modelName: openrouter/voyage-code-4
+  params:
+    model: openrouter/voyageai/voyage-code-4
+    apiKeyRef:
+      name: litellm-openrouter-secret
+      key: OPENROUTER_API_KEY
+  info:
+    mode: embedding
