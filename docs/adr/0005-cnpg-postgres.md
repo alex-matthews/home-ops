@@ -118,3 +118,12 @@ run Immich apart did so because it once needed the custom
   on its `Database`, as the storage note describes.
 - System-SSD write wear on m2 and m3 becomes a tracked metric against the
   drives' 300 TBW rating. Wear figures are scenarios until measured.
+- Exception: kritika runs its own `Cluster`, `kritika-postgres`, in the
+  `kritika` namespace, with one instance on `openebs-hostpath` pinned to m1,
+  no backup and no PodDisruptionBudget. Its history is accepted as losable
+  for a trial of four to eight weeks: reviews and findings remain on GitHub.
+  A separate cluster can be upgraded or reset on its own while kritika
+  promises no schema upgrade path. Revisit at the end of the trial, when
+  kritika ships supported migrations, or if that history becomes worth
+  keeping. A second instance would use synchronous replication with
+  `dataDurability: preferred`.

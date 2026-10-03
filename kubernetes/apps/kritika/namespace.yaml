@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: _
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    # kritika's server can create Jobs with any pod spec; this keeps them
+    # unprivileged, off the host and non-root.
+    pod-security.kubernetes.io/enforce: restricted

@@ -92,6 +92,7 @@ CRDs):
 - `grafana-instance → grafana` — the Grafana CR and datasources.
 - `grafana-dashboards → grafana` — dashboards and their folder.
 - `flux-instance → flux-operator` — the FluxInstance CR.
+- `kritika-postgres → cloudnative-pg` — kritika's own CNPG `Cluster`.
 
 Operator → CRD chart:
 
