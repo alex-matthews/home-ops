@@ -123,8 +123,9 @@ publisher's actual signing practice supports. Version components in tag
 refs use strict patterns (for example `v[0-9]+\.[0-9]+\.[0-9]+$`), never
 loose character classes. Should a keyed source become verifiable, the same
 rule applies to its key: pinned, and validated against the artifact before
-adoption. The observed identity for each verified source is recorded in
-implementation issue #1894 at adoption time, and each trusted workflow is
+adoption. The pinned identity for each verified source is in its
+`OCIRepository`; adoption records to 2026-09-16 are in closed issue #1894,
+which has no successor. Each trusted workflow is
 checked for `workflow_call` reachability and untrusted-trigger paths before
 its class is assigned.
 
