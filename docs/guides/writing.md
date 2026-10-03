@@ -123,8 +123,8 @@ NAS export". To sanitise something already published, delete and repost; edit
 history stays visible.
 
 **Linking to other repositories.** `owner/repo#123` shorthand or a plain
-`https://github.com/...` URL emits a permanent cross-reference into the
-upstream issue's timeline. Link through `https://www.github.com/owner/repo/...`
+`https://github.com/...` URL emits a permanent cross-reference into the upstream
+issue's timeline. Link through `https://redirect.github.com/owner/repo/...`
 instead, or omit the upstream link and cite the local issue that carries it.
 Local `#123` references are fine. Editing a reference out afterwards does not
 remove the event; get the form right before posting.
