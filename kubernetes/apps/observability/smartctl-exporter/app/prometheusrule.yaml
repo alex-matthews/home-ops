@@ -67,7 +67,7 @@ spec:
             summary: >-
               Drive {{ $labels.device }} on {{ $labels.node }}: {{ $labels.attribute_name }} changed for the worse in the last day
           labels:
-            severity: warning
+            severity: critical
 
         # Fires for a day on each 5-point step from 90, not continuously, so a
         # worn drive awaiting replacement does not stay firing.
