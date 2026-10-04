@@ -8,23 +8,7 @@ context:
 rules:
   - id: renovate
     whenExpr: pr.headRef.startsWith("renovate/")
-    rule: >-
-      This is a dependency update. Read the upstream release notes, changelog
-      and upgrade notes for every version in the range with gh; the body may
-      be cut. Check each entry against what this repository sets for the app:
-      its HelmRelease values, OCIRepository, ExternalSecret, routes, storage
-      and anything else in its directory. Open the commit range only for an
-      entry that fixes security, changes authentication or credentials,
-      migrates stored data, changes a protocol something here speaks, or names
-      a key the manifests set, or when the notes are missing. For a chart,
-      compare templates/, crds/, values.yaml and values.schema.json between
-      the two tags rather than trusting the notes. A digest change under an
-      unchanged tag is a rebuild. A breaking change nothing here uses is not a
-      finding. Report what the update breaks here, a migration or companion
-      change it makes due, and a pin or workaround in the app's directory it
-      makes unnecessary, each on the changed version line. For a GitHub Action
-      or a tool pinned in .mise/, the places to check are the workflows,
-      scripts and tasks that use it, not an app directory.
+    file: .kritika/renovate.md
   - id: manifests
     paths: ["kubernetes/**"]
     rule: >-
