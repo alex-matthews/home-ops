@@ -131,8 +131,9 @@ spec:
         enabled: true
     networkPolicy:
       enabled: true
-      # LiteLLM's pod port, besides the default 443.
-      egressPorts: [443, 4000]
+      # Cilium matches pod ports after service translation: 4000 is LiteLLM's,
+      # 10443 envoy-external's, which serves Konflate's public hostname.
+      egressPorts: [443, 4000, 10443]
     resources:
       requests:
         cpu: 10m
