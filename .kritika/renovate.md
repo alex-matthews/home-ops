@@ -19,9 +19,9 @@ of what reaches the cluster.
 Before comparing two tags, check that they are on one line: `gh api
 repos/<owner>/<repo>/compare/<old>...<new> --jq '{status, ahead_by,
 behind_by}'`. When the status is diverged, the compare starts from the
-merge base, not the old tag: what the old tag got on a release branch shows
-as new, and what it has that the new tag lacks does not show at all. Read
-the files at each tag instead.
+merge base, not the old tag: a fix the old tag got by backport shows as new
+when the new tag has it too, and what the old tag has that the new tag lacks
+does not show at all. Read the files at each tag instead.
 
 Findings: report what the update breaks here, a migration or companion
 change it makes due, and a pin or workaround in the app's directory it makes
