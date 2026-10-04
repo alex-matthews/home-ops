@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://kritika.home-operations.com/kritika.schema.json
+context:
+  - path: .kritika/context.md
+    description: >-
+      Read first. What is authoritative in this repository, in what order,
+      and which documents are being replaced and may be stale.
+rules:
+  - id: renovate
+    whenExpr: pr.headRef.startsWith("renovate/")
+    rule: >-
+      This is a dependency update. Read the upstream release notes, changelog
+      and upgrade notes for every version in the range with gh; the body may
+      be cut. Check each entry against what this repository sets for the app:
+      its HelmRelease values, OCIRepository, ExternalSecret, routes, storage
+      and anything else in its directory. Open the commit range only for an
+      entry that fixes security, changes authentication or credentials,
+      migrates stored data, changes a protocol something here speaks, or names
+      a key the manifests set, or when the notes are missing. For a chart,
+      compare templates/, crds/, values.yaml and values.schema.json between
+      the two tags rather than trusting the notes. A digest change under an
+      unchanged tag is a rebuild. A breaking change nothing here uses is not a
+      finding. Report what the update breaks here, a migration or companion
+      change it makes due, and a pin or workaround in the app's directory it
+      makes unnecessary, each on the changed version line.
+  - id: repo-shape
+    whenExpr: '!pr.headRef.startsWith("renovate/")'
+    rule: >-
+      Judge a change against the manifests around it, not against prose. A
+      hostname in a manifest is ${SECRET_DOMAIN} or an existing variable,
+      never a literal public name. A new or moved app follows its neighbours
+      in the same namespace directory: a ks.yaml Flux Kustomization pointing
+      at its app/ directory, and a kustomization.yaml there listing every
+      file. Anything renamed or removed is something nothing else under
+      kubernetes/ still names: grep for it. A file ending in .sops.yaml is
+      changed only by SOPS. When the change alters behaviour a document in the
+      tree describes and leaves that document as it was, report it as a nit on
+      the changed line, naming the document; a document that was already wrong
+      before this change is not a finding.
