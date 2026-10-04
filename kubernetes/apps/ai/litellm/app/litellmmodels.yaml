@@ -119,5 +119,10 @@ spec:
   params:
     model: huggingface/Alibaba-NLP/gte-reranker-modernbert-base
     apiBase: http://tei-reranker.ai.svc.cluster.local:8080
+  # LiteLLM skips a key's budget only for a model with both costs set to zero,
+  # so a spent memini budget does not also refuse reranking.
   info:
     mode: rerank
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0

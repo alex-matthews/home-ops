@@ -23,3 +23,19 @@ spec:
             summary: "kritika's weekly LiteLLM budget is spent"
           labels:
             severity: critical
+        - alert: MeminiBudgetWarning
+          expr: |-
+            litellm_remaining_api_key_budget_metric{api_key_alias="memini"} < 2.81
+          annotations:
+            summary: "memini has spent over half its weekly LiteLLM budget"
+          labels:
+            severity: warning
+        # Answers and query rewrites are refused from here until the budget
+        # resets; recall itself does not use the budget and keeps working.
+        - alert: MeminiBudgetSpent
+          expr: |-
+            litellm_remaining_api_key_budget_metric{api_key_alias="memini"} <= 0
+          annotations:
+            summary: "memini's weekly LiteLLM budget is spent"
+          labels:
+            severity: critical

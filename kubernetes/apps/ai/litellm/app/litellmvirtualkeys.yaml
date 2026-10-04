@@ -27,4 +27,9 @@ spec:
   keyAlias: memini
   secretName: memini-litellm-key
   models:
+    - openrouter/gpt-6.1-sol
     - tei/gte-reranker-modernbert-base
+  # NZ$10 in USD at the ECB reference rate of 2026-10-02. The alert in
+  # prometheusrule.yaml warns at half of it.
+  maxBudget: "5.61"
+  budgetDuration: 7d
