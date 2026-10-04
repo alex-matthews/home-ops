@@ -92,7 +92,10 @@ spec:
               OCIRepository or Kustomization the render covers, titled
               "Rendered evidence incomplete", naming each resource read in part
               or not at all and the render's head commit. Never treat an
-              incomplete render as complete.
+              incomplete render as complete. (5) End the summary with one
+              line: "Render <head commit>: read in full <resources>; in part
+              or not at all <resources, or none>", or "Render unavailable"
+              when it could not be fetched.
     envFrom:
       - secretRef:
           name: kritika-secret
