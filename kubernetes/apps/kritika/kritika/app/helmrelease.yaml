@@ -63,6 +63,9 @@ spec:
           commandTimeout: 2m
           maxTokens: 1000000
           timeout: 30m
+        # Temporary, for the A′ re-runs: revert once they are counted.
+        incremental:
+          maxDeltaFiles: 1
         rules:
           # Here rather than in .kritika.yaml so Flux substitutes the Konflate
           # hostname. A rule is at most 2,000 characters, so the jq filters
