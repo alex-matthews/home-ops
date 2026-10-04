@@ -220,9 +220,11 @@ Observability PVCs — Prometheus, Alertmanager, Grafana, the Gatus sidecar,
 Victoria Logs — are deliberately outside the backup set. Losing them loses
 telemetry history or non-declarative UI state, not the Git source of truth.
 
-Hermes and the AI workbench are intentionally stateless; the Hermes home
-directory is an `emptyDir`. Do not add persistence or backup coverage unless
-the workbench design changes.
+Hermes keeps its runtime state on a plain `ceph-block` claim with no backup.
+The state is not authoritative (`ai-workbench.md`) and holds nothing that
+needs protecting yet. Add backup coverage when the workbench design makes it
+matter; moving the populated claim under the Kopiur component then takes one
+snapshot-and-restore window.
 
 `chaski` runs in `default` with no PVC and no Kopiur component. It is stateless
 by design.

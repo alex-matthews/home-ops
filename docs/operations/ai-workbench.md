@@ -209,9 +209,9 @@ Current ToolHive tools:
 - Flux for GitOps health.
 - Grafana for Prometheus, Alertmanager, and VictoriaLogs-backed observability.
 
-Hermes runtime state under `/opt/data` is currently `emptyDir`. Generated
-skills, memory, cron state, and sessions are disposable until that volume is
-deliberately made persistent.
+Hermes runtime state under `/opt/data` is on a plain claim, so generated
+skills, memory, cron state, and sessions survive pod replacement. It is not
+backed up: a rebuild or a lost claim starts Hermes afresh.
 
 ## Boundaries
 
@@ -326,8 +326,8 @@ If a Hermes skill should move out of runtime state, choose the smallest durable
 form: a short operations note, a narrow guide under `docs/guides/`, or a new
 `.agents/skills/<name>/SKILL.md`.
 
-Before relying on Hermes self-improvement, persist `/opt/data`, keep generated
-memory non-authoritative, and review generated skill diffs before reuse.
+Before relying on Hermes self-improvement, keep generated memory
+non-authoritative and review generated skill diffs before reuse.
 
 ## Known Hermes Runtime Caveats
 
