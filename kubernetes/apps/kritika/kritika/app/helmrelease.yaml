@@ -113,10 +113,6 @@ spec:
           ephemeral-storage: 2Gi
     httpRoute:
       enabled: true
-      annotations:
-        gatus.home-operations.com/endpoint: |-
-          conditions: ["[STATUS] == 200"]
-          path: /api/v1/meta
       parentRefs:
         - name: envoy-internal
           namespace: network
