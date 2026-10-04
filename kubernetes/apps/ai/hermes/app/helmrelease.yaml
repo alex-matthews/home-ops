@@ -79,7 +79,7 @@ spec:
                 port: http
     persistence:
       data:
-        type: emptyDir
+        existingClaim: "{{ .Release.Name }}"
         globalMounts:
           - path: /opt/data
       config:
