@@ -1,0 +1,145 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kritika
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: kritika
+  interval: 1h
+  values:
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    config:
+      webUrl: "https://kritika.${SECRET_DOMAIN}"
+      runnerRuntimeClass: gvisor
+      authAdminPassword:
+        valueFrom:
+          secretKeyRef:
+            name: kritika-secret
+            key: ADMIN_PASSWORD
+      defaultsModelsReview: litellm/openrouter/gpt-6.1-sol
+      defaultsSettle: 2m
+      # The code's default is detailed, whatever the chart's description says.
+      defaultsFeedback: standard
+      embeddingModel: litellm/openrouter/voyage-code-4
+      embeddingDims: 1024
+      transcriptRetention: 2400h
+      diffRetention: 2400h
+    configFile:
+      apps:
+        github:
+          accounts: [alex-matthews]
+          clientId: { env: GITHUB_APP_CLIENT_ID }
+          privateKey: { env: GITHUB_APP_PRIVATE_KEY }
+          webhookSecret: { env: GITHUB_APP_WEBHOOK_SECRET }
+      providers:
+        litellm:
+          type: openai
+          baseUrl: http://litellm.ai.svc.cluster.local:4000/v1
+          apiKey: { env: LITELLM_API_KEY }
+          # Dollars per million tokens, for kritika's own cost metric when
+          # LiteLLM reports none.
+          pricing:
+            openrouter/gpt-6.1-sol: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 }
+            openrouter/voyage-code-4: { input: 0.12, output: 0 }
+      egress:
+        allowHosts: ["konflate.${SECRET_DOMAIN}", raw.githubusercontent.com]
+      defaults:
+        # Pause switch: uncomment to stop every review, poll and index run
+        # without undeploying. Never toggle home-ops in the dashboard: that
+        # choice overrides this one.
+        # enabled: false
+        # AGENTS.md is for agents that change the repository; the reviewer's
+        # orientation is .kritika/context.md.
+        agentFiles: false
+        # docs/ is out while it is rewritten: drop the glob afterwards and
+        # press Reindex in the dashboard.
+        ignore: ["**/?*.sops.*", "docs/**"]
+        agent:
+          commands: [gh, curl, jq, yq, rg, fd]
+          commandTimeout: 2m
+          maxTokens: 1000000
+          timeout: 30m
+        rules:
+          # Here rather than in .kritika.yaml so Flux substitutes the Konflate
+          # hostname. A rule is at most 2,000 characters, so the jq filters
+          # live in .kritika/.
+          - id: rendered-evidence
+            paths: ["kubernetes/**"]
+            rule: >-
+              Before saying what this change does to rendered Kubernetes
+              manifests, read Konflate's render of this pull request in bounded
+              pieces, never whole. (1) curl -fsS --retry 10 --retry-delay 6 -o
+              /tmp/k.json
+              https://konflate.${SECRET_DOMAIN}/api/prs/<number>/diff with this
+              pull request's number. (2) jq -r -f .kritika/konflate-header.jq
+              /tmp/k.json prints status, head commit, counts, truncation, each
+              failure and warning, and one line per resource with its row
+              count. (3) Read each resource with jq -r --argjson i <index>
+              --argjson from <a> --argjson to <b> -f
+              .kritika/konflate-resource.jq /tmp/k.json in slices of 1000 rows;
+              if an output ends in "[truncated", read that slice again in
+              halves. Read workloads, RBAC, Services, routes and configuration
+              first, and CRDs and other resources over 1000 rows last, as the
+              step and token budget allows. (4) The render is incomplete when
+              its status is not ready, its head is not the one under review,
+              truncated is above zero, it has a failure, or you did not read
+              every resource in full. Then report one finding, important and
+              reliability, on the first changed line of the HelmRelease,
+              OCIRepository or Kustomization the render covers, titled
+              "Rendered evidence incomplete", naming each resource read in part
+              or not at all and the render's head commit. Never treat an
+              incomplete render as complete.
+    envFrom:
+      - secretRef:
+          name: kritika-secret
+    database:
+      app:
+        existingSecret: kritika-postgres-app
+      owner:
+        existingSecret: kritika-postgres-owner
+      runner:
+        existingSecret: kritika-postgres-runner
+    runner:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 128Mi
+        limits:
+          memory: 1Gi
+          ephemeral-storage: 2Gi
+    httpRoute:
+      enabled: true
+      annotations:
+        gatus.home-operations.com/endpoint: |-
+          conditions: ["[STATUS] == 200"]
+          path: /api/v1/meta
+      parentRefs:
+        - name: envoy-internal
+          namespace: network
+      hostnames:
+        - "kritika.${SECRET_DOMAIN}"
+    monitoring:
+      dashboards:
+        enabled: true
+        grafanaOperator:
+          enabled: true
+          matchLabels:
+            dashboards: grafana
+      prometheusRule:
+        enabled: true
+      serviceMonitor:
+        enabled: true
+    networkPolicy:
+      enabled: true
+      # LiteLLM's pod port, besides the default 443.
+      egressPorts: [443, 4000]
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 512Mi

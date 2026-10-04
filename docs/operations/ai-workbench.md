@@ -177,7 +177,10 @@ Hermes sends auxiliary calls (title generation, compression, vision) without
 streaming, which LiteLLM's Responses bridge answers with an empty output and a 500. `auxiliary.stream_only_base_urls` puts those calls on the streaming path
 and re-aggregates them client-side; interactive chat already streams. This is a
 Hermes-side fix, so a second gateway consumer would need its own answer — the
-peer repositories patch LiteLLM itself for that reason.
+peer repositories patch LiteLLM itself for that reason. kritika avoids it: it
+calls the OpenRouter models, which LiteLLM serves on Chat Completions rather
+than the Responses bridge, with the `kritika` virtual key and its weekly
+budget.
 
 Hermes's `model.provider` must be `custom:<name>`, not the bare provider name.
 Its resolver accepts only `custom`, `custom:<name>`, or a name in its own
