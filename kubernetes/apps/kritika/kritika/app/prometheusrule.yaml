@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kritika-reviews
+spec:
+  groups:
+    - name: kritika-reviews.rules
+      rules:
+        # Covers a budget refusal while budget remains, which the LiteLLM
+        # budget alerts do not.
+        - alert: KritikaReviewFailed
+          expr: |-
+            increase(kritika_reviews_total{status="failed"}[15m]) > 0
+          annotations:
+            summary: "A kritika review failed or ended incomplete"
+          labels:
+            severity: warning
