@@ -55,9 +55,7 @@ spec:
         # AGENTS.md is for agents that change the repository; the reviewer's
         # orientation is .kritika/context.md.
         agentFiles: false
-        # docs/ is out while it is rewritten: drop the glob afterwards and
-        # press Reindex in the dashboard.
-        ignore: ["**/?*.sops.*", "docs/**"]
+        ignore: ["**/?*.sops.*"]
         agent:
           commands: [gh, curl, jq, yq, rg, fd]
           commandTimeout: 2m
