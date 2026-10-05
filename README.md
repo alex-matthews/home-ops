@@ -24,32 +24,23 @@
 
 This repository is the source of truth for my home Kubernetes cluster: three
 Intel NUCs running Talos Linux, with Flux reconciling applications from `main`.
-Besides running the household's media and services, the cluster is where I
-practise designing and operating cloud-native systems.
+The cluster runs the household's media and services, and gives me somewhere
+to practise designing and operating cloud-native systems.
 
 ## Platform
 
-| Layer            | Role                                                                                                                                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Compute          | Three Intel NUC 11 Pro i5 nodes, each with 64 GiB RAM, a 500 GB SATA SSD and a 1 TB NVMe disk for Ceph                                                                                                              |
-| Operating system | [Talos Linux](https://www.talos.dev/), upgraded by [tuppr](https://github.com/home-operations/tuppr)                                                                                                                |
-| Delivery         | [Flux](https://fluxcd.io/) and [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator)                                                                                                              |
-| Networking       | [Cilium](https://github.com/cilium/cilium), [Envoy Gateway](https://github.com/envoyproxy/gateway) and Cloudflare Tunnel; [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) manages LAN and public DNS |
-| Secrets          | [External Secrets](https://github.com/external-secrets/external-secrets) with 1Password Connect; [SOPS](https://github.com/getsops/sops) for encrypted configuration in Git                                         |
-| Storage          | [Rook-Ceph](https://github.com/rook/rook) for app volumes; [OpenEBS](https://github.com/openebs/openebs) for PostgreSQL and CI workspaces; Synology NFS for bulk media                                              |
-| Database         | Shared PostgreSQL managed by [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg)                                                                                                                      |
-| Backups          | App volumes: [Kopiur](https://github.com/home-operations/kopiur) to independent Garage S3 and Cloudflare R2 repositories. PostgreSQL: Barman Cloud to R2                                                            |
-| Observability    | Prometheus, VictoriaLogs, Grafana and Gatus                                                                                                                                                                         |
-| AI workbench     | [Hermes](https://github.com/NousResearch/hermes-agent) with [ToolHive](https://github.com/stacklok/toolhive) for read-only cluster and repository tools                                                             |
-
-## How a change lands
-
-[Renovate](https://github.com/renovatebot/renovate) proposes dependency
-updates. GitHub Actions checks each pull request, and
-[Konflate](https://github.com/home-operations/konflate) posts its rendered
-manifest diff. Once a change merges, Flux reconciles it from `main`.
-[CONTRIBUTING.md](CONTRIBUTING.md) covers validating a change locally, writing
-for the record and keeping documents true.
+| Layer            | Role                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Compute          | Three Intel NUC 11 Pro i5 nodes, each with 64 GiB RAM, a 500 GB SATA SSD and a 1 TB NVMe disk for Ceph                                                                                                                                                                                                                                                       |
+| Operating system | [Talos Linux](https://www.talos.dev/), upgraded by [tuppr](https://github.com/home-operations/tuppr)                                                                                                                                                                                                                                                         |
+| Delivery         | [Flux](https://fluxcd.io/) and [Flux Operator](https://github.com/controlplaneio-fluxcd/flux-operator); [Renovate](https://github.com/renovatebot/renovate) proposes updates; on pull requests, [Konflate](https://github.com/home-operations/konflate) posts the rendered diff and [kritika](https://github.com/home-operations/kritika) reviews the change |
+| Networking       | [Cilium](https://github.com/cilium/cilium), [Envoy Gateway](https://github.com/envoyproxy/gateway) and Cloudflare Tunnel; [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) manages LAN and public DNS                                                                                                                                          |
+| Secrets          | [External Secrets](https://github.com/external-secrets/external-secrets) with 1Password Connect; [SOPS](https://github.com/getsops/sops) for encrypted configuration in Git                                                                                                                                                                                  |
+| Storage          | [Rook-Ceph](https://github.com/rook/rook) for app volumes; [OpenEBS](https://github.com/openebs/openebs) for PostgreSQL and CI workspaces; Synology NFS for bulk media                                                                                                                                                                                       |
+| Database         | Shared PostgreSQL managed by [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg)                                                                                                                                                                                                                                                               |
+| Backups          | App volumes: [Kopiur](https://github.com/home-operations/kopiur) to independent Garage S3 and Cloudflare R2 repositories. PostgreSQL: Barman Cloud to R2                                                                                                                                                                                                     |
+| Observability    | Prometheus, VictoriaLogs, Grafana and Gatus                                                                                                                                                                                                                                                                                                                  |
+| AI workbench     | [Hermes](https://github.com/NousResearch/hermes-agent) with [ToolHive](https://github.com/stacklok/toolhive) for read-only cluster and repository tools                                                                                                                                                                                                      |
 
 ## Local workflow
 
@@ -57,7 +48,7 @@ From the repository root, install the pinned tools with
 [mise](https://mise.jdx.dev/getting-started.html), then list the operator
 recipes:
 
-```sh
+```bash
 mise install
 just -l
 ```
@@ -69,10 +60,11 @@ just -l
 
 ## Documentation
 
-- [Architecture](ARCHITECTURE.md): how the system fits together.
-- [Documentation index](docs/README.md): policy, operations and recovery.
-- [Bootstrap](bootstrap/README.md): a full rebuild.
-- [Contributing](CONTRIBUTING.md): validating and writing changes.
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the system fits together.
+- [docs/README.md](docs/README.md): the index of policy, operations and recovery
+  documents.
+- [bootstrap/README.md](bootstrap/README.md): a full rebuild.
+- [CONTRIBUTING.md](CONTRIBUTING.md): validating and writing changes.
 - [AGENTS.md](AGENTS.md): repository rules and task guidance.
 
 ## Thanks
