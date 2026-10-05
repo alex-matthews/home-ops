@@ -86,17 +86,17 @@ spec:
               halves. Read workloads, RBAC, Services, routes and configuration
               first, and CRDs and other resources over 400 rows last, as the
               step and token budget allows. (4) The render is incomplete when
-              its status is not ready, its head is not the one under review,
-              truncated is above zero, it has a failure, or you did not read
-              every changed row of every resource. Then report one finding,
-              important and reliability, on the first changed line of the
-              HelmRelease, OCIRepository or Kustomization the render covers,
-              titled "Rendered evidence incomplete", naming each resource read
-              in part or not at all and the render's head commit. Never treat
-              an incomplete render as complete. (5) End the summary with one
-              line: "Render <head commit>: read in full <resources>; in part
-              or not at all <resources, or none>", or "Render unavailable"
-              when it could not be fetched.
+              it could not be fetched, its status is not ready, its head is
+              not the one under review, truncated is above zero, it has a
+              failure, or you did not read every changed row of every
+              resource. Then report one finding, important and reliability, on
+              the first changed line of the HelmRelease, OCIRepository or
+              Kustomization the render covers, titled "Rendered evidence
+              incomplete", naming each resource read in part or not at all and
+              the render's head commit. Never treat an incomplete render as
+              complete. (5) That finding is the only report of coverage: when
+              the render was read in full, the summary says nothing about what
+              you read.
     envFrom:
       - secretRef:
           name: kritika-secret
