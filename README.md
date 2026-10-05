@@ -22,10 +22,10 @@
 
 ## Overview
 
-This repository is the source of truth for my home Kubernetes cluster. Three
-Intel NUCs run Talos Linux, with Flux managing applications from `main`.
-Alongside running the household's media and services, I use it to practise
-designing and operating cloud-native systems.
+This repository is the source of truth for my home Kubernetes cluster: three
+Intel NUCs running Talos Linux, with Flux reconciling applications from `main`.
+Besides running the household's media and services, the cluster is where I
+practise designing and operating cloud-native systems.
 
 ## Platform
 
@@ -45,16 +45,17 @@ designing and operating cloud-native systems.
 ## How a change lands
 
 [Renovate](https://github.com/renovatebot/renovate) proposes dependency
-updates. GitHub Actions checks pull requests, and
-[Konflate](https://github.com/home-operations/konflate) shows the rendered
-manifest diff. After merge, Flux reconciles the applications from `main`.
-The [validation guide](CONTRIBUTING.md#validate-locally) covers the checks and
-local tooling.
+updates. GitHub Actions checks each pull request, and
+[Konflate](https://github.com/home-operations/konflate) posts its rendered
+manifest diff. Once a change merges, Flux reconciles it from `main`.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers validating a change locally, writing
+for the record and keeping documents true.
 
 ## Local workflow
 
-From the repository root, install the pinned toolchain with
-[mise](https://mise.jdx.dev/getting-started.html) and list the operator recipes:
+From the repository root, install the pinned tools with
+[mise](https://mise.jdx.dev/getting-started.html), then list the operator
+recipes:
 
 ```sh
 mise install
@@ -62,15 +63,15 @@ just -l
 ```
 
 > [!IMPORTANT]
-> The default environment uses read-only Kubernetes and Talos identities.
-> A mise hook refreshes the Kubernetes token when needed.
-> `MISE_ENV=admin` selects administrative identities for operator sessions.
+> The default environment uses read-only Kubernetes and Talos identities, and
+> a mise hook refreshes the Kubernetes token when needed. Set `MISE_ENV=admin`
+> to select the administrative identities for an operator session.
 
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md): how the system fits together.
-- [Documentation index](docs/README.md): policy, operations and recovery;
-  [bootstrap](bootstrap/README.md) covers a full rebuild.
+- [Documentation index](docs/README.md): policy, operations and recovery.
+- [Bootstrap](bootstrap/README.md): a full rebuild.
 - [Contributing](CONTRIBUTING.md): validating and writing changes.
 - [AGENTS.md](AGENTS.md): repository rules and task guidance.
 
@@ -84,6 +85,6 @@ This repository builds on patterns from
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The repository began from
+MIT; see [LICENSE](LICENSE). The repository began from
 [onedr0p's cluster-template](https://github.com/onedr0p/cluster-template), and
-the parts that derive from it carry onedr0p's notice in [NOTICE](NOTICE).
+the parts derived from it carry onedr0p's notice in [NOTICE](NOTICE).
