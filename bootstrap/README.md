@@ -86,5 +86,8 @@ Check PostgreSQL's recovered data, roles/extensions, replication, resumed
 archiving and actual consumer recovery; earlier drills held consumers stopped,
 so they do not prove unattended recovery. Collect recovery logs promptly while
 the observation stack itself rebuilds. A human re-establishes Kubernetes
-read-only access with `just kube readonly-token`, which needs the
-administrative kubeconfig ([access](../docs/operations/access.md)).
+read-only access by deleting any pre-rebuild `kubeconfig-readonly` in the
+main checkout, then running `just kube readonly-token` there with the new
+administrative kubeconfig ([access](../docs/operations/access.md)). The
+recipe trusts the old file's expiry without asking the cluster, so it would
+otherwise keep a token the rebuilt cluster rejects.
