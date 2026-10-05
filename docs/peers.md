@@ -43,12 +43,18 @@ conventions rather than sources of them.
 ## Beyond the catalog
 
 The catalog is the short list, not the field. If the question is "has anyone
-solved this", also sweep the home-ops repositories onedr0p keeps starred
-(`gh api users/onedr0p/starred --paginate`, filtered to cluster repositories):
-that list is curated by the author of the pattern most of this repo follows,
-and it is where a practice shows up before it reaches the peers above. Treat
-a hit there as a lead to inspect, not a precedent to cite, until the file has
-been read.
+solved this", also sweep the cluster repositories onedr0p keeps starred. That
+list is curated by the author of the pattern most of this repo follows, and it
+is where a practice shows up before it reaches the peers above. The topic
+filter misses untagged repositories, so widen it when a search comes up empty:
+
+```bash
+gh api users/onedr0p/starred --paginate \
+  --jq '.[] | select((.topics // []) | index("k8s-at-home")) | .full_name'
+```
+
+Treat a hit there as a lead to inspect, not a precedent to cite, until the
+file has been read.
 
 ## Reading peer pull requests
 

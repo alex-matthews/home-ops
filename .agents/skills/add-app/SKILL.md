@@ -41,8 +41,8 @@ Confirm with the user anything not already given:
 2. **Image** repository and tag. Pin as `tag@sha256:digest`; Renovate maintains
    it afterward.
 3. **Port**, and the route posture: none, internal (`envoy-internal`, the
-   default), or public (`envoy-external` — public routes need explicit
-   justification per `AGENTS.md`).
+   default), or public (`envoy-external`; public routes follow the
+   [public-surface policy](../../../docs/policy/public-surfaces.md)).
 4. **Persistence**: choose backup posture from the app's value and recovery
    requirements, not from the presence of a PVC. Read the
    [volume prerequisites](../restore-data/references/app-volumes.md) before
@@ -154,7 +154,8 @@ Copy atuin's and adapt. Invariants to keep:
 - Kopiur-backed persistence mounts `existingClaim: "{{ .Release.Name }}"`.
 - Config files mount as `type: configMap` with
   `name: "{{ .Release.Name }}-configmap"` (see recyclarr); SOPS-encrypted
-  config mounts as `type: secret` (see resolute in Git history).
+  config mounts as `type: secret`, as resolute did before its removal:
+  `git show 90e3da64^:kubernetes/apps/default/resolute/app/helmrelease.yaml`.
 - Secrets arrive via `envFrom` from `"{{ .Release.Name }}-secret"`, with
   `reloader.stakater.com/auto: "true"` on the controller.
 - SQLite or other single-writer apps: `replicas: 1` with

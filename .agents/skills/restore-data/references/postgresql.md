@@ -21,7 +21,15 @@ history.
 ## Admission and drills
 
 Admit consumers or start migrations only with a healthy archive/recovery
-window and a demonstrated second-cluster WAL replay. For an approved drill:
+window and a demonstrated second-cluster WAL replay. Read the cluster,
+backups and recovery window with:
+
+```bash
+mise exec -- kubectl -n database get cluster,scheduledbackup,backup
+mise exec -- kubectl -n database get objectstore r2 -o jsonpath='{.status.serverRecoveryWindow}'
+```
+
+For an approved drill:
 
 1. Write a marker after the base backup and confirm its WAL segment archived.
 2. Recover an isolated cluster with compatible PostgreSQL/extension images
