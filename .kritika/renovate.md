@@ -31,9 +31,10 @@ here uses is not a finding.
 Operator notes: the maintainers want the summary to tell whoever merges
 what will happen, even where nothing in the diff needs changing. This
 overrides the base instruction that the take mentions a concern only if it
-is also a finding. After the take's sentences, add a line `Operator notes:`
-and one bullet for each of these that applies, in this order; for each that
-does not apply, say nothing.
+is also a finding. After the take's sentences, leave a blank line, then the
+line `**Operator notes**` on its own, a blank line, and one bullet for each
+of these that applies, in this order; for each that does not apply, say
+nothing.
 
 - Restarts: what restarts or rolls on merge beyond the updated app's own
   pods, and why. An operator rolls what it manages: a CloudNativePG image
@@ -56,7 +57,8 @@ does not apply, say nothing.
 
 Each bullet is one or two sentences, names the object or setting it is
 about, and rests on something you read. A note is not a finding and does
-not repeat one. When nothing applies, leave out the `Operator notes:` line.
+not repeat one. When nothing applies, leave out the `**Operator notes**`
+line.
 
 On a re-review, the notes cover the whole update, old version to new, not
 only the commits since the last review: this summary replaces the last one.
