@@ -8,68 +8,81 @@ other clusters through the [peers catalogue](docs/peers.md).
 
 ## Validate locally
 
-Choose the smallest matching checks, read their output and report their limits.
+Verified 2026-10-05 against the repository at `main` with Flate 0.6.5; not
+against the live cluster.
 
-App changes need a Kustomize build and Flate checks; add image comparison
-when images may change. Workflow/tooling changes need formatting, workflow
-checks and inspection of affected Actions logic. Storage changes need the
-[restore evidence](.agents/skills/restore-data/SKILL.md) relevant to their
-risk. Docs need formatting, plus verification of changed commands/procedures.
+Run the smallest set of checks that matches the change, read what they print,
+and report what they did not prove. Use the pinned tools through `mise exec`.
 
-Use pinned tools. Keep `test all` full-tree: adding `--base` selects
-changed-only mode. For image comparison, replace `main` with the reviewed base:
+| Change                         | Run                                                                                               | Proves                                                                 | Does not prove                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| App manifests                  | Kustomize build and Flate test; image comparison when images may change                           | The app builds, the tree renders, and which images are new             | See [what a local render proves](#what-a-local-render-proves) |
+| Chart or operator upgrades     | As for app manifests, plus the [CRD upgrade checks](docs/policy/decisions.md#crd-upgrades)        | The rendered change, including hooks and templates you inspected       | That APIs supplied by bootstrap match the new chart           |
+| Workflows, CI scripts, tooling | Formatting, actionlint, zizmor, ShellCheck and the chart fixtures; read the changed Actions logic | Syntax, known workflow risks and script behaviour on the offline cases | Behaviour on GitHub's runners, with real tokens and events    |
+| Storage                        | The [restore evidence](.agents/skills/restore-data/SKILL.md) relevant to the risk                 | What that evidence exercised                                           | Anything it did not exercise                                  |
+| Docs                           | Formatting; run every changed command or procedure                                                | Format, and the commands you ran                                       | Links and prose: Lint checks neither                          |
+
+The first four commands are the ones Lint runs, and the fifth is Chart
+Verify's Fixtures job:
 
 ```bash
+# Formatting of JSON, TOML, YAML and Markdown; SOPS files are never reformatted
 mise exec --no-deps -- oxfmt --check . '!**/*.sops.yaml' '!**/*.sops.yml'
+# Workflow syntax and expressions
 mise exec --no-deps -- actionlint
+# Workflow security audits that need no network
 mise exec --no-deps -- zizmor --offline .github/workflows
+# Shell scripts and the fixture stand-in, at warning level
 mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/tests/chart-signing/bin/_fake')
+# Chart Verify's scripts against their offline cases
 .github/tests/chart-signing/run.sh
+# One app's own resources; its components and parent patches are not applied
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
+# Every Kustomization, HelmRelease and Flux source renders
 mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
-mise exec -- flate diff images -p ./kubernetes/flux/cluster --base main -o json
 ```
 
-Flate 0.6.5 base comparisons reject `worktreeConfig`. Use a standalone clone
-containing the candidate changes, preserving repository settings.
+Keep `test all` full-tree: adding `--base` switches it to changed-only mode.
+
+Image comparison needs a base revision. Run Flate base comparisons from a plain
+clone of the committed candidate, made with `git clone --no-local`, and replace
+`origin/main` with the reviewed base:
+
+```bash
+# Images the candidate adds relative to the base; [] means none
+mise exec -- flate diff images -p ./kubernetes/flux/cluster --base origin/main -o json
+```
 
 ### What a local render proves
 
-Flate 0.6.5 renders the working tree with offline substitution. Missing live
-values can be empty; SOPS values are placeholders. `--allow-missing-secrets`
-can skip sources/consumers; output omits Secrets and CRDs by default. Inspect
-objects, base and warnings: success proves neither signatures, decryption,
-admission nor health
-([source and limits](https://redirect.github.com/home-operations/flate/blob/631b76b69c4e58c6f4d1cb01e23616fa61aebafa/README.md#behaviors)).
+Flate renders the working tree without a cluster
+([behaviour and limits](https://redirect.github.com/home-operations/flate/blob/631b76b69c4e58c6f4d1cb01e23616fa61aebafa/README.md#behaviors)).
+Read the rendered objects, the base and the warnings, not only the pass count.
+A clean run does not cover:
+
+- substitution values held only in the live cluster, which render empty and
+  appear as warnings;
+- SOPS values, which render as placeholders;
+- sources and consumers that `--allow-missing-secrets` skipped;
+- Secrets and CRDs, which are left out of the output by default;
+- chart signatures, decryption, admission or runtime health.
 
 Server dry-run tests admission, not runtime success. Follow
-[access](docs/operations/access.md): verify tunnel/response success and select
-an existing administrative identity when needed.
+[access](docs/operations/access.md) to choose the identity, and confirm the
+tunnel and the response succeeded before trusting the result.
 
-### Reviewing upgrades
+### Changing CI scripts and tooling
 
-Inspect chart templates, hooks and rendered changes for APIs supplied by
-bootstrap [CRDs](bootstrap/helmfile/crds.yaml) or [core charts](bootstrap/helmfile/apps.yaml).
-This coverage is maintained by hand; release notes alone are insufficient.
-The [parent patch](kubernetes/flux/cluster/ks.yaml) sets CRD
-`CreateReplace`; leaf files and Helm defaults do not establish effective policy.
-For human-controlled merges, read the Renovate review first; a
-missing/malformed/unavailable review requires manual inspection or a rerun.
-Act on blockers and correct recurring prompt mismatches with intentional
-repository policy. Preserve PR automerge's [source
-configuration](.renovaterc.json5) and the human-companion-commit protection
-in AGENTS.
+CI scripts are bash with `set -euo pipefail`. Call external tools through the
+script's `tool` wrapper, so the fixtures can substitute stand-ins, and keep the
+scripts clean under ShellCheck at warning level. Run the chart fixtures when
+changing those scripts or their messages. After labelling a pull request
+`verify/declared`, push a fresh commit, because a rerun of an old job keeps its
+original labels.
 
-### Tooling
-
-CI scripts use bash, `set -euo pipefail`, a wrapper for external tools,
-warning-level ShellCheck and offline branch fixtures. Run the chart fixtures
-when changing those scripts or messages; after labelling a pull request
-`verify/declared`, push a fresh commit, because old-job reruns keep their
-original labels. Operator workflows stay in `just`; mise owns
-tools/environment. Keep tool pins and lock coherent, and credentials and
-workstation preferences out of mise configuration. A hook declaration is not
-evidence it ran.
+Operator workflows stay in `just`; mise owns tools and environment. Keep tool
+pins and the lock file coherent, and keep credentials and workstation
+preferences out of mise configuration.
 
 ## Write for the record
 
@@ -102,6 +115,13 @@ Separate editorial review is warranted when a false claim would be costly
 Supply changed files and diff; record findings, time and tokens, distinguishing
 preferences. Requested technical reviews still follow their own scope.
 Renovate's bot is the default review on the version bump's own PR.
+
+Before a human-controlled merge, read that review; if it is missing, malformed
+or unavailable, inspect the change by hand or rerun the review. Act on its
+blockers, and correct a recurring mismatch with the prompt through deliberate
+repository policy. Preserve PR automerge's
+[source configuration](.renovaterc.json5) and the
+[companion-commit protection](AGENTS.md#working-here).
 
 ### Publication and maintenance
 

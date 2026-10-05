@@ -126,6 +126,20 @@ files; until then, check it against them when an edge changes.
 | `plex`, `drm-exporter → intel-gpu-resource-driver`                                          | Exception: unschedulable DRA consumers can exhaust the remediation budget                                                                              |
 | `kopiur-repositories → rook-ceph-cluster`                                                   | Exception: a population deadline failure can become terminal for the claiming PVC UID ([#1983](https://github.com/alex-matthews/home-ops/issues/1983)) |
 
+## CRD upgrades
+
+Verified 2026-10-05 against the repository at `main`.
+
+Bootstrap supplies some APIs before Flux runs: the
+[CRD Helmfile](../../bootstrap/helmfile/crds.yaml) applies CRDs extracted from
+upstream charts, and the [core charts](../../bootstrap/helmfile/apps.yaml) are
+installed by Helmfile. That coverage is maintained by hand, so for a chart
+upgrade that touches those APIs, inspect its templates, hooks and rendered
+changes; release notes alone are insufficient. The
+[parent patch](../../kubernetes/flux/cluster/ks.yaml) sets
+`crds: CreateReplace` on install and upgrade for every nested HelmRelease;
+leaf files and Helm defaults do not establish the effective policy.
+
 ## Secrets and substitution
 
 Verified 2026-10-05 against the repository at `main`.

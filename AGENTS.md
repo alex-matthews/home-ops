@@ -33,6 +33,7 @@ retired-document retrieval, including offline Git commands.
 | Compare with a peer repository                                       | [peers](docs/peers.md)                                                     |
 | Trust a chart source: verify identity, trust classes                 | [chart-trust](docs/policy/decisions.md#chart-trust)                        |
 | Exclude a chart from verification; the coverage check                | [chart-exclusions](docs/policy/decisions.md#chart-exclusions-and-coverage) |
+| Review a chart or operator upgrade that may carry CRDs               | [crd-upgrades](docs/policy/decisions.md#crd-upgrades)                      |
 | Add or change a dependsOn edge                                       | [ordering](docs/policy/decisions.md#reconciliation-ordering)               |
 | Choose External Secrets or SOPS                                      | [secrets](docs/policy/decisions.md#secrets-and-substitution)               |
 | Backup repositories; what stays unprotected by decision              | [data-protection](docs/policy/decisions.md#data-protection)                |
