@@ -14,9 +14,10 @@ acme.sh, its DSM deploy hook and Task Scheduler; the router uses automatic
 DNS-01. Verify each appliance's installed version, configuration and renewal
 results. Manual TXT entry does not meet the unattended-renewal requirement.
 
-Secure an independent management path before changing TLS. Do not assume
-removing a certificate preserves access. From a LAN client, verify named
-browser access and the served certificate's name, issuer and validity.
+Secure an independent management path before changing or repairing TLS. Do
+not assume removing a certificate preserves or restores access. From a LAN
+client, verify named browser access and the served certificate's name, issuer
+and validity.
 Observe a natural renewal on each appliance before trusting automation;
 use its current renewal information rather than a fixed day count.
 
@@ -26,6 +27,3 @@ After an interrupted DSM deployment, verify two-factor enforcement is
 restored and temporary administrative access removed. The [upstream
 hook](https://redirect.github.com/acmesh-official/acme.sh/wiki/Synology-NAS-Guide)
 uses those temporarily; this is not permission to relax safeguards.
-
-Preserve an independent management path before attempting certificate
-repair; do not assume deleting a certificate restores access.

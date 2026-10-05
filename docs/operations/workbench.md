@@ -8,7 +8,8 @@ Use the workbench for read-only, evidence-led triage.
 adoption and promotion gates.
 
 [LiteLLM declarations](../../kubernetes/apps/ai/litellm/app) own the model
-list. Promote useful UI-only database experiments to Git.
+list. A model added in the LiteLLM UI lives only in its database; promote one
+worth keeping to a `LiteLLMModel` in Git.
 
 Start with Flux health, datasource reachability, alerts and bounded anomaly
 metrics. Query logs once a signal identifies a workload. Report what changed,
@@ -18,15 +19,15 @@ existing alerts and the Renovate review already cover those paths.
 
 ## Checks
 
-Verify these before acceptance:
+Before accepting a gateway, client or Hermes image change, verify:
 
 - Test primary and auxiliary model requests. Hermes declares a streaming
   workaround for auxiliary calls; assess it when changing the gateway or
   adding a client rather than assuming every client needs the same setting.
   kritika calls models that LiteLLM serves on Chat Completions, with its own
   virtual key and weekly budget.
-- Check provider resolution and the new image's configuration defaults and
-  migrations. Update the read-only ConfigMap deliberately in Git; startup
+- For a new Hermes image, check provider resolution, configuration defaults
+  and migrations. Update the read-only ConfigMap deliberately in Git; startup
   cannot repair it. Keep migration checks enabled and preserve dashboard
   authentication on non-loopback binds.
 - Discover the current MCP catalogue, verify effective read-only permissions
@@ -56,4 +57,7 @@ probe-driven restarts and concurrent token writers. The client must be able
 to rewrite its login state on refresh. A printed success is insufficient:
 LiteLLM 1.103.2 logs a failed save without raising it. Verify persistence
 through metadata and subsequent use without displaying credential contents.
-Agents do not execute this flow.
+Agents do not execute this flow. The last written procedure, a one-off pod
+without probes, is in the retired `docs/operations/ai-workbench.md`
+([retrieval](../README.md#retired-documents)); check its pins against the
+current declarations before using it.

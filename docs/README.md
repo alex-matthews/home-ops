@@ -11,9 +11,10 @@ for people browsing. Keep scratch notes and transcripts outside this tree.
   record, keep documents true.
 - [peers.md](peers.md): the peer cluster catalogue.
 - `policy/`: standing decisions.
-    - [decisions.md](policy/decisions.md): chart trust, reconciliation
-      ordering, secrets, data protection, workbench, appliance certificates,
-      bypass merges.
+    - [decisions.md](policy/decisions.md): chart trust and exclusions,
+      reconciliation ordering and dependency edges, secrets, data protection,
+      PostgreSQL and the kritika database exception, workbench, appliance
+      certificates, bypass merges.
     - [public-surfaces.md](policy/public-surfaces.md): what is exposed, to
       whom, behind which control.
 - `operations/`: keeping a running cluster healthy.

@@ -32,8 +32,7 @@ Any failed prerequisite stops the window:
    defines the recovery and migration checks.
 5. Drain every node and confirm no RBD mounts with fresh, successful reads
    on each. The reset wrapper can treat a failed read as no matching mount;
-   that is not a safe gate. The recorded concurrent-reset failure removed
-   monitors before another node finished unmounting, leaving it hung.
+   that is not a safe gate.
 
 These gates protect planned teardown. After failure, preserve the baseline
 and inspect surviving volumes, snapshots, PostgreSQL timelines and archivers.
@@ -62,7 +61,10 @@ The human-run `just bootstrap cluster` follows [mod.just](mod.just):
    then install the [core charts](helmfile/apps.yaml), including Flux Operator
    and its instance. Helmfile pulls these pins directly, outside Flux's
    [signature verification](../docs/policy/decisions.md#chart-trust).
-4. Return to the stable API endpoint once its networking is available.
+4. Write the final kubeconfig, which targets the stable API endpoint. That
+   address answers only after Flux reconciles Cilium's networking; until
+   then, use a node's direct address as in
+   [break-glass access](../docs/recovery/break-glass.md).
 
 Flux then reconciles Kubernetes declarations; machine and external state keep
 their own owners. Verify machine changes through [affected-resource readback](../talos/README.md),
@@ -84,4 +86,5 @@ Check PostgreSQL's recovered data, roles/extensions, replication, resumed
 archiving and actual consumer recovery; earlier drills held consumers stopped,
 so they do not prove unattended recovery. Collect recovery logs promptly while
 the observation stack itself rebuilds. A human re-establishes Kubernetes
-read-only access using the [break-glass access](../docs/recovery/break-glass.md).
+read-only access with `just kube readonly-token`, which needs the
+administrative kubeconfig ([access](../docs/operations/access.md)).

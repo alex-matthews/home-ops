@@ -45,6 +45,4 @@ compatibility support. The [declared installer](../../talos/cluster.yaml.j2)
 is not a Secure Boot image: enabling Secure Boot without compatible signed
 assets and enrolled trust can prevent boot. Adopting that path needs a
 separate plan; verify actual settings after loading defaults. A flash is not
-an established repair for boot-variable state. Confirm labels and enforcement
-mode before classifying audit floods, and never disable SELinux or audit
-merely to silence them.
+an established repair for boot-variable state.

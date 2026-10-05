@@ -47,6 +47,9 @@ Rules for filling it in:
   proof that a manually stopped workload will return.
 - Note which guardrails are expected to trip (for example Tuppr blocking
   upgrades during a restore) so they are not misread as failures.
+- Record the baseline the guards compare against: the expected restore
+  points, the workloads that mount each target, and file counts and
+  ownership from the latest snapshot.
 
 ## During the window: guard every destructive step
 

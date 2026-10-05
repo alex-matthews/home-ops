@@ -13,8 +13,9 @@ restoration, follow the
 Derive protected claims from app `ks.yaml` inclusion of the [kopiur
 component](../../kubernetes/components/kopiur/kustomization.yaml). Only its
 claim is covered, in both repositories; extra caches and NAS mounts are not
-protected by association. Zeroscaler protects runtime NAS consumers, not
-backup movers automatically.
+protected by association. Zeroscaler, an autoscaler that scales an app to
+zero while the NAS probe fails, protects runtime NAS consumers; it does not
+cover backup movers.
 
 This table is a candidate for generation from the Kopiur objects; until then,
 the pull request that adds or removes the component updates it.
@@ -52,6 +53,14 @@ here; obtain it before a recovery window needs it.
 
 ## Maintenance and health
 
+Read the current state first:
+
+```bash
+mise exec -- kubectl get clusterrepository,snapshotpolicy -A
+mise exec -- kubectl -n kopiur-system get maintenance,job
+mise exec -- kubectl describe clusterrepository local
+```
+
 Kopia maintenance keeps metadata healthy and reclaims expired storage. Never
 disable it to silence symptoms.
 [Schedules](../../kubernetes/apps/kopiur-system/kopiur/repository) stagger
@@ -62,10 +71,11 @@ Job TTLs remove evidence; promptly collect or query retained
 
 Verification results and recent snapshots are separate evidence. Existing
 persistent cache claims are not proven resized by changing a policy value.
-Read repository phase **and reason**: unreachable/missing backends park work,
-while probe timeouts may allow maintenance. Pending work can leave
-backup-failure alerts quiet, so inspect repository/breaker signals. No fixed
-detection time is guaranteed. Diagnose discovery failures, deletion holds and
+Read repository phase **and condition reasons**: unreachable/missing backends
+park work, while probe timeouts may allow maintenance. Pending work can leave
+backup-failure alerts quiet, so inspect conditions such as `BackendReachable`,
+`MassDeletionHeld` and `Stalled`. No fixed detection time is guaranteed.
+Diagnose discovery failures, deletion holds and
 missing backends; never bypass health/deletion/reinitialisation guards or
 create a replacement repository merely because one is unavailable.
 Reinitialisation acknowledges data loss and needs an explicit decision.

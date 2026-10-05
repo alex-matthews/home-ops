@@ -13,8 +13,9 @@ Configuration combines cluster, role and node templates in that order.
 Later patches can override earlier ones: the role directory selects the role,
 so node patches must not declare `machine.type`. Undefined template values
 fail rendering. A per-node schematic is a complete override, not a delta;
-the recipe returns its resolved ID. Adding the first worker requires supplying
-its role and node files.
+the recipe returns its resolved ID. Adding the first worker requires a
+`workers.yaml.j2` role template and `nodes/workers/<node>.yaml.j2`; the
+recipe selects the worker role when that node file exists.
 
 These templates resolve secret references during rendering. A human runs
 `just talos render-config <node>`; agents must not print or write resolved
