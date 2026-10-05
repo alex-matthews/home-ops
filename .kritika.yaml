@@ -42,7 +42,7 @@ rules:
     rule: >-
       If this change adds a route whose parentRefs name envoy-external, or
       widens what an existing one serves (hostnames, paths, methods), read
-      docs/operations/public-surfaces.md at the head with read_file (docs/ is
+      docs/policy/public-surfaces.md at the head with read_file (docs/ is
       left out of the diff). Report as a finding when the surface has no row
       there naming its consumers and the control in front of it. Otherwise say
       nothing.

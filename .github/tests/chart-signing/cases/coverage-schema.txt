@@ -5,7 +5,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo has no verify block and no home-ops/chart-verify-exclusion-reason; add a verify block after re-validating the identity (ADR-0003), or declare one of: unsigned, keyed-unpinned, verifier-gap, unverifiable
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo has no verify block and no home-ops/chart-verify-exclusion-reason; add a verify block after re-validating the identity (docs/policy/decisions.md#chart-trust), or declare one of: unsigned, keyed-unpinned, verifier-gap, unverifiable
 new source without a verify block, declared none: kubernetes/apps/demo/app/ocirepository.yaml
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
@@ -176,7 +176,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo has no verify block and no home-ops/chart-verify-exclusion-reason; add a verify block after re-validating the identity (ADR-0003), or declare one of: unsigned, keyed-unpinned, verifier-gap, unverifiable
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::demo has no verify block and no home-ops/chart-verify-exclusion-reason; add a verify block after re-validating the identity (docs/policy/decisions.md#chart-trust), or declare one of: unsigned, keyed-unpinned, verifier-gap, unverifiable
 new source without a verify block, declared none: kubernetes/apps/demo/app/ocirepository.yaml
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml

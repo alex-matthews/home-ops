@@ -4,6 +4,9 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: services
 spec:
+  # Keep this pool outside the nodes' L2 subnet: no interface answers ARP
+  # for these addresses. Clients must use the router's BGP-learned path.
+  # See ARCHITECTURE.md#traffic-names-and-certificates.
   blocks:
     - start: 192.168.96.200
       stop: 192.168.96.254

@@ -92,7 +92,7 @@ for file in "$@"; do
   if [ -n "$material" ]; then
     material="${material% }"
     row material-present "$material"
-    printf -- "- \`%s\` (\`%s\`) carries signing-related or unknown material (%s). Review it under ADR-0003 before changing trust or the exclusion reason (\`%s\`).\n" \
+    printf -- "- \`%s\` (\`%s\`) carries signing-related or unknown material (%s). Review it under [chart trust policy](https://github.com/alex-matthews/home-ops/blob/main/docs/policy/decisions.md#chart-trust) before changing trust or the exclusion reason (\`%s\`).\n" \
       "$ref" "$digest" "$material" "$file" >> "$FINDINGS_OUT"
   else
     row unsigned 'no signing-related or unknown material discovered'

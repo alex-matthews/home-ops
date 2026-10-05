@@ -35,10 +35,10 @@ spec:
           namespace: network
       hostnames:
         - "{{ .Release.Name }}.${SECRET_DOMAIN}"
-      # The MCP endpoint's only consumer is in-cluster (ADR-0004); answer it
-      # with 404 externally instead of forwarding to the backend. Prepended
-      # before the default catch-all rule, and /mcp is the longer path prefix,
-      # so it takes precedence for GET, POST, and DELETE alike.
+      # The MCP endpoint's only consumer is in-cluster; see
+      # docs/policy/public-surfaces.md. Answer it with 404 externally instead
+      # of forwarding to the backend. The longer /mcp prefix precedes the
+      # catch-all rule for GET, POST and DELETE alike.
       additionalRules:
         - filters:
             - type: ExtensionRef
