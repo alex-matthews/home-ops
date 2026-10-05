@@ -37,8 +37,9 @@ spec:
           namespace: network
       # Prometheus scrapes /metrics in-cluster via the ServiceMonitor; nothing
       # consumes it through the public route, so answer it with 404 there
-      # (ADR-0004). Gatus routes case-insensitively, hence the RE2 match
-      # alongside the literal prefix; both sort before the catch-all rule.
+      # (docs/policy/public-surfaces.md). Gatus routes case-insensitively,
+      # hence the RE2 match alongside the literal prefix; both sort before
+      # the catch-all rule.
       additionalRules:
         - filters:
             - type: ExtensionRef

@@ -18,7 +18,7 @@ spec:
         enabled: false
       # Queries must aggregate to label-free samples (single version labels
       # aside): the json format serializes the first sample's complete label
-      # set to the public route (ADR-0004).
+      # set to the public route (docs/policy/public-surfaces.md).
       badges:
         - title: Talos
           id: talos_version

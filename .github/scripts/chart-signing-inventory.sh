@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chart signing inventory (ADR-0003, #2145). Offline: yq only.
+# Chart signing inventory (docs/policy/decisions.md#chart-trust, #2145). Offline: yq only.
 #
 # Derive exclusions, discovery coverage and pinned signing subjects from the
 # manifests. "Verified" means configured verification, not a live signature check.

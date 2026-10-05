@@ -6,15 +6,17 @@ description: Scaffold a new Flux-managed application under kubernetes/apps/ — 
 # Add a New Application
 
 Scaffolds `kubernetes/apps/<namespace>/<app>/` with a Flux Kustomization and a
-HelmRelease (chart chosen in Step 0). Every value below comes from current
-repo conventions. When in doubt, mirror a real app instead of inventing
-structure:
+HelmRelease (chart chosen in Step 0). Use the source apps below as patterns,
+checking their current configuration and suitability before copying:
 
 | Reference app                       | Shows                                                                             |
 | ----------------------------------- | --------------------------------------------------------------------------------- |
 | `kubernetes/apps/default/atuin`     | Small app: internal route, Kopiur-backed PVC, no secrets                          |
 | `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                              |
 | `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service |
+
+Read the [app pattern](references/app-pattern.md) first: layout, wiring,
+substitution, persistent state and YAML ordering.
 
 ## Step 0: Pick the chart
 
@@ -42,7 +44,10 @@ Confirm with the user anything not already given:
    default), or public (`envoy-external` — public routes need explicit
    justification per `AGENTS.md`).
 4. **Persistence**: choose backup posture from the app's value and recovery
-   requirements, not from the presence of a PVC. Protected application state
+   requirements, not from the presence of a PVC. Read the
+   [volume prerequisites](../restore-data/references/app-volumes.md) before
+   selecting recovery wiring, including ownership and the missing-snapshot stop.
+   Protected application state
    (the norm in the `default` namespace) uses the Kopiur component, which
    supplies the PVC and its backups.
    Some persistent workloads — observability data especially — intentionally
@@ -54,12 +59,16 @@ Confirm with the user anything not already given:
    `resources/` directory (see recyclarr). A structured config file that
    mixes sensitive and non-sensitive content and cannot cleanly split into
    ExternalSecret fields may be committed as a directly SOPS-encrypted Secret
-   instead (no current app does; resolute did, see Git history) — that is
-   an exception, not
-   the default. Ordinary credentials always go through
+   instead. This is a storage format exception, not permission for an agent
+   to create or edit credential material. Ordinary credentials always go through
    1Password/ExternalSecret; never encrypt them directly into Git.
-7. **Dependencies**: almost never — `dependsOn` follows the doctrine in
-   `docs/guides/cluster-model.md`; the default is none.
+7. **Database**: for PostgreSQL, follow [policy and admission](../../../docs/policy/decisions.md#postgresql)
+   before adding a consumer. Use [the existing consumer](../../../kubernetes/apps/database/postgres/app/litellm.yaml)
+   as the DatabaseRole/Database and reload-labelled Secret pattern; connect
+   through `postgres-rw`. Declare required extensions on the Database.
+8. **Dependencies**: `dependsOn` follows the
+   [reconciliation ordering rule](../../../docs/policy/decisions.md#reconciliation-ordering);
+   the default is none.
 
 ## Step 2: Create the files
 
@@ -78,7 +87,9 @@ kubernetes/apps/<namespace>/<app>/
 
 Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
 
-- `components` (kopiur): only with a Kopiur PVC.
+- `components` (kopiur): only with a Kopiur PVC. Check both repository
+  `allowedNamespaces` and the namespace's Kopiur secrets component;
+  a new namespace does not inherit these. Expanding access needs approval.
 - `postBuild.substitute.APP` is required by the Kopiur component; add
   `PVC_CAPACITY` when the component default (5Gi) is wrong.
 - `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
@@ -102,17 +113,17 @@ the same chart tag as nearby apps (Renovate bumps it). Keep atuin's `verify`
 block verbatim — it pins the app-template signing identity. For any other
 chart, first see what the registry shows:
 
-```sh
+```bash
 .github/scripts/chart-signing-check.sh kubernetes/apps/<namespace>/<app>/app/ocirepository.yaml
 ```
 
-Then inspect any discovered material and either derive the identity per
-ADR-0003 and add a `verify` block, or record the exclusion reason in
+Then inspect any discovered material and either derive the identity under
+[chart trust](../../../docs/policy/decisions.md#chart-trust) and add a `verify` block, or record the exclusion reason in
 `home-ops/chart-verify-exclusion-reason`: `unsigned`, `keyed-unpinned`,
 `verifier-gap` or `unverifiable`. Discovery does not classify or verify the
 material. Non-unsigned reasons require manual investigation and opt the source
 out of ongoing discovery. Coverage rejects missing or conflicting declarations.
-Never copy another chart's identity; see `docs/guides/validation.md`.
+Never copy another chart's identity; see [chart trust](../../../docs/policy/decisions.md#chart-trust).
 
 ### app/helmrelease.yaml
 
@@ -121,11 +132,11 @@ Copy atuin's and adapt. Invariants to keep:
 - Schema comment pointing at the app-template helmrelease schema.
 - `spec.values` order: `controllers`, `defaultPodOptions`, `service`, `route`,
   `configMaps`, `persistence` (see
-  `docs/guides/yaml-ordering.md`).
+  [app pattern](references/app-pattern.md#yaml-ordering)).
 - `defaultPodOptions.securityContext` for Kopiur-backed apps only:
   `runAsNonRoot: true`, `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
   `fsGroupChangePolicy: OnRootMismatch` — the identity the Kopiur movers and
-  the NAS convention expect (`docs/operations/storage-and-backups.md`). Apps
+  the NAS convention expect; check [mover permissions](../restore-data/references/app-volumes.md#uidgid-and-mover-permissions). Apps
   without backed-up persistence run whatever identity their image expects; keep
   `runAsNonRoot: true` where the image allows it.
 - Container `securityContext`: `allowPrivilegeEscalation: false`,
@@ -147,7 +158,8 @@ Copy atuin's and adapt. Invariants to keep:
 - Secrets arrive via `envFrom` from `"{{ .Release.Name }}-secret"`, with
   `reloader.stakater.com/auto: "true"` on the controller.
 - SQLite or other single-writer apps: `replicas: 1` with
-  `strategy: Recreate`, and a comment saying not to scale.
+  `strategy: Recreate`, and a comment saying not to scale above one. Stopping
+  the workload still follows the maintenance-window procedure.
 
 ### app/externalsecret.yaml
 
@@ -162,12 +174,9 @@ keeping the list alphabetical.
 
 ## Step 4: Validate
 
-```sh
-mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
-mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
-mise exec -- flate diff images -p ./kubernetes/flux/cluster -o json
-mise exec --no-deps -- oxfmt --check <changed files>
-```
-
-The image diff should list exactly the new app's image. Open the change as a
-PR branch; Konflate posts the rendered diff on the PR.
+Use [validation](../../../CONTRIBUTING.md#validate-locally) for the matching app,
+image, chart-trust and formatting checks. Inspect the new app and any shared
+component changes in the rendered output; account for missing-input warnings
+and every image change. Local rendering does not prove live reconciliation
+or restore success. Present the complete diff and actual check results;
+commit, push and PR creation require the owner's approval.

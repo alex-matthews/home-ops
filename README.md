@@ -48,7 +48,7 @@ designing and operating cloud-native systems.
 updates. GitHub Actions checks pull requests, and
 [Konflate](https://github.com/home-operations/konflate) shows the rendered
 manifest diff. After merge, Flux reconciles the applications from `main`.
-The [validation guide](docs/guides/validation.md) covers the checks and
+The [validation guide](CONTRIBUTING.md#validate-locally) covers the checks and
 local tooling.
 
 ## Local workflow
@@ -68,11 +68,10 @@ just -l
 
 ## Documentation
 
-- [Cluster model](docs/guides/cluster-model.md): how the system fits together.
-- [Storage and backups](docs/operations/storage-and-backups.md) and
-  [cluster rebuild](docs/operations/cluster-rebuild.md): protecting and
-  recovering state.
-- [AI workbench](docs/operations/ai-workbench.md): the assistant and its tools.
+- [Architecture](ARCHITECTURE.md): how the system fits together.
+- [Documentation index](docs/README.md): policy, operations and recovery;
+  [bootstrap](bootstrap/README.md) covers a full rebuild.
+- [Contributing](CONTRIBUTING.md): validating and writing changes.
 - [AGENTS.md](AGENTS.md): repository rules and task guidance.
 
 ## Thanks
@@ -85,6 +84,6 @@ This repository builds on patterns from
 
 ## License
 
-MIT, see [LICENSE](./LICENSE). The repository began from
+MIT, see [LICENSE](LICENSE). The repository began from
 [onedr0p's cluster-template](https://github.com/onedr0p/cluster-template), and
-the parts that derive from it carry onedr0p's notice in [NOTICE](./NOTICE).
+the parts that derive from it carry onedr0p's notice in [NOTICE](NOTICE).

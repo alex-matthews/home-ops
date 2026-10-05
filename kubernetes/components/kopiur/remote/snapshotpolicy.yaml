@@ -19,7 +19,7 @@ spec:
   compression:
     compressor: zstd
   # Leaner GFS than local: the independent cadence and retention is the point
-  # of ADR-0002's remote shape.
+  # of the independent repositories in docs/policy/decisions.md#data-protection.
   retention:
     keepDaily: 7
     keepWeekly: 4

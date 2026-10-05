@@ -5,7 +5,8 @@ kind: ClusterRepository
 metadata:
   name: remote
 spec:
-  # Independent R2 repository per ADR-0002: own credentials, encryption
+  # Independent R2 repository per docs/policy/decisions.md#data-protection:
+  # own credentials, encryption
   # password, cadence, retention, and maintenance — no RepositoryReplication,
   # no shared corruption domain with the local repository.
   # kopiur-system must be allowed: the managed Maintenance CR lands in the

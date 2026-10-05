@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chart verification coverage (ADR-0003, #1967, #2145). Offline: git and yq only.
+# Chart verification coverage (docs/policy/decisions.md#chart-trust, #1967, #2145). Offline: git and yq only.
 #
 # Every OCIRepository needs a verify block or a valid exclusion reason, a
 # unique (name, URL) pair, and a single-document ocirepository.yaml file.
@@ -63,7 +63,7 @@ while IFS=$'\t' read -r path name url reason verify documents; do
   if [ "$verify" != "$EMPTY_VERIFY" ] && [ -n "$reason" ]; then
     err "$path" "$name has both a verify block and $ANNOTATION_REASON; a verified source carries no exclusion reason"
   elif [ "$verify" = "$EMPTY_VERIFY" ] && [ -z "$reason" ]; then
-    err "$path" "$name has no verify block and no $ANNOTATION_REASON; add a verify block after re-validating the identity (ADR-0003), or declare one of: ${REASONS// /, }"
+    err "$path" "$name has no verify block and no $ANNOTATION_REASON; add a verify block after re-validating the identity (docs/policy/decisions.md#chart-trust), or declare one of: ${REASONS// /, }"
   fi
   if [ -n "$reason" ] && ! in_list "$reason" "$REASONS"; then
     err "$path" "$name declares the unknown exclusion reason '$reason'; valid values: ${REASONS// /, }"
@@ -82,7 +82,7 @@ guard() {
   if [ "$DECLARED" = true ]; then
     echo "::warning file=$path::$msg (declared with the verify/declared label)"
   else
-    err "$path" "$msg without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request"
+    err "$path" "$msg without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request"
   fi
 }
 matched_base=""

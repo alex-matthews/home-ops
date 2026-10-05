@@ -1,6 +1,7 @@
 # Peer Repositories
 
-**When to use:** Peer repositories, how others solved it, upstream pattern, comparison, reference catalog, adopting a pattern.
+Verified 2026-10-05 against the repository at `main`; peer repositories
+change, so read the file before citing it.
 
 Use peers to answer a narrow question: "how have others solved this specific
 problem?" They are comparison inputs, not constraints. Inspect the relevant
@@ -55,15 +56,15 @@ Most peers run Renovate under a custom app identity, so raw pull request volume
 is generated and says nothing about house style. Filter to hand-authored pull
 requests before drawing any conclusion; on most peers that leaves very little.
 
-[auricom/home-ops]: https://github.com/auricom/home-ops
-[bjw-s-labs/home-ops]: https://github.com/bjw-s-labs/home-ops
-[buroa/home-ops]: https://github.com/buroa/home-ops
-[carpenike/k8s-gitops]: https://github.com/carpenike/k8s-gitops
-[eleboucher/homelab]: https://github.com/eleboucher/homelab
-[jfroy/flatops]: https://github.com/jfroy/flatops
-[JJGadgets/Biohazard]: https://github.com/JJGadgets/Biohazard
-[joryirving/home-ops]: https://github.com/joryirving/home-ops
-[onedr0p/home-ops]: https://github.com/onedr0p/home-ops
-[rcdailey/home-ops]: https://github.com/rcdailey/home-ops
-[Tanguille/cluster]: https://github.com/Tanguille/cluster
-[xunholy/k8s-gitops]: https://github.com/xunholy/k8s-gitops
+[auricom/home-ops]: https://redirect.github.com/auricom/home-ops
+[bjw-s-labs/home-ops]: https://redirect.github.com/bjw-s-labs/home-ops
+[buroa/home-ops]: https://redirect.github.com/buroa/home-ops
+[carpenike/k8s-gitops]: https://redirect.github.com/carpenike/k8s-gitops
+[eleboucher/homelab]: https://redirect.github.com/eleboucher/homelab
+[jfroy/flatops]: https://redirect.github.com/jfroy/flatops
+[JJGadgets/Biohazard]: https://redirect.github.com/JJGadgets/Biohazard
+[joryirving/home-ops]: https://redirect.github.com/joryirving/home-ops
+[onedr0p/home-ops]: https://redirect.github.com/onedr0p/home-ops
+[rcdailey/home-ops]: https://redirect.github.com/rcdailey/home-ops
+[Tanguille/cluster]: https://redirect.github.com/Tanguille/cluster
+[xunholy/k8s-gitops]: https://redirect.github.com/xunholy/k8s-gitops

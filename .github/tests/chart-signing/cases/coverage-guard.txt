@@ -7,7 +7,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
 @fixtures/unsigned.yaml
@@ -33,7 +33,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify identity changed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify identity changed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
 ---
@@ -60,7 +60,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/other/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/other/ocirepository.yaml::verify block removed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 --- head .keep
 --- head kubernetes/apps/demo/other/ocirepository.yaml
 @fixtures/unsigned.yaml
@@ -86,7 +86,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 --- head .keep
 === v16-moved-unchanged
 --- base .keep
@@ -109,7 +109,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verify block removed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
 ---
@@ -133,7 +133,7 @@ false
 --- exit
 1
 --- expected
-::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; ADR-0003 requires the re-observed identity and the reason in the pull request
+::error file=kubernetes/apps/demo/app/ocirepository.yaml::verified source removed without the verify/declared label; docs/policy/decisions.md#chart-trust requires the re-observed identity and the reason in the pull request
 new source without a verify block, declared unsigned: kubernetes/apps/demo2/app/ocirepository.yaml
 --- head .keep
 --- head kubernetes/apps/demo2/app/ocirepository.yaml

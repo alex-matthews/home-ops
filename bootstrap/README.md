@@ -1,63 +1,87 @@
-# Bootstrap
+# Bootstrap and Full Rebuild
 
-Operator-facing notes for `just bootstrap cluster`, which takes three
-freshly reset Talos nodes to a running Flux. Planning, guards, and what the
-control loop does after Flux takes over are in
-[`../docs/operations/cluster-rebuild.md`](../docs/operations/cluster-rebuild.md).
+Verified 2026-10-05 against the repository at `main`; the sequence was not
+run.
 
-## Before you run it
+Use this sequence for a cold start or full rebuild. [Restore-data](../.agents/skills/restore-data/SKILL.md)
+links the detailed restore procedures; the [maintenance skill](../.agents/skills/maintenance-window/SKILL.md)
+owns durable holds and destructive execution. Read both before planning the
+window. Bootstrap renders secrets and writes credential files, so a human
+runs those recipes. Read-only inspection remains available to agents.
 
-- An interactive shell with the administrative identities selected
-  (`export MISE_ENV=admin`); the recipes do not work on the read-only pair.
-- Access to the password manager: machine configs render their secrets at
-  apply time and prompt once per node.
-- The SOPS age key available to the tooling, for the encrypted secrets the
-  base stage applies.
-- Console or physical access to the nodes. A node that stays silent after a
-  reboot is hung in firmware and needs a power-button hold; see
-  [`../docs/operations/node-firmware-and-boot.md`](../docs/operations/node-firmware-and-boot.md).
-- Every node in maintenance mode, confirmed with the insecure Talos API
-  (`talosctl -n <node> -e <node> version --insecure`).
+## Preflight
 
-## What the recipe does
+Any failed prerequisite stops the window:
 
-`just bootstrap cluster` runs six stages in order and stops at the first
-failure. Each stage is also a private recipe in `mod.just` for re-running
-one step.
+1. Choose the Git revision, reviewing open PRs that might affect recovery.
+   Record nodes, PVCs, addresses, source-verification state and workload/data
+   baselines against which recovery will be judged.
+2. Confirm the [external dependencies](../ARCHITECTURE.md#layers-and-owners)
+   are available, especially the gateway and NAS/Garage. Stop if the gateway
+   is degraded or degrades during the window. Arrange administrative access,
+   human-supplied bootstrap/decryption inputs, password-manager access and
+   console/physical access to every node. Include [workbench login recovery](../docs/operations/workbench.md#login).
+3. At GO time, every protected app needs a successful, non-zero snapshot
+   younger than 24 hours in **both** repositories. Any missing result stops
+   teardown; earlier evidence is not the current gate.
+4. PostgreSQL needs a completed base backup younger than 24 hours and a
+   reported recovery window. Durably stop every consumer, confirm no client
+   connections, switch the final WAL segment and confirm that exact segment
+   archived. Freshly exclude surviving old archivers before any successor
+   writes to the same archive. [PostgreSQL](../.agents/skills/restore-data/references/postgresql.md)
+   defines the recovery and migration checks.
+5. Drain every node and confirm no RBD mounts with fresh, successful reads
+   on each. The reset wrapper can treat a failed read as no matching mount;
+   that is not a safe gate. The recorded concurrent-reset failure removed
+   monitors before another node finished unmounting, leaving it hung.
 
-1. `nodes` renders and applies each node's machine config in insecure mode.
-   A node that already has a config is skipped rather than failed.
-2. `k8s` bootstraps etcd on the first endpoint and retries until the
-   cluster reports it as already bootstrapped.
-3. `kubeconfig` fetches a kubeconfig pointed at the first node directly,
-   because the stable DNS name resolves to a LoadBalancer address that does
-   not exist yet.
-4. `base` waits for the nodes to register, then applies the namespaces,
-   the SOPS-encrypted bootstrap secrets, and the CRDs listed in
-   `helmfile/crds.yaml`.
-5. `apps` syncs `helmfile/apps.yaml`: the CNI, cluster DNS, the registry
-   mirror, cert-manager, external-secrets, the secrets connector, and
-   finally the Flux operator and instance. These charts are pulled by helm
-   directly from the pins in the repository's `ocirepository.yaml` files,
-   outside source-controller, so no signature verification runs on this
-   path; see the chart-source verification issue for that caveat.
-6. `kubeconfig` runs again against the stable DNS name once the Flux-managed
-   networking has advertised the API address.
+These gates protect planned teardown. After failure, preserve the baseline
+and inspect surviving volumes, snapshots, PostgreSQL timelines and archivers.
+Unavailable state cannot prove fresh destructive preconditions: stop, and
+obtain a new approved recovery plan before further resets.
 
-On the 2026-09-03 rebuild the six stages took eight minutes; Flux was
-applying `main` within the same minute the instance came up.
+## Execution
 
-## After it returns
+Approve the exact reset and disk selection before acting, planning for complete
+Ceph data loss. The [reset recipe](../talos/mod.just) selects STATE/EPHEMERAL
+labels unless forced; that alone does not establish which physical disks are
+erased. Confirm maintenance mode on every node before bootstrap:
 
-Flux owns everything from here. Expect storage to be the slowest component
-to arrive and everything that needs it to wait; the rebuild note lists what
-that looks like and which waits have been made automatic. Verify with the
-read-only checks in the rebuild note rather than by watching pods.
+```bash
+talosctl -n <node> -e <node> version --insecure
+```
 
-Two things stay manual today:
+The human-run `just bootstrap cluster` follows [mod.just](mod.just):
 
-- the read-only agent kubeconfig needs a fresh token
-  (`just kube readonly-token`), because Flux recreates the ServiceAccount;
-- if the Actions runner listener crash-loops against a runner set that no
-  longer exists, delete the AutoscalingListener object and the controller
-  recreates it.
+1. Render/apply node configuration; the recognised certificate-required
+   response skips an already-configured node.
+2. Bootstrap etcd and obtain a direct-node kubeconfig. The etcd loop swallows
+   failures until it sees the already-bootstrapped response: a loop is not
+   proof of progress. Stop and diagnose unexpected output.
+3. Apply base resources, human-resolved bootstrap inputs and [CRDs](helmfile/crds.yaml),
+   then install the [core charts](helmfile/apps.yaml), including Flux Operator
+   and its instance. Helmfile pulls these pins directly, outside Flux's
+   [signature verification](../docs/policy/decisions.md#chart-trust).
+4. Return to the stable API endpoint once its networking is available.
+
+Flux then reconciles Kubernetes declarations; machine and external state keep
+their own owners. Verify machine changes through [affected-resource readback](../talos/README.md),
+not a generic sysctl check. Inspect conditions/events and missing dependencies
+or storage before proposing a retry. Failed Kustomization applies retry;
+Helm upgrade failures can exhaust the [remediation budget](../kubernetes/flux/cluster/ks.yaml).
+Correct the prerequisite first; resets require exact approval. Failed
+population follows [claim-specific diagnosis](../.agents/skills/restore-data/references/app-volumes.md#pvc-lifecycle),
+never a blanket deletion or hand-population remedy. Stop on failed signature
+verification or other unexpected behaviour; do not bypass checks.
+
+## Acceptance
+
+Confirm the intended revision, Ready Kustomizations/HelmReleases, verification
+success on configured sources, and restored baseline addresses/resources.
+Claims must complete population and their Restore state must agree with
+[content evidence](../.agents/skills/restore-data/references/app-volumes.md#verifying-restored-content).
+Check PostgreSQL's recovered data, roles/extensions, replication, resumed
+archiving and actual consumer recovery; earlier drills held consumers stopped,
+so they do not prove unattended recovery. Collect recovery logs promptly while
+the observation stack itself rebuilds. A human re-establishes Kubernetes
+read-only access using the [break-glass access](../docs/recovery/break-glass.md).

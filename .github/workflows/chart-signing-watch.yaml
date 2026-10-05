@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Chart Signing Watch
 
-# Weekly discovery for sources declared unsigned (#2018, #2145, ADR-0003).
+# Weekly discovery for sources declared unsigned (#2018, #2145, docs/policy/decisions.md#chart-trust).
 # Signing-related or unknown material needs human review. Signed exclusions
 # receive manual review; all sources appear in the manifest-derived inventory.
 on:
@@ -100,7 +100,7 @@ jobs:
         run: |
           title="Chart signing watch: findings"
           block="$(printf '<!-- chart-signing-watch:findings -->\n%s\n<!-- /chart-signing-watch:findings -->' "$FINDINGS")"
-          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach finding is signing-related or unknown material on a source declared unsigned. Inspect it under ADR-0003 before adding a verify block or correcting the exclusion reason. Discovery does not establish signature validity or publisher identity. Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
+          body="$(printf '<!-- chart-signing-watch -->\n%s\n\nEach finding is signing-related or unknown material on a source declared unsigned. Inspect it under [chart trust policy](https://github.com/alex-matthews/home-ops/blob/main/docs/policy/decisions.md#chart-trust) before adding a verify block or correcting the exclusion reason. Discovery does not establish signature validity or publisher identity. Do not rename this issue; the watch finds it by title, marker, and author.\n\nRun: %s' "$block" "$RUN_URL")"
           number="$(gh issue list --state open --limit 100 --search "\"$title\" in:title" --json number,body,author \
             --jq '[.[] | select((.author.login == "app/github-actions" or .author.login == "github-actions") and (.body | contains("<!-- chart-signing-watch -->")))][0].number // ""')"
           if [ -z "$number" ]; then
