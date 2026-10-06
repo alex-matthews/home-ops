@@ -5,6 +5,10 @@ context:
     description: >-
       Read first. What is authoritative in this repository, and in what
       order.
+skills:
+  scope:
+    renovate-review:
+      when: [{ expr: pr.headRef.startsWith("renovate/") }]
 rules:
   - id: renovate
     when: [{ expr: pr.headRef.startsWith("renovate/") }]
@@ -17,16 +21,12 @@ rules:
       A hostname is ${SECRET_DOMAIN} or an existing variable, never
       a literal public name. A new app has a ks.yaml Flux Kustomization
       pointing at its app/ directory, and a kustomization.yaml there listing
-      every file. A dependsOn edge follows this rule: a Kustomization whose
-      product is instances of an operator's API depends on the Kustomization
-      that ships the operator (and an operator whose CRDs ship in a separate
-      CRD chart depends on that chart); everything else gets no edge unless
-      it meets the evidence-based exception, which requires demonstrated
-      evidence of a stored-release Helm failure with bounded remediation. A
-      change to a file ending in .sops.yaml shows only ENC[...] values and
-      changes under its sops: block (mac, lastmodified, version); plaintext in
-      such a file is a breach. Report each breach on its line; otherwise say
-      nothing.
+      every file. A dependsOn edge it adds or changes follows the rule under
+      Reconciliation ordering in docs/policy/decisions.md, read at the head
+      with read_file. A change to a file ending in .sops.yaml shows only
+      ENC[...] values and changes under its sops: block (mac, lastmodified,
+      version); plaintext in such a file is a breach. Report each breach on
+      its line; otherwise say nothing.
   - id: state
     paths: ["kubernetes/**"]
     rule: >-
