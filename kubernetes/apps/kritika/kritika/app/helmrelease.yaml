@@ -20,10 +20,10 @@ spec:
           secretKeyRef:
             name: kritika-secret
             key: ADMIN_PASSWORD
-      defaultsModelsReview: litellm/openrouter/gpt-6.1-sol
-      defaultsSettle: 2m
+      reviewModel: litellm/openrouter/gpt-6.1-sol
+      triggerSettle: 2m
       # The code's default is detailed, whatever the chart's description says.
-      defaultsFeedback: standard
+      reviewFeedback: standard
       embeddingModel: litellm/openrouter/voyage-code-4
       embeddingDims: 1024
       transcriptRetention: 2400h
@@ -47,54 +47,65 @@ spec:
             openrouter/voyage-code-4: { input: 0.12, output: 0 }
       egress:
         allowHosts: ["konflate.${SECRET_DOMAIN}", raw.githubusercontent.com]
-      defaults:
-        # Pause switch: uncomment to stop every review, poll and index run
-        # without undeploying. Never toggle home-ops in the dashboard: that
-        # choice overrides this one.
-        # enabled: false
-        # AGENTS.md is for agents that change the repository; the reviewer's
-        # orientation is .kritika/context.md.
-        agentFiles: false
-        ignore: ["**/?*.sops.*"]
-        agent:
-          commands: [gh, curl, jq, yq, rg, fd]
-          commandTimeout: 2m
-          maxTokens: 1000000
-          timeout: 30m
-        rules:
-          # Here rather than in .kritika.yaml so Flux substitutes the Konflate
-          # hostname. A rule is at most 2,000 characters, so the jq filters
-          # live in .kritika/.
-          - id: rendered-evidence
-            paths: ["kubernetes/**"]
-            rule: >-
-              Before saying what this change does to rendered Kubernetes
-              manifests, read Konflate's render of this pull request in bounded
-              pieces, never whole. (1) curl -fsS --retry 10 --retry-delay 6 -o
-              /tmp/k.json
-              https://konflate.${SECRET_DOMAIN}/api/prs/<number>/diff with this
-              pull request's number. (2) jq -r -f .kritika/konflate-header.jq
-              /tmp/k.json prints status, head commit, counts, truncation, each
-              failure and warning, and one line per resource with its count of
-              changed rows; unchanged context is folded out and need not be
-              read. (3) Read each resource with jq -r --argjson i <index>
-              --argjson from <a> --argjson to <b> -f
-              .kritika/konflate-resource.jq /tmp/k.json in slices of 400 rows;
-              if an output ends in "[truncated", read that slice again in
-              halves. Read workloads, RBAC, Services, routes and configuration
-              first, and CRDs and other resources over 400 rows last, as the
-              step and token budget allows. (4) The render is incomplete when
-              it could not be fetched, its status is not ready, its head is
-              not the one under review, truncated is above zero, it has a
-              failure, or you did not read every changed row of every
-              resource. Then report one finding, important and reliability, on
-              the first changed line of the HelmRelease, OCIRepository or
-              Kustomization the render covers, titled "Rendered evidence
-              incomplete", naming each resource read in part or not at all and
-              the render's head commit. Never treat an incomplete render as
-              complete. (5) That finding is the only report of coverage: when
-              the render was read in full, the summary says nothing about what
-              you read.
+      # Pause switch: uncomment to stop every review, poll and index run
+      # without undeploying. Never toggle home-ops in the dashboard: that
+      # choice overrides this one.
+      # enabled: false
+      ignore: ["**/?*.sops.*"]
+      trigger:
+        # .mise/ is an inclusion off Renovate branches because an exclusion
+        # holds on any changed path, and the Talos, Kubernetes and Kopiur
+        # groups move .mise/ with their manifests.
+        include:
+          - name: cluster
+            paths: ["kubernetes/**", "talos/**", "bootstrap/**", ".sops.yaml"]
+          - name: ci
+            paths: [".github/**", ".renovaterc.json5"]
+          - name: mise
+            expr: '!pr.headRef.startsWith("renovate/")'
+            paths: [".mise/**"]
+        exclude: [{ name: forks, expr: pr.fork }]
+      limits:
+        reviewsPerDay: 40
+      agent:
+        commands: [gh, curl, jq, yq, rg, fd]
+        commandTimeout: 2m
+        tokens: 1000000
+        timeout: 30m
+      rules:
+        # Here rather than in .kritika.yaml so Flux substitutes the Konflate
+        # hostname. A rule is at most 2,000 characters, so the jq filters
+        # live in .kritika/.
+        - id: rendered-evidence
+          paths: ["kubernetes/**"]
+          rule: >-
+            Before saying what this change does to rendered Kubernetes
+            manifests, read Konflate's render of this pull request in bounded
+            pieces, never whole. (1) curl -fsS --retry 10 --retry-delay 6 -o
+            /tmp/k.json
+            https://konflate.${SECRET_DOMAIN}/api/prs/<number>/diff with this
+            pull request's number. (2) jq -r -f .kritika/konflate-header.jq
+            /tmp/k.json prints status, head commit, counts, truncation, each
+            failure and warning, and one line per resource with its count of
+            changed rows; unchanged context is folded out and need not be
+            read. (3) Read each resource with jq -r --argjson i <index>
+            --argjson from <a> --argjson to <b> -f
+            .kritika/konflate-resource.jq /tmp/k.json in slices of 400 rows;
+            if an output ends in "[truncated", read that slice again in
+            halves. Read workloads, RBAC, Services, routes and configuration
+            first, and CRDs and other resources over 400 rows last, as the
+            step and token budget allows. (4) The render is incomplete when
+            it could not be fetched, its status is not ready, its head is
+            not the one under review, truncated is above zero, it has a
+            failure, or you did not read every changed row of every
+            resource. Then report one finding, important and reliability, on
+            the first changed line of the HelmRelease, OCIRepository or
+            Kustomization the render covers, titled "Rendered evidence
+            incomplete", naming each resource read in part or not at all and
+            the render's head commit. Never treat an incomplete render as
+            complete. (5) That finding is the only report of coverage: when
+            the render was read in full, the summary says nothing about what
+            you read.
     envFrom:
       - secretRef:
           name: kritika-secret

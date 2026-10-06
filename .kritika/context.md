@@ -9,8 +9,7 @@ then prose.
 `ARCHITECTURE.md` explains how the parts fit together, and
 `docs/policy/decisions.md` records standing decisions by anchor. Both are
 prose in the order above: where one disagrees with a manifest, report the
-disagreement rather than treating the change as wrong. `AGENTS.md` governs
-agents that change the repository, not reviews.
+disagreement rather than treating the change as wrong.
 
 Workload secrets reach the cluster through ExternalSecrets from 1Password
 and one SOPS file; public hostnames are `${SECRET_DOMAIN}`. CI lints
