@@ -114,11 +114,12 @@ Separate editorial review is warranted when a false claim would be costly
 (irreversible work, credentials, auth, storage or pre-merge uncertainty).
 Supply changed files and diff; record findings, time and tokens, distinguishing
 preferences. Requested technical reviews still follow their own scope.
-Renovate's bot is the default review on the version bump's own PR.
+[kritika](docs/policy/decisions.md#renovate-review) is the default review on
+the version bump's own PR.
 
 Before a human-controlled merge, read that review; if it is missing, malformed
 or unavailable, inspect the change by hand or rerun the review. Act on its
-blockers, and correct a recurring mismatch with the prompt through deliberate
+blockers, and correct a recurring mismatch with its rules through deliberate
 repository policy. Preserve PR automerge's
 [source configuration](.renovaterc.json5) and the
 [companion-commit protection](AGENTS.md#working-here).

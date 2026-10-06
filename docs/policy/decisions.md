@@ -200,6 +200,34 @@ no schema upgrade path. Revisit at the end of the trial, when kritika ships
 supported migrations, or if that history becomes worth keeping. A second
 instance would use synchronous replication with `dataDurability: preferred`.
 
+## Renovate review
+
+Decided 2026-10-06.
+
+kritika reviews Renovate pull requests. The Renovate PR Review workflow, a
+Claude Code reviewer in GitHub Actions that ran beside kritika on Renovate
+pull requests under `kubernetes/` as a bridge, is retired with its prompt
+([#2325](https://github.com/alex-matthews/home-ops/issues/2325)).
+
+Two independent counts listed what mattered to an operator in each pull
+request, from its render and upstream sources, then scored each review
+against that list. On 2026-10-05, over five pull requests reviewed before
+kritika's [Renovate rule](../../.kritika/renovate.md) asked for operator
+notes, the Claude reviewer stated 16 of 29 points correctly, 3 imprecisely
+and missed 10, with 5 false claims; kritika stated 7, 2 imprecisely and
+missed 20, with none. On 2026-10-06, over the next five both reviewed with
+that rule in place, kritika stated 11 of 14 correctly, 2 imprecisely and
+missed 1, with no false claim; the Claude reviewer stated 3, 4 imprecisely
+and missed 7, with one. Five of its seven misses were after-merge checks its
+prompt excluded; without them the scores were 3, 4 and 2 against kritika's
+6, 2 and 1. It caught nothing that mattered which kritika missed.
+
+The second batch had no hard case: no database operator roll, migration,
+single-instance store, diverged release tags or re-review, the classes where
+kritika missed most in the first count. Its coverage of those is untested.
+Revisit if kritika misses something that matters on a database, CRD or
+node-upgrade update.
+
 ## Workbench and automation
 
 Decided 2026-06-12.

@@ -15,7 +15,7 @@ Start with Flux health, datasource reachability, alerts and bounded anomaly
 metrics. Query logs once a signal identifies a workload. Report what changed,
 what appears benign, what deserves attention and what evidence is missing.
 Broad log hunting and duplicate PR review are poor starting points because
-existing alerts and the Renovate review already cover those paths.
+existing alerts and kritika already cover those paths.
 
 ## Checks
 
