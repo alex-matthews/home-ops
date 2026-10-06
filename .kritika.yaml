@@ -3,11 +3,11 @@
 context:
   - path: .kritika/context.md
     description: >-
-      Read first. What is authoritative in this repository, in what order,
-      and which documents are being replaced and may be stale.
+      Read first. What is authoritative in this repository, and in what
+      order.
 rules:
   - id: renovate
-    whenExpr: pr.headRef.startsWith("renovate/")
+    when: [{ expr: pr.headRef.startsWith("renovate/") }]
     file: .kritika/renovate.md
   - id: manifests
     paths: ["kubernetes/**"]

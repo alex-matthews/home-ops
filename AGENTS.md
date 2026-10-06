@@ -1,5 +1,10 @@
 # Repository Guidance
 
+This file is for agents that change the repository. A review takes its trust
+order from `.kritika/context.md` and standing decisions from
+`docs/policy/decisions.md` by anchor; the safety boundaries and the task
+router below do not address it.
+
 Keep changes small, reviewable and independently reconcilable.
 
 ## Entry Point
@@ -16,7 +21,7 @@ Read [ARCHITECTURE.md](ARCHITECTURE.md) before substantive work, including
 manifest, tooling, workflow, instruction and operational changes, technical
 reviews and diagnosis. Only navigation, status checks and literal typo fixes
 are exempt. Global and repository rules still apply. Supply the architecture
-text to commissioned reviewers; CI reviewers follow their own prompt contract.
+text to commissioned reviewers.
 
 ## Find The Document For The Task
 
