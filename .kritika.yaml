@@ -23,11 +23,10 @@ rules:
       pointing at its app/ directory, and a kustomization.yaml there listing
       every file. A dependsOn edge it adds or changes follows the rule under
       Reconciliation ordering in docs/policy/decisions.md, read at the head
-      with read_file. A
-      change to a file ending in .sops.yaml shows only ENC[...] values and
-      changes under its sops: block (mac, lastmodified, version); plaintext in
-      such a file is a breach. Report each breach on its line; otherwise say
-      nothing.
+      with read_file. A change to a file ending in .sops.yaml shows only
+      ENC[...] values and changes under its sops: block (mac, lastmodified,
+      version); plaintext in such a file is a breach. Report each breach on
+      its line; otherwise say nothing.
   - id: state
     paths: ["kubernetes/**"]
     rule: >-
