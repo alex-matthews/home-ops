@@ -71,7 +71,7 @@ style.
   identifiers, 1Password vault/item names, secret key names, private-key or
   credential storage topology, or detailed permission inventories.
 - Avoid hardcoded hostnames in manifests, docs, rules and workflow defaults.
-  Use `${SECRET_DOMAIN}` or existing secrets/vars such as `KONFLATE_URL`.
+  Use `${SECRET_DOMAIN}` or existing secrets/vars.
   Generated CI comments and status links may expose configured public
   hostnames when needed.
 
@@ -125,8 +125,8 @@ suspension. Gate destructive steps on fresh, successful state reads.
   a new shape.
 - Amend the active branch or PR instead of accumulating work on main.
 - Do not rebase a Renovate PR with human companion commits, or let Renovate
-  rewrite it, without the owner's acceptance of that risk. Read the Renovate
-  PR Review bot's comment before merging.
+  rewrite it, without the owner's acceptance of that risk. Read kritika's
+  review before merging.
 - Use the smallest matching checks from [validation](CONTRIBUTING.md#validate-locally) and
   `mise exec -- <tool> ...` for pinned tools. Report changes, actual
   validation and remaining gaps or risks.

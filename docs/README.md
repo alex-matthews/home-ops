@@ -13,8 +13,8 @@ for people browsing. Keep scratch notes and transcripts outside this tree.
 - `policy/`: standing decisions.
     - [decisions.md](policy/decisions.md): chart trust and exclusions,
       reconciliation ordering and dependency edges, secrets, data protection,
-      PostgreSQL and the kritika database exception, workbench, appliance
-      certificates, bypass merges.
+      PostgreSQL and the kritika database exception, the Renovate reviewer,
+      workbench, appliance certificates, bypass merges.
     - [public-surfaces.md](policy/public-surfaces.md): what is exposed, to
       whom, behind which control.
 - `operations/`: keeping a running cluster healthy.
@@ -82,3 +82,4 @@ Use each recorded commit and path for offline retrieval: search with
 | `docs/operations/storage-and-backups.md`                    | `beb4f457`                | [backups](operations/backups.md), [restore-data](../.agents/skills/restore-data/SKILL.md)                                         |
 | `docs/operations/talos-access-and-break-glass.md`           | `beb4f457`                | [access](operations/access.md), [break-glass](recovery/break-glass.md)                                                            |
 | `talos/README.md`                                           | `beb4f457`                | [Talos](../talos/README.md), rewritten at the same path                                                                           |
+| `.github/renovate-review-prompt.md`                         | `4794090b`                | [Renovate review](policy/decisions.md#renovate-review)                                                                            |
