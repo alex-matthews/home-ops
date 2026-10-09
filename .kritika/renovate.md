@@ -1,8 +1,7 @@
 This is a Renovate dependency update. It gets findings, as the base
 instructions describe, and operator notes in the summary. The
-renovate-review skill carries the procedure: read it before reviewing. For
-a change under kubernetes/, Konflate's render, which the rendered-evidence
-rule fetches, is the record of what reaches the cluster.
+renovate-review skill carries the procedure, including how to render a
+chart update with flate: read it before reviewing.
 
 Operator notes: the maintainers want the summary to tell whoever merges
 what will happen, even where nothing in the diff needs changing. This

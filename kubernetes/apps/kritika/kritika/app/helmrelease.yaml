@@ -10,6 +10,7 @@ spec:
     name: kritika
   interval: 1h
   values:
+    replicas: 2
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
     config:
@@ -22,8 +23,6 @@ spec:
             key: ADMIN_PASSWORD
       reviewModel: litellm/openrouter/gpt-6.1-sol
       triggerSettle: 2m
-      # The code's default is detailed, whatever the chart's description says.
-      reviewFeedback: standard
       embeddingModel: litellm/openrouter/voyage-code-4
       embeddingDims: 1024
       transcriptRetention: 2400h
@@ -45,8 +44,11 @@ spec:
           pricing:
             openrouter/gpt-6.1-sol: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 }
             openrouter/voyage-code-4: { input: 0.12, output: 0 }
+      # The gateway already refuses names that resolve to private addresses;
+      # deny repeats it for addresses given directly.
       egress:
-        allowHosts: ["konflate.${SECRET_DOMAIN}", raw.githubusercontent.com]
+        allow: ["*"]
+        deny: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, "*.internal"]
       # Pause switch: uncomment to stop every review, poll and index run
       # without undeploying. Never toggle home-ops in the dashboard: that
       # choice overrides this one.
@@ -68,44 +70,10 @@ spec:
       limits:
         reviewsPerDay: 40
       agent:
-        commands: [gh, curl, jq, yq, rg, fd]
+        commands: [gh, curl, jq, yq, rg, fd, flate]
         commandTimeout: 2m
         tokens: 1000000
         timeout: 30m
-      rules:
-        # Here rather than in .kritika.yaml so Flux substitutes the Konflate
-        # hostname. A rule is at most 2,000 characters, so the jq filters
-        # live in .kritika/.
-        - id: rendered-evidence
-          paths: ["kubernetes/**"]
-          rule: >-
-            Before saying what this change does to rendered Kubernetes
-            manifests, read Konflate's render of this pull request in bounded
-            pieces, never whole. (1) curl -fsS --retry 10 --retry-delay 6 -o
-            /tmp/k.json
-            https://konflate.${SECRET_DOMAIN}/api/prs/<number>/diff with this
-            pull request's number. (2) jq -r -f .kritika/konflate-header.jq
-            /tmp/k.json prints status, head commit, counts, truncation, each
-            failure and warning, and one line per resource with its count of
-            changed rows; unchanged context is folded out and need not be
-            read. (3) Read each resource with jq -r --argjson i <index>
-            --argjson from <a> --argjson to <b> -f
-            .kritika/konflate-resource.jq /tmp/k.json in slices of 400 rows;
-            if an output ends in "[truncated", read that slice again in
-            halves. Read workloads, RBAC, Services, routes and configuration
-            first, and CRDs and other resources over 400 rows last, as the
-            step and token budget allows. (4) The render is incomplete when
-            it could not be fetched, its status is not ready, its head is
-            not the one under review, truncated is above zero, it has a
-            failure, or you did not read every changed row of every
-            resource. Then report one finding, important and reliability, on
-            the first changed line of the HelmRelease, OCIRepository or
-            Kustomization the render covers, titled "Rendered evidence
-            incomplete", naming each resource read in part or not at all and
-            the render's head commit. Never treat an incomplete render as
-            complete. (5) That finding is the only report of coverage: when
-            the render was read in full, the summary says nothing about what
-            you read.
     envFrom:
       - secretRef:
           name: kritika-secret
@@ -117,12 +85,16 @@ spec:
       runner:
         existingSecret: kritika-postgres-runner
     runner:
+      tools:
+        - name: flate
+          image: ghcr.io/home-operations/flate:0.6.5@sha256:e0e2d2de97539b3141977e8bb3bbb50ea5c5afe89477950e5fa972c9862478da
+      # flate renders charts in the runner.
       resources:
         requests:
           cpu: 10m
-          memory: 128Mi
+          memory: 512Mi
         limits:
-          memory: 1Gi
+          memory: 2Gi
           ephemeral-storage: 2Gi
     httpRoute:
       enabled: true
@@ -144,9 +116,8 @@ spec:
         enabled: true
     networkPolicy:
       enabled: true
-      # Cilium matches pod ports after service translation: 4000 is LiteLLM's,
-      # 10443 envoy-external's, which serves Konflate's public hostname.
-      egressPorts: [443, 4000, 10443]
+      # Cilium matches pod ports after service translation: 4000 is LiteLLM's.
+      egressPorts: [443, 4000]
     resources:
       requests:
         cpu: 10m

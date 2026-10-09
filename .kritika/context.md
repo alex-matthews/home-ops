@@ -3,8 +3,8 @@
 This repository is the Flux source of truth for one Talos cluster. When
 sources disagree, trust them in this order: the manifests under
 `kubernetes/`, `talos/` and `bootstrap/` at the pull request's head;
-Konflate's render of the pull request; upstream release notes and source;
-then prose.
+a flate render of the head; upstream release notes and source; then
+prose.
 
 `ARCHITECTURE.md` explains how the parts fit together, and
 `docs/policy/decisions.md` records standing decisions by anchor. Both are

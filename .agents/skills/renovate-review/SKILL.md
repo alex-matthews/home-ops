@@ -99,6 +99,42 @@ The full review adds:
   does not show.
 - Every risk surface below that the update touches.
 
+## Rendering a chart update
+
+For a chart bump, render the HelmRelease with the new chart and this
+repository's values, from the repository root, with the namespace's
+directory as the path:
+
+```
+flate build hr <name> --path kubernetes/apps/<namespace> --no-progress
+```
+
+A HelmRelease whose Kustomization depends on one in another namespace is
+reported as blocked there; render it from the whole tree instead, which
+takes several times the memory:
+
+```
+flate build hr <name> -n <namespace> --path kubernetes/flux/cluster --no-progress
+```
+
+flate reports every failure in the namespace, not only the requested
+HelmRelease's, and exits nonzero for any of them. A failure is a finding
+on the bumped line only when it belongs to the HelmRelease under review
+and the update caused it: a value the new chart's schema rejects, a
+template that errors on this repository's values. A failure of another
+HelmRelease, or a source that could not be fetched, says nothing about the
+update.
+
+A render that succeeds is an offline approximation of what the cluster
+applies: CRDs and Secrets are left out, `${SECRET_DOMAIN}` and other
+substitutions stay unresolved, and templates that branch on Kubernetes
+capabilities see flate's bundled version, not the cluster's. Take label
+values, resource names and ports from the render rather than from a
+reading of the template, and narrow it with `--show-only <template path>`
+when the whole output is too long. Only the head is checked out, so the
+old chart does not render here: read what it produced upstream at the old
+tag.
+
 ## What breaks
 
 Look in each release for breaking-change markers; removed or renamed
