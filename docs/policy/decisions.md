@@ -212,7 +212,7 @@ pull requests under `kubernetes/` as a bridge, is retired with its prompt
 Two independent counts listed what mattered to an operator in each pull
 request, from its render and upstream sources, then scored each review
 against that list. On 2026-10-05, over five pull requests reviewed before
-kritika's [Renovate rule](../../.kritika/renovate.md) asked for operator
+kritika's [Renovate rule](https://github.com/alex-matthews/home-ops/blob/a3c3fbb7eb581aa6a12f358b25609605c52d4205/.kritika/renovate.md) asked for operator
 notes, the Claude reviewer stated 16 of 29 points correctly, 3 imprecisely
 and missed 10, with 5 false claims; kritika stated 7, 2 imprecisely and
 missed 20, with none. On 2026-10-06, over the next five both reviewed with
@@ -227,6 +227,12 @@ single-instance store, diverged release tags or re-review, the classes where
 kritika missed most in the first count. Its coverage of those is untested.
 Revisit if kritika misses something that matters on a database, CRD or
 node-upgrade update.
+
+On 2026-10-09 the Renovate rule, its operator notes and the other
+repository rules were dropped for the kritika maintainer's renovate-review
+skill and repository configuration, which the maintainer runs and tests
+([#2362](https://github.com/alex-matthews/home-ops/pull/2362)). The counts
+above measured the rule, not the skill: the same revisit applies.
 
 ## Workbench and automation
 

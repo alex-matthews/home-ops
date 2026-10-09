@@ -10,7 +10,6 @@ spec:
     name: kritika
   interval: 1h
   values:
-    replicas: 2
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
     config:
@@ -72,7 +71,6 @@ spec:
       agent:
         commands: [gh, curl, jq, yq, rg, fd, flate]
         commandTimeout: 2m
-        tokens: 1000000
         timeout: 30m
     envFrom:
       - secretRef:
