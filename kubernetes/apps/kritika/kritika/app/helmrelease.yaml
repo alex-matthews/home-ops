@@ -20,7 +20,8 @@ spec:
           secretKeyRef:
             name: kritika-secret
             key: ADMIN_PASSWORD
-      reviewModel: litellm/openrouter/gpt-6.1-sol
+      reviewModel: plan/~sol-latest
+      reviewFallback: litellm/openrouter/gpt-6.1-sol
       triggerSettle: 2m
       embeddingModel: litellm/openrouter/voyage-code-4
       embeddingDims: 1024
@@ -34,6 +35,11 @@ spec:
           privateKey: { env: GITHUB_APP_PRIVATE_KEY }
           webhookSecret: { env: GITHUB_APP_WEBHOOK_SECRET }
       providers:
+        # Signed in from a running pod with `kritika chatgpt login plan`.
+        # Until then, and while the plan's limit holds, reviews fall back to
+        # LiteLLM.
+        plan:
+          type: chatgpt
         litellm:
           type: openai
           baseUrl: http://litellm.ai.svc.cluster.local:4000/v1
