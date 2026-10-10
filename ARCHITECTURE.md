@@ -119,7 +119,7 @@ Coverage job; everything else advises or alarms.
 - **Konflate**, hosted in the cluster, renders the pull request and posts the
   rendered diff. It is the pull request's render evidence, subject to
   completeness checks, and does not cover machine configuration or tooling.
-- **Image Pull** compares images with Flate and pulls the changed ones on
+- **Image Pull** compares images with flate and pulls the changed ones on
   the cluster's own runners.
 - **Chart Verify** has three jobs. Coverage, offline, enforces one verify
   block or exclusion per chart source and guards removals and identity
@@ -131,7 +131,7 @@ Coverage job; everything else advises or alarms.
   merge on the required checks before a review lands, and only because
   `.renovaterc.json5` sets `automergeType: "pr"`.
 
-After merge, **Render** runs Flate on `main` as an unrequired alarm that is
+After merge, **Render** runs flate on `main` as an unrequired alarm that is
 silent unless watched; Flux's own alerts report failed applies. **Chart
 Signing Watch** looks weekly for signing material on sources declared
 unsigned and keeps one findings issue; a failed lookup is inconclusive, never

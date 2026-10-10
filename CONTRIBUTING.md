@@ -8,7 +8,7 @@ other clusters through the [peers catalogue](docs/peers.md).
 
 ## Validate locally
 
-Verified 2026-10-05 against the repository at `main` with Flate 0.6.5; not
+Verified 2026-10-05 against the repository at `main` with flate 0.6.5; not
 against the live cluster.
 
 Run the smallest set of checks that matches the change, read what they print,
@@ -16,7 +16,7 @@ and report what they did not prove. Use the pinned tools through `mise exec`.
 
 | Change                         | Run                                                                                               | Proves                                                                 | Does not prove                                                |
 | ------------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
-| App manifests                  | Kustomize build and Flate test; image comparison when images may change                           | The app builds, the tree renders, and which images are new             | See [what a local render proves](#what-a-local-render-proves) |
+| App manifests                  | Kustomize build and flate test; image comparison when images may change                           | The app builds, the tree renders, and which images are new             | See [what a local render proves](#what-a-local-render-proves) |
 | Chart or operator upgrades     | As for app manifests, plus the [CRD upgrade checks](docs/policy/decisions.md#crd-upgrades)        | The rendered change, including hooks and templates you inspected       | That APIs supplied by bootstrap match the new chart           |
 | Workflows, CI scripts, tooling | Formatting, actionlint, zizmor, ShellCheck and the chart fixtures; read the changed Actions logic | Syntax, known workflow risks and script behaviour on the offline cases | Behaviour on GitHub's runners, with real tokens and events    |
 | Storage                        | The [restore evidence](.agents/skills/restore-data/SKILL.md) relevant to the risk                 | What that evidence exercised                                           | Anything it did not exercise                                  |
@@ -44,7 +44,7 @@ mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
 
 Keep `test all` full-tree: adding `--base` switches it to changed-only mode.
 
-Image comparison needs a base revision. Run Flate base comparisons from a plain
+Image comparison needs a base revision. Run flate base comparisons from a plain
 clone of the committed candidate, made with `git clone --no-local`, and replace
 `origin/main` with the reviewed base:
 
@@ -55,7 +55,7 @@ mise exec -- flate diff images -p ./kubernetes/flux/cluster --base origin/main -
 
 ### What a local render proves
 
-Flate renders the working tree without a cluster
+flate renders the working tree without a cluster
 ([behaviour and limits](https://redirect.github.com/home-operations/flate/blob/631b76b69c4e58c6f4d1cb01e23616fa61aebafa/README.md#behaviors)).
 Read the rendered objects, the base and the warnings, not only the pass count.
 A clean run does not cover:
