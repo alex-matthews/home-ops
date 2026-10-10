@@ -1,9 +1,8 @@
 # Repository Guidance
 
-This file is for agents that change the repository. A review takes its trust
-order from `.kritika/context.md` and standing decisions from
-`docs/policy/decisions.md` by anchor; the safety boundaries and the task
-router below do not address it.
+This file is for agents that change the repository. A kritika review follows
+the renovate-review skill; the safety boundaries and the task router below do
+not address it.
 
 Keep changes small, reviewable and independently reconcilable.
 
