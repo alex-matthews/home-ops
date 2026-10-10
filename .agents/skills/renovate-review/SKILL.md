@@ -1,173 +1,184 @@
 ---
 name: renovate-review
-description: >-
-    Review a Renovate dependency update in this Flux repository: where each
-    kind of dependency keeps its upstream history (images, charts and their
-    mirrors, GitHub Actions, mise tools), how to compare tags that have
-    diverged, what counts as breaking, how deep to go for each update class,
-    and what in this repository can depend on the update. Read it for any
-    pull request on a renovate/ branch.
+description: Review a Renovate dependency update in this Flux repository. Where to find a dependency's upstream history (charts from their OCIRepository, images, actions, mise tools), what counts as a breaking change, how to check what under kubernetes/ depends on it, how to write checked lines a second reader can verify, and where this repository's Renovate rules live. Read it for any pull request on a renovate/ branch.
 ---
 
-# Review a Renovate Update
+# Review a Renovate PR
 
-Find what changed upstream between the old and new versions, and whether
-anything in this repository depends on it.
+Judge whether the update is safe to merge: what changed upstream between the
+old and new versions, and whether anything in this repository depends on
+it. GitHub is read with `gh`; a project's own changelog or documentation
+site with `curl`.
 
 ## The update
 
-From the title, labels, description and diff, take each package and its
-datasource (container image, chart through an OCIRepository, GitHub Action,
-mise tool, Grafana dashboard), the old and new version or digest, the
-`type/*` label, and the changed files. A group update moves several
-packages; each gets the review.
+Take from the title, body, labels and diff: the package and its datasource
+(container image, Helm chart as an `OCIRepository`, GitHub Action, mise
+tool, Grafana dashboard, Renovate preset), the old and new version or
+digest, the update type from the `type/*` label, and the changed files,
+which are the call sites that consume the dependency.
 
-Read the upstream release notes, changelog and upgrade notes for every
-version in the range: breaking changes land in the middle of a jump.
-Renovate's description carries excerpts in a collapsed Release Notes
-section, which is where a long description gets cut: read it whole before
-going upstream.
+Renovate's body carries a collapsed **Release Notes** section with upstream
+excerpts. Read it first. Go upstream when it is missing, truncated or
+ambiguous, and always for a major update or a jump over several versions:
+read every intermediate release, breaking changes land in the middle.
 
 ## Finding the upstream
 
-Read upstream on GitHub. A documentation page a note links to is read as
-its Markdown source in the repository that holds it: a kritika review
-reaches no registry, chart repository or documentation site.
-
-- Renovate's update table links each package's source, on the package name
-  or as a separate "source" link, through `redirect.github.com`: read it as
-  `github.com`. A registry path names the publisher, not the source: a
-  `ghcr.io/home-operations/<app>` image is built in home-operations/containers,
-  whose `apps/<app>/docker-bake.hcl` names the upstream as `SOURCE`.
-- A chart under `charts-mirror/` republishes another project's chart:
-  home-operations/charts-mirror's `apps/<chart>/metadata.yaml` names the
-  upstream Helm repository and version, and that project's `Chart.yaml`
-  (`sources`, `home`) names its code. Chart and application versions move
-  separately: read the chart's notes, and the application's too when
+- An image at `<registry>/<owner>/<repo>` usually comes from `<owner>/<repo>`
+  on GitHub; otherwise the body or the image's
+  `org.opencontainers.image.source` annotation names the source.
+- A chart's source is the app's `OCIRepository` (`ocirepository.yaml`): its
+  `url` is the registry path and `ref.tag` the version. A path under an
+  owner (`oci://<registry>/<owner>/...`) is that owner's chart on GitHub,
+  where `Chart.yaml`'s `sources` or `home` confirms the repository. A path
+  under `ghcr.io/home-operations/charts-mirror/<chart>` is a mirror of a
+  chart whose project publishes none in OCI form:
+  `apps/<chart>/metadata.yaml` in `home-operations/charts-mirror` names the
+  upstream Helm repository, and the chart's changelog and releases are in
+  that project's own GitHub repository. Chart version and app version
+  differ: read the chart's changelog, and the application's too when
   `appVersion` moved.
-- A repository that publishes many charts prefixes its tags with the chart
-  name (`<chart>-1.2.3`). When a release is not found, list the releases
-  and look for the chart's name.
-- A note that says "see #123" is followed to the merged pull request that
-  made the change: the issue, and the note itself, often leave its scope
-  unclear where the pull request does not.
-- Before comparing two tags, check that they are on one line:
-  `gh api repos/<owner>/<repo>/compare/<old>...<new> --jq '{status, ahead_by, behind_by}'`.
-  When the status is `diverged`, the compare starts from the merge base,
-  not the old tag: a fix the old tag got by backport shows as new when the
-  new tag has it too, and what the old tag has that the new one lacks does
-  not show at all. Read the files at each tag instead, raw with
-  `gh api -H "Accept: application/vnd.github.raw+json" "repos/<owner>/<repo>/contents/<path>?ref=<tag>"`.
-
-## Depth
-
-A digest, patch or minor update whose rendered change (or, outside
-`kubernetes/`, whose diff) is only version strings and image references,
-on any kind of resource, gets the short review, unless its title carries
-Renovate's `!` (the preset's mark for a major update, 0.x minors included)
-or the render warns about it. Everything else gets the full review. A
-warning about a setting that was already there is not this update's, and
-an immutable-field warning on a Job is handled when its template carries
-Helm hook annotations with a delete policy.
-
-The short review:
-
-- Check each release-note entry against what this repository sets for the
-  app: its HelmRelease values, OCIRepository, ExternalSecret, routes and
-  storage.
-- Open the commit range only for an entry that fixes security; changes
-  authentication, credentials or sessions; migrates stored data; changes a
-  protocol or API something here speaks; or names a key the manifests set.
-  Open it too when the notes are missing.
-- Leave the image's build, base layers and bundled libraries alone.
-- A digest change under an unchanged tag is a rebuild: say so, and do not
-  attribute it to a commit without build metadata.
-
-The full review adds:
-
-- Both the wrapper and what it wraps: chart and application, image and
-  software, Action and the tool it runs. Where the notes are thin, read the
-  commits between the tags.
-- For a chart, a comparison of `templates/`, `crds/`, `values.yaml`,
-  `values.schema.json` and subcharts between the two tags rather than
-  trust in the notes; README, tests and CI can be skipped.
-- Each upstream change traced through the app's OCIRepository and
-  HelmRelease, the Kustomization's patches and components, ConfigMaps,
-  routes, storage, RBAC and consumers, including proxies and clients that
-  speak its protocol.
-- For an operator, the workloads it creates, for runtime changes the render
-  does not show.
-- Every risk surface below that the update touches.
+- A repository that publishes many charts prefixes its release tags with
+  the chart name (`<chart>-1.2.3`, not `v1.2.3`). When a release is not
+  found, list releases and look for the chart name.
+- A digest-only update moved no version: say whether the tag was rebuilt
+  (a security rebuild or a `latest`-style pin).
+- A release note that says "see #2785" is read with `gh issue view` or
+  `gh pr view`, and an issue is taken to the merged PR that closed it
+  (`gh pr list -R <repo> --search "#<n>" --state merged`): the PR says what
+  changed and in what scope, where the issue and the note may not.
 
 ## What breaks
 
-Look in each release for breaking-change markers; removed or renamed
-values, CRD fields, environment variables and flags; a new minimum
-Kubernetes, Flux or Talos version; one-way schema or data migrations;
-changed defaults (authentication, storage class, ports, probes);
-deprecations that became errors; new required keys with no default; and a
-label value or resource name that changed while its key stayed, which
-breaks whatever selects on the old value while a search for the key still
-matches. Minor and patch releases carry these too. When a note such as
-"prefix removed" leaves its scope unclear, settle it from the upstream pull
-request or the template, not the sentence.
+Flag in each release: `BREAKING CHANGE`, `⚠` or `!:` markers; removed or
+renamed Helm values, CRD fields, environment variables and flags; a
+required Kubernetes, Flux, Talos or kernel version; one-way schema or
+data migrations; changed defaults (authentication, storage class, ports,
+probes); deprecations that became errors; new required keys with no
+default; and label values that changed while the key stayed, or resource
+names that dropped or gained a prefix, which break anything selecting on
+the old value while a search for the key still matches.
 
-A finding is what the update breaks here, a migration or companion change
-it makes due, or a pin, override or workaround in the app's directory it
-makes unnecessary; a comment citing an upstream issue or version often
-marks the last kind. Each sits on the version line the update moved, and
-its explanation names the file and line here that depend on the change. A
-breaking change nothing here uses is not a finding.
+Minor and patch updates carry breaking changes too. "Chart name prefix
+removed" is ambiguous between label values and resource names: settle it
+from the PR or the template, not the sentence.
 
-## What depends on it
+An update also moves images that appear nowhere in the diff: a chart or
+operator that changes its default images, or stops setting them and
+leaves them to another operator's built-in defaults. Name each such image
+with its old and new version, read from the chart's or operator's source
+at both versions. Nothing here pins them, so Renovate never raises them
+and the review is the only place they show. A version a chart sets by
+default, such as the image of a workload its operator manages, is the
+default in the chart's `values.yaml` at the new tag unless the
+HelmRelease values pin it.
+
+## Rendering a chart update
+
+For a chart bump, render the HelmRelease with the new chart and this
+repository's values, from the repository root, with the namespace's
+directory as the path:
+
+```
+flate build hr <name> --path kubernetes/apps/<namespace> --no-progress
+```
+
+A HelmRelease whose Kustomization depends on one in another namespace is
+reported as blocked there; render it from the whole tree instead, which
+takes several times the memory:
+
+```
+flate build hr <name> -n <namespace> --path kubernetes/flux/cluster --no-progress
+```
+
+flate reports every failure in the namespace, not only the requested
+HelmRelease's, and exits nonzero for any of them. A failure is a finding
+on the bumped line only when it belongs to the HelmRelease under review
+and the update caused it: a value the new chart's schema rejects, a
+template that errors on this repository's values. A failure of another
+HelmRelease, or a source that could not be fetched, says nothing about the
+update.
+
+A render that succeeds is an offline approximation of what the cluster
+applies: CRDs and Secrets are left out, patches Flux applies from a parent
+Kustomization are not, and templates that branch on Kubernetes
+capabilities see flate's bundled version, not the cluster's. Within that,
+take the label values, resource names and ports the exposure search
+depends on from the render rather than from a reading of the template,
+and narrow it with `--show-only <template path>` when the whole output is
+too long. Only the head is checked out, so the old chart does
+not render here: what it produced is read upstream, or from the names this
+repository already refers to.
+
+## Exposure here
 
 The question is not whether this repository sets the old thing but whether
 anything here depends on it. Search `kubernetes/` for:
 
-- a label key or value: whatever selects on it, such as monitors, network
-  policies, disruption budgets, and label matchers in alert rules and
-  dashboards;
-- a resource name: whatever refers to it, such as route backends, cluster
-  DNS names (`<name>.<namespace>.svc`), and Flux `dependsOn` and
-  `healthChecks`;
-- a value, flag or CRD field: HelmRelease `values`, `valuesFrom` and
-  `postRenderers`, Kustomize patches, and the custom resources other apps
-  create from the dependency's CRDs.
+- **a label key or value**: whatever selects on it, such as `matchLabels`
+  and `selector` fields of monitors, network policies and disruption
+  budgets, and label matchers in PromQL rules and dashboards;
+- **a resource name**: whatever refers to it, such as route backends,
+  cross-namespace DNS (`<name>.<namespace>.svc.cluster.local`), selectors,
+  and Flux `dependsOn` and `healthChecks`;
+- **a value, flag or CRD field**: the HelmRelease `values`, `valuesFrom`,
+  `postRenderers`, kustomize patches, including those the Kustomizations
+  in `kubernetes/flux/cluster` apply to every HelmRelease (a CRD upgrade
+  policy among them), and the custom resources other apps create from the
+  dependency's CRDs (`apiVersion: <group>`).
 
-For a GitHub Action or a mise tool, search instead the workflows, scripts
-and tasks that use it. Before writing that nothing here sets a key, search
-the app's whole directory, its ExternalSecret included. Once each search
-has come back empty or with a short list, stop: rephrasing it adds nothing.
-
-These risk surfaces need evidence whatever the update class; "patch
-release" is not evidence:
-
-- CRD schema, versions or conversion webhooks. Name tightened validations,
-  removed fields or enum values, and version or conversion changes. A
-  conversion webhook needs its Service and Deployment to render or to
-  exist already. How CRDs reach the cluster, including the ones
-  `bootstrap/helmfile/` applies, is in
-  [docs/policy/decisions.md#crd-upgrades](../../../docs/policy/decisions.md#crd-upgrades).
-- A webhook's Service, Deployment or certificates.
-- RBAC or a ServiceAccount.
-- PVCs, storage, backups or Kopiur objects; protected claims come from
-  [kubernetes/components/kopiur](../../../kubernetes/components/kopiur/kustomization.yaml).
-- `runAsUser`, `runAsGroup`, `fsGroup` or `fsGroupChangePolicy` on a
-  workload with persistence: name the claim, the mount path and the policy.
-- Routes, gateways or public hostnames:
-  [docs/policy/public-surfaces.md](../../../docs/policy/public-surfaces.md).
-- Authentication.
-- An image that moves registry or repository.
+An app configured through its own UI keeps that configuration on its
+volume, not in git, so a search of this repository proves nothing about
+it: an affected integration or setting there is one the review could not
+verify.
 
 Before prescribing a rename or a new value, confirm it from the upstream
-pull request's diff or the template at the new tag. Without that, name it
-as a check after merge rather than an edit: a wrong edit that gets applied
-is worse than none.
+PR's diff or from the chart's template at the new tag, read raw with
+`gh api -H "Accept: application/vnd.github.raw+json" repos/<owner>/<repo>/contents/<path>?ref=<tag>`.
+Without that, make it a check to do after the merge rather than an edit; a
+wrong edit that gets applied is worse than none.
 
-## Before writing
+A finding anchors to the bumped line in the diff; name the dependent file
+and line in its explanation. A breaking change that touches nothing here
+is not a finding: one sentence in the take, with the search that came up
+empty, is enough.
 
-- When [.renovaterc.json5](../../../.renovaterc.json5) automerges this
-  update, it can merge before this review lands
-  ([ARCHITECTURE.md#what-ci-proves](../../../ARCHITECTURE.md#what-ci-proves)):
-  write for someone reading after the merge.
-- Never name a secret key.
+## The account
+
+The summary's checked lines and the sources it lists are what a second
+reader judges the review by. That reader has the description and the diff
+but no tools: it never sees the commands the review ran or what they
+printed.
+
+- Give every entry under the release notes' breaking changes and upgrade
+  notes, and every step the upgrade guide names, a checked line of its
+  own, including one that touches nothing here: name the entry, then why
+  it does not apply or what it changes.
+- Put the evidence in the line: the value found and the file it came
+  from, or the source that says so. "`auth.enabled: true` already set in
+  the HelmRelease values" carries its proof; "auth checked" does not.
+- Write an inference out, and only one the evidence carries. A render of
+  the new chart that succeeded proves the tag exists and the values fit
+  its schema. A default the release changes to a value this repository
+  already sets explicitly changes nothing here; a prerequisite that comes
+  with it, such as a kernel or Kubernetes version, is checked on its own.
+- A version requirement is checked against the version this repository
+  targets, read from where it pins it. A target in git is not proof that
+  a rollout reached every node: say that the line rests on the target.
+- What the repository cannot show is not a check. Say in the take what
+  could not be verified and what to look at after the merge, and keep it
+  out of the checked lines.
+
+## This repository
+
+- Flux reconciles `kubernetes/` from `main`: a merge rolls out within
+  minutes.
+- `.renovaterc.json5` is the source for how Renovate treats this update:
+  its `automerge` rules say whether the PR merges on its own, in which case
+  the review is the last look before the merge; its `groupName` rules say
+  which PRs move several packages at once, each of which the review
+  covers; its labels and the shared preset's `!` on a major update should
+  agree with the title, and drift between them is worth a note.
+- Secrets are ExternalSecrets from 1Password: judge key names and mappings
+  from the manifests.

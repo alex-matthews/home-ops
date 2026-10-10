@@ -1,59 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kritika.home-operations.com/kritika.schema.json
-context:
-  - path: .kritika/context.md
-    description: >-
-      Read first. What is authoritative in this repository, and in what
-      order.
 skills:
   scope:
     renovate-review:
       when: [{ expr: pr.headRef.startsWith("renovate/") }]
-rules:
-  - id: renovate
-    when: [{ expr: pr.headRef.startsWith("renovate/") }]
-    file: .kritika/renovate.md
-  - id: manifests
-    paths: ["kubernetes/**"]
-    rule: >-
-      Check what this change adds or edits. A new or changed image reference
-      carries tag@digest, unless the file already pins that image without one.
-      A hostname is ${SECRET_DOMAIN} or an existing variable, never
-      a literal public name. A new app has a ks.yaml Flux Kustomization
-      pointing at its app/ directory, and a kustomization.yaml there listing
-      every file. A dependsOn edge it adds or changes follows the rule under
-      Reconciliation ordering in docs/policy/decisions.md, read at the head
-      with read_file. A change to a file ending in .sops.yaml shows only
-      ENC[...] values and changes under its sops: block (mac, lastmodified,
-      version); plaintext in such a file is a breach. Report each breach on
-      its line; otherwise say nothing.
-  - id: state
-    paths: ["kubernetes/**"]
-    rule: >-
-      If this change renames or removes an ExternalSecret, its target Secret
-      or a template key, a PVC, a storage class, a namespace, or an app name
-      that Flux, alerts, dashboards or backups use, or alters Kopiur wiring or
-      a backup's schedule, retention or restore wiring, report as a finding
-      what breaks or is lost: data, a Secret something still reads, or backup
-      coverage. For a renamed name, grep kubernetes/ for every reference left
-      behind. Otherwise say nothing.
-  - id: exposure
-    paths: ["kubernetes/**"]
-    rule: >-
-      If this change adds a route whose parentRefs name envoy-external, or
-      widens what an existing one serves (hostnames, paths, methods), read
-      docs/policy/public-surfaces.md at the head with read_file. Report as a
-      finding when the surface has no row there naming its consumers and the
-      control in front of it. Otherwise say nothing.
-  - id: window
-    paths:
-      - "talos/**"
-      - "kubernetes/apps/kube-system/cilium/**"
-      - "kubernetes/apps/flux-system/flux-instance/**"
-      - "kubernetes/apps/system-upgrade/tuppr/upgrades/**"
-    rule: >-
-      If this change takes effect by restarting Cilium agents, Flux's
-      controllers or the Kubernetes API, or by rebooting or upgrading nodes,
-      report as a finding what restarts or reboots, and whether it happens on
-      merge without anyone present or needs someone to apply it at a
-      maintenance window. Otherwise say nothing.
