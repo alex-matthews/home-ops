@@ -24,11 +24,8 @@ Before accepting a gateway, client or Hermes image change, verify:
 - Test primary and auxiliary model requests. Hermes declares a streaming
   workaround for auxiliary calls; assess it when changing the gateway or
   adding a client rather than assuming every client needs the same setting.
-  kritika reviews on a ChatGPT plan, signed in as its
-  [docs](https://redirect.github.com/home-operations/kritika/blob/0.0.56/docs/models.md#chatgpt-plans)
-  describe, and falls back to models that LiteLLM serves on Chat
-  Completions, with its own virtual key and weekly budget. LiteLLM also
-  serves its embeddings.
+  kritika calls models that LiteLLM serves on Chat Completions, with its own
+  virtual key and weekly budget.
 - For a new Hermes image, check provider resolution, configuration defaults
   and migrations. Update the read-only ConfigMap deliberately in Git; startup
   cannot repair it. Keep migration checks enabled and preserve dashboard
