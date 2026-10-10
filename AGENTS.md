@@ -1,8 +1,8 @@
 # Repository Guidance
 
-This file is for agents that change the repository. A kritika review follows
-the renovate-review skill; the safety boundaries and the task router below do
-not address it.
+This file is for agents that change the repository. The safety boundaries and
+the task router below do not address a kritika review, which follows the
+renovate-review skill on a Renovate pull request.
 
 Keep changes small, reviewable and independently reconcilable.
 
