@@ -30,7 +30,7 @@ just = "1.58.0"
 "github:home-operations/kopiur" = "0.10.12"
 kubectl = "1.37.1"
 kustomize = "5.8.3"
-lefthook = "2.1.17"
+lefthook = "2.2.1"
 oxfmt = "0.72.0"
 # Lints the bash scripts CI runs (.github/scripts, tests); run via `mise exec -- shellcheck`.
 shellcheck = "0.11.0"
