@@ -22,6 +22,7 @@ spec:
             key: ADMIN_PASSWORD
       reviewModel: plan/~sol-latest
       reviewFallback: litellm/openrouter/gpt-6.1-sol
+      reviewEffort: high
       triggerSettle: 2m
       embeddingModel: litellm/openrouter/voyage-code-4
       embeddingDims: 1024
