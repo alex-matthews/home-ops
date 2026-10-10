@@ -275,7 +275,7 @@ Verified 2026-10-05 against the repository at `main`.
 
 Only missing cluster-hosted reporting during an outage permits consideration
 of a bypass, never a real failed check. Obtain exact approval, run matching
-[local checks](../../CONTRIBUTING.md#validate-locally), including Flate and
+[local checks](../../CONTRIBUTING.md#validate-locally), including flate and
 image diff, record commands/results and reason, then observe Render and Flux
 at the merged revision. Include workflow checks for workflow/Renovate
 changes. A low-risk docs-only direct-main change is a separate exceptional
