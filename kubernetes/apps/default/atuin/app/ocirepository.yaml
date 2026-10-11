@@ -12,6 +12,7 @@ spec:
   ref:
     tag: 5.2.1
   url: oci://ghcr.io/bjw-s-labs/helm/app-template
+  # Accepts only charts signed by bjw-s-labs' release workflow on main.
   verify:
     provider: cosign
     matchOIDCIdentity:
