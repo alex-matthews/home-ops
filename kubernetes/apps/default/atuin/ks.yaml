@@ -6,6 +6,7 @@ metadata:
   name: atuin
 spec:
   components:
+    # Creates the atuin claim and its local and remote snapshot schedules.
     - ../../../../components/kopiur
   interval: 1h
   path: ./kubernetes/apps/default/atuin/app
