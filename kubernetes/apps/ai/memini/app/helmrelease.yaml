@@ -44,6 +44,12 @@ spec:
               MEMINI_CONSOLIDATE_MODE: "off"
               MEMINI_ASSESS_INTERVAL: "0s"
               MEMINI_PROMOTE_INTERVAL: "0s"
+              # Durable memories leave recall only when superseded. By
+              # default, demotion sends an unrecalled one to the 30-day
+              # episodic tier, and the daily dedup pass tombstones
+              # near-duplicates in every tier, pins included.
+              MEMINI_DEMOTE_AFTER: "0s"
+              MEMINI_DEDUP_TIERS: working,episodic
               MEMINI_RERANK: http://litellm.ai.svc.cluster.local:4000
               MEMINI_RERANK_MODEL: tei/gte-reranker-modernbert-base
               MEMINI_RERANK_API_KEY:
