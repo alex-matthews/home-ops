@@ -166,9 +166,42 @@ printed.
 - A version requirement is checked against the version this repository
   targets, read from where it pins it. A target in git is not proof that
   a rollout reached every node: say that the line rests on the target.
-- What the repository cannot show is not a check. Say in the take what
-  could not be verified and what to look at after the merge, and keep it
-  out of the checked lines.
+- What the repository cannot show is not a check. It belongs in Merge
+  impact, as a check with its expected result, not in the checked lines.
+
+## Merge impact
+
+Merge impact (the summary's `impact`) tells whoever merges what will happen.
+One note for each of these that applies, in this order; nothing for one
+that does not.
+
+- Restarts: what restarts or rolls beyond the updated app's own pods, and
+  who notices. An operator rolls what it manages: a CloudNativePG image
+  change restarts every instance of each cluster that uses it, and a
+  single-instance cluster is down for that restart.
+- Revert: for an operator, CRD, storage or data change, whether a revert
+  undoes it: whether the upgrade guide documents a downgrade path (a guide
+  you read that has none is the evidence), what a revert runs over (the old
+  operator against what the new one wrote), and that a failed upgrade is
+  retried and then rolled back by Flux (`RemediateOnFailure` in
+  `kubernetes/flux/cluster/ks.yaml`), possibly after part of the roll. A
+  migration or data rewrite the new version runs at start goes here.
+- Behaviour: a changed default or behaviour of a feature this repository
+  uses that needs someone to act or to watch.
+- Permissions: RBAC or other permissions added or widened, with their scope
+  and what uses them.
+- Action: a manual step this update makes due, including removing a pin,
+  override or workaround it makes unnecessary; name the file.
+- Checks: before the merge, what must hold for it to be safe; after it, a
+  check a note above makes necessary, with its expected result; not that
+  the new version is running.
+
+Each note is one sentence, two at most, that names the object and says what
+happens, never what does not, and rests on something you read. Lead with
+the consequence; name its evidence in a few words at the end (a file, or a
+linked source) and leave the rest to Sources consulted. Name a version only
+when the version is the consequence. A note is not a finding and does not
+repeat one.
 
 ## This repository
 
