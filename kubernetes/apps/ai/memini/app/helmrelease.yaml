@@ -69,10 +69,11 @@ spec:
                     # composite order until the next restart picks it up.
                     optional: true
               MEMINI_RERANK_POOL: "8"
-              # The pool times the 2,048-character document cap, so all eight
-              # go in one request. Raise it with the pool, or memini splits
-              # them into serial requests.
-              MEMINI_RERANK_MAX_BATCH_CHARS: "16384"
+              # A ceiling per rerank request, counting the query and request
+              # envelope as well as the documents. Well above eight at the
+              # 2,048-character cap, so the pool goes in one request; the
+              # default of 6,000 splits it into serial requests.
+              MEMINI_RERANK_MAX_BATCH_CHARS: "48000"
               MEMINI_RERANK_MAX_CONCURRENCY: "1"
               # Below the clients' 30 s budget. No score floor, so a timeout
               # falls back to the composite order instead of an empty result.
