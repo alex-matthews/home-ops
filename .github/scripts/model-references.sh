@@ -19,6 +19,9 @@ while IFS= read -r -d '' file; do
   keys+=("$file")
 done < <(git grep -z -l -E '^kind:[[:space:]]*LiteLLMVirtualKey' -- kubernetes/apps)
 [ "${#keys[@]}" -gt 0 ] || { echo "no LiteLLMVirtualKey found under kubernetes/apps" >&2; exit 2; }
+# Keys are looked up by name, so a name used twice would merge two allowlists.
+duplicates="$(tool yq -N 'select(.kind == "LiteLLMVirtualKey") | .metadata.name' "${keys[@]}" | sort | uniq -d)"
+[ -z "$duplicates" ] || { echo "LiteLLMVirtualKey names used more than once: $duplicates" >&2; exit 2; }
 
 failures=""
 checked=0
@@ -32,7 +35,7 @@ check() {
     echo "$client: $file is missing a model at $expr" >&2
     exit 2
   fi
-  [ -n "$key" ] || { echo "$client: its key Secret matches no LiteLLMVirtualKey" >&2; exit 2; }
+  [ -n "$key" ] || { echo "$client: its secretKeyRef matches no LiteLLMVirtualKey's Secret and key" >&2; exit 2; }
   allowed="$served"
   if [ "$key" != - ]; then
     allowed="$(tool yq -N "select(.kind == \"LiteLLMVirtualKey\" and .metadata.name == \"$key\") | .spec.models[]" "${keys[@]}")"
@@ -59,29 +62,30 @@ for file in "${keys[@]}"; do
   done
 done
 
-# key_for <file> <yq expression>: the virtual key that mints one of the Secrets
-# the expression names, reading "{{ .Release.Name }}" as the HelmRelease's name.
+# key_for <file> <yq path to a secretKeyRef>: the virtual key that mints the
+# Secret and data key the reference names, reading "{{ .Release.Name }}" as the
+# HelmRelease's name.
 key_for() {
-  local release secret
+  local release name data
   release="$(tool yq -N '.metadata.name' "$1")"
-  while IFS= read -r secret; do
-    secret="${secret//"{{ .Release.Name }}"/$release}"
-    tool yq -N "select(.kind == \"LiteLLMVirtualKey\" and .spec.secretName == \"$secret\") | .metadata.name" "${keys[@]}"
-  done < <(tool yq -N "$2" "$1") | head -n 1
+  name="$(tool yq -N "$2.name" "$1")"
+  name="${name//"{{ .Release.Name }}"/$release}"
+  data="$(tool yq -N "$2.key" "$1")"
+  tool yq -N "select(.kind == \"LiteLLMVirtualKey\" and .spec.secretName == \"$name\" and (.spec.secretKey // \"key\") == \"$data\") | .metadata.name" "${keys[@]}"
 }
 
 hermes=kubernetes/apps/ai/hermes/app/helmrelease.yaml
-check hermes "$(key_for "$hermes" '.spec.values.controllers.hermes.containers.app.env.LITELLM_API_KEY.valueFrom.secretKeyRef.name')" \
+check hermes "$(key_for "$hermes" '.spec.values.controllers.hermes.containers.app.env.LITELLM_API_KEY.valueFrom.secretKeyRef')" \
   kubernetes/apps/ai/hermes/app/configmap.yaml \
   '.data["config.yaml"] | from_yaml | (.providers.litellm.default_model, .model.default)'
 
 memini=kubernetes/apps/ai/memini/app/helmrelease.yaml
 env=.spec.values.controllers.main.containers.main.env
-check memini "$(key_for "$memini" "$env.MEMINI_LLM_API_KEY.valueFrom.secretKeyRef.name")" "$memini" "$env.MEMINI_LLM_MODEL"
-check memini "$(key_for "$memini" "$env.MEMINI_RERANK_API_KEY.valueFrom.secretKeyRef.name")" "$memini" "$env.MEMINI_RERANK_MODEL"
+check memini "$(key_for "$memini" "$env.MEMINI_LLM_API_KEY.valueFrom.secretKeyRef")" "$memini" "$env.MEMINI_LLM_MODEL"
+check memini "$(key_for "$memini" "$env.MEMINI_RERANK_API_KEY.valueFrom.secretKeyRef")" "$memini" "$env.MEMINI_RERANK_MODEL"
 
 kritika=kubernetes/apps/kritika/kritika/app/helmrelease.yaml
-kritika_key="$(key_for "$kritika" '.spec.values.env.LITELLM_API_KEY.valueFrom.secretKeyRef.name')"
+kritika_key="$(key_for "$kritika" '.spec.values.env.LITELLM_API_KEY.valueFrom.secretKeyRef')"
 check kritika "$kritika_key" "$kritika" \
   '.spec.values.config | (.reviewModel, .reviewFallback, .embeddingModel)' litellm/
 check "kritika pricing" "$kritika_key" "$kritika" \
