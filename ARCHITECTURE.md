@@ -126,6 +126,10 @@ Coverage job; everything else advises or alarms.
   changes; it proves declarations, not their truth. Signatures advises: it
   verifies changed keyless Cosign tag pins and skips other providers and
   digest-only pins. Fixtures runs the scripts' offline tests.
+- **Model References** advises when an AI app changes: the LiteLLM models that
+  Hermes, memini and kritika name, and those the virtual keys list, are served
+  and allowed by the client's key. Git cannot show which key kritika uses, so
+  the check assumes the one named after it.
 - **kritika** gives an advisory review of pull requests, Renovate's
   included, from inside the cluster. Classes that Renovate automerges can
   merge on the required checks before a review lands, and only because
