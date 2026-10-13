@@ -79,6 +79,12 @@ spec:
         commands: [gh, curl, jq, yq, rg, fd, flate]
         commandTimeout: 2m
         timeout: 30m
+    env:
+      LITELLM_API_KEY:
+        valueFrom:
+          secretKeyRef:
+            name: kritika-litellm-key
+            key: LITELLM_API_KEY
     envFrom:
       - secretRef:
           name: kritika-secret
