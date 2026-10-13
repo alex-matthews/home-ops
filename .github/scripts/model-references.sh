@@ -17,20 +17,26 @@ served="$(tool yq -N 'select(.kind == "LiteLLMModel") | .spec.modelName' "$litel
 failures=""
 checked=0
 
-# check <client> <key, or - for the master key> <file> <yq expression>
+# check <client> <key, or - for the master key> <file> <yq expression> [<prefix>]
+# With a prefix, only models carrying it are LiteLLM's, and it is stripped.
 check() {
-  local client="$1" key="$2" file="$3" expr="$4" models allowed model
+  local client="$1" key="$2" file="$3" expr="$4" prefix="${5:-}" models allowed model
   models="$(tool yq -N "$expr" "$file")"
   if [ -z "$models" ] || grep -qx null <<< "$models"; then
     echo "$client: $file is missing a model at $expr" >&2
     exit 2
   fi
+  [ -n "$key" ] || { echo "$client: its key Secret matches no LiteLLMVirtualKey" >&2; exit 2; }
   allowed="$served"
   if [ "$key" != - ]; then
     allowed="$(tool yq -N "select(.kind == \"LiteLLMVirtualKey\" and .metadata.name == \"$key\") | .spec.models[]" "$litellm/litellmvirtualkeys.yaml")"
     [ -n "$allowed" ] || { echo "$client: no LiteLLMVirtualKey $key with models" >&2; exit 2; }
   fi
   while IFS= read -r model; do
+    if [ -n "$prefix" ]; then
+      [[ $model == "$prefix"* ]] || continue
+      model="${model#"$prefix"}"
+    fi
     checked=$((checked + 1))
     if ! grep -qxF -- "$model" <<< "$served"; then
       failures+="$client: $model is not served by LiteLLM"$'\n'
@@ -46,12 +52,22 @@ for key in $(tool yq -N 'select(.kind == "LiteLLMVirtualKey") | .metadata.name' 
 done
 check hermes - kubernetes/apps/ai/hermes/app/configmap.yaml \
   '.data["config.yaml"] | from_yaml | (.providers.litellm.default_model, .model.default)'
-check memini memini kubernetes/apps/ai/memini/app/helmrelease.yaml \
-  '.spec.values.controllers.main.containers.main.env | (.MEMINI_LLM_MODEL, .MEMINI_RERANK_MODEL)'
+
+memini=kubernetes/apps/ai/memini/app/helmrelease.yaml
+env=.spec.values.controllers.main.containers.main.env
+# key_for <env var>: the virtual key whose Secret memini reads that key from.
+key_for() {
+  local secret
+  secret="$(tool yq -N "$env.$1.valueFrom.secretKeyRef.name" "$memini")"
+  tool yq -N "select(.kind == \"LiteLLMVirtualKey\" and .spec.secretName == \"$secret\") | .metadata.name" "$litellm/litellmvirtualkeys.yaml"
+}
+check memini "$(key_for MEMINI_LLM_API_KEY)" "$memini" "$env.MEMINI_LLM_MODEL"
+check memini "$(key_for MEMINI_RERANK_API_KEY)" "$memini" "$env.MEMINI_RERANK_MODEL"
+
 # kritika receives this key's value through its own ExternalSecret, so Git
 # cannot show the link; the key's alias names it.
 check kritika kritika kubernetes/apps/kritika/kritika/app/helmrelease.yaml \
-  '.spec.values.config | (.reviewModel, .reviewFallback, .embeddingModel) | select(. != null and test("^litellm/")) | sub("^litellm/"; "")'
+  '.spec.values.config | (.reviewModel, .reviewFallback, .embeddingModel)' litellm/
 check "kritika pricing" kritika kubernetes/apps/kritika/kritika/app/helmrelease.yaml \
   '.spec.values.configFile.providers.litellm.pricing | keys | .[]'
 
