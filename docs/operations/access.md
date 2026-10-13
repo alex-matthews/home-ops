@@ -40,8 +40,8 @@ re-fetch the kubeconfig, as [bootstrap](../../bootstrap/mod.just) does:
 mise exec -- talosctl --talosconfig talosconfig kubeconfig -n <node> -f --force-context-name main .
 ```
 
-`just talos cert-renew reader` mints `talosconfig-readonly` from the
-administrative file, and replaces it once it has expired.
+`just talos cert-renew reader` creates or replaces `talosconfig-readonly`
+from the administrative file; nothing warns before it expires.
 
 For lost credentials or DNS/router failure, follow
 [break-glass access](../recovery/break-glass.md).
