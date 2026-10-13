@@ -50,6 +50,10 @@ spec:
               # near-duplicates in every tier, pins included.
               MEMINI_DEMOTE_AFTER: "0s"
               MEMINI_DEDUP_TIERS: working,episodic
+              # A write with no tier that is longer than this is filed as
+              # working and expires. Agents' saved lessons run to 500–800
+              # characters; the default is 400.
+              MEMINI_CLASSIFY_MAX_CHARS: "1000"
               MEMINI_RERANK: http://litellm.ai.svc.cluster.local:4000
               MEMINI_RERANK_MODEL: tei/gte-reranker-modernbert-base
               MEMINI_RERANK_API_KEY:
