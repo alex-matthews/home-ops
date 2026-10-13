@@ -135,8 +135,10 @@ After merge, **Render** runs Flate on `main` as an unrequired alarm that is
 silent unless watched; Flux's own alerts report failed applies. **Chart
 Signing Watch** looks weekly for signing material on sources declared
 unsigned and keeps one findings issue; a failed lookup is inconclusive, never
-evidence of absence. None of these proves decryption, admission, runtime
-health or restore success, and a bypass merge is governed by
+evidence of absence. **Mirrored Chart Watch** fails weekly when a chart pulled
+from home-operations/charts-mirror is no longer listed there, which Renovate
+does not report. None of these proves decryption, admission, runtime health or
+restore success, and a bypass merge is governed by
 [standing decisions](docs/policy/decisions.md#bypass-merges).
 
 ## Traffic, names and certificates

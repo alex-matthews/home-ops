@@ -1,0 +1,42 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Mirrored Chart Watch
+
+# home-operations/charts-mirror drops a chart once upstream publishes its own
+# OCI chart and prunes the package six months later. Renovate cannot tell a
+# dropped chart from one with no update, so it stops offering bumps without
+# failing.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 3 * * 1 # Mondays 03:00 UTC
+
+concurrency:
+  group: mirrored-chart-watch
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    name: Mirrored Chart Watch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check mirrored charts are still mirrored
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          charts="$(grep -rhoP 'oci://ghcr\.io/home-operations/charts-mirror/\K[a-z0-9-]+' kubernetes bootstrap | sort -u || true)"
+          # Empty means the pattern drifted from the manifests, not that nothing is mirrored.
+          [ -n "$charts" ] || { echo "no charts-mirror references found"; exit 1; }
+          mirrored="$(gh api repos/home-operations/charts-mirror/git/trees/HEAD:apps --jq '.tree[].path' | sort -u)"
+          removed="$(comm -23 <(printf '%s\n' "$charts") <(printf '%s\n' "$mirrored"))"
+          [ -z "$removed" ] || { printf 'dropped from charts-mirror; move to the upstream OCI chart:\n%s\n' "$removed"; exit 1; }
+          printf '%s\n' "$charts"
