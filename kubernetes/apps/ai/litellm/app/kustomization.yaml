@@ -8,7 +8,6 @@ resources:
   - ./externalsecret-openrouter.yaml
   - ./litellmmodels.yaml
   - ./litellmproxy.yaml
-  - ./litellmvirtualkeys.yaml
   - ./prometheusrule.yaml
   - ./pvc.yaml
   - ./servicemonitor.yaml

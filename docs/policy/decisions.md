@@ -149,6 +149,14 @@ substitution. An indivisible structured file mixing sensitive and ordinary
 content may instead be an app-local SOPS Secret mounted as a file. This
 exception grants no permission to create or edit credential material.
 
+A consumer's LiteLLM virtual key is declared in that consumer's directory, and
+the operator mints its Secret in the consumer's namespace (`proxyNamespace`
+names the proxy's), so the key is never copied by hand. The key is stored
+under `LITELLM_API_KEY`, and apps read it with `env` + `secretKeyRef`, because
+the operator, not an ExternalSecret template, shapes the Secret. Only Git
+creates these keys; RBAC already limits creating them to cluster administrators
+and the operator.
+
 ## Data protection
 
 Decided 2026-07-20.

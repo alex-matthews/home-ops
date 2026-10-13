@@ -30,7 +30,7 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: memini-litellm-key
-                    key: key
+                    key: LITELLM_API_KEY
                     # Same key and reason as MEMINI_RERANK_API_KEY below.
                     optional: true
               # Locks the client defaults; the UI cannot change them.
@@ -60,7 +60,7 @@ spec:
                 valueFrom:
                   secretKeyRef:
                     name: memini-litellm-key
-                    key: key
+                    key: LITELLM_API_KEY
                     # The operator mints this key after the proxy is ready.
                     # Without it memini still starts, and recall keeps the
                     # composite order until the next restart picks it up.
