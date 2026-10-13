@@ -44,5 +44,11 @@ postinstall = "lefthook install"
 # A sitting starts with a fresh read-only token (#2021). The recipe is a
 # no-op while the current token has more than an hour left, and it needs
 # the administrative kubeconfig beside it; the `|| true` keeps a shell
-# usable when the cluster is unreachable.
-enter = "just kube readonly-token || true"
+# usable when the cluster is unreachable. It also warns once the
+# administrative talosconfig or kubeconfig has 30 days or less left, since
+# nothing renews them on its own.
+enter = [
+  "just kube readonly-token || true",
+  "just kube cert-reminder || true",
+  "just talos cert-reminder || true",
+]
