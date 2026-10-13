@@ -33,8 +33,11 @@ spec:
                     key: LITELLM_API_KEY
                     # Same key and reason as MEMINI_RERANK_API_KEY below.
                     optional: true
-              # Locks the client defaults; the UI cannot change them.
-              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":true,"auto_save":true,"session_digest":false}'
+              # Locks the client defaults; the UI cannot change them. Recall
+              # injects five one-line pointers per prompt; the briefing's
+              # 1,500 tokens fit its pinned, facts, how-tos and recent items,
+              # where the default 600 dropped about half of them.
+              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":true,"auto_save":true,"session_digest":false,"recall_limit":5,"inject_recall_max_tok":400,"inject_briefing_max_tok":1500,"inject_briefing_recent":6}'
               # Keep captured history separate from explicitly authored lessons.
               MEMINI_DISTILL_ON_WRITE: "false"
               # With an LLM configured these two rewrite stored memories:
@@ -65,10 +68,11 @@ spec:
                     # Without it memini still starts, and recall keeps the
                     # composite order until the next restart picks it up.
                     optional: true
-              MEMINI_RERANK_POOL: "20"
-              # Twenty documents at the 2,048-character cap in one request;
-              # the default splits them into serial requests.
-              MEMINI_RERANK_MAX_BATCH_CHARS: "48000"
+              MEMINI_RERANK_POOL: "8"
+              # The pool times the 2,048-character document cap, so all eight
+              # go in one request. Raise it with the pool, or memini splits
+              # them into serial requests.
+              MEMINI_RERANK_MAX_BATCH_CHARS: "16384"
               MEMINI_RERANK_MAX_CONCURRENCY: "1"
               # Below the clients' 30 s budget. No score floor, so a timeout
               # falls back to the composite order instead of an empty result.
