@@ -1,14 +1,15 @@
-# Repository Guidance
+# AGENTS.md
 
-This file is the repository authority on change control. Where it and
-another repository document disagree, this file wins.
+This repository describes a Kubernetes cluster running on Talos; Flux
+reconciles its Kubernetes resources from Git. This file owns the working
+rules and the task router; where it and another repository document
+disagree, it wins.
 
-Keep each change independently reconcilable.
-
-## Entry Point
+## Entry point
 
 Read `~/.config/agents/AGENTS.md`; it is a prerequisite and a floor these
-rules cannot relax. If unavailable, report that and stop affected work.
+rules cannot relax. If it is unavailable, as it may be for a headless
+session, report that and stop affected work.
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md) before substantive work, including
 manifest, tooling, workflow, instruction and operational changes, technical
@@ -16,7 +17,7 @@ reviews and diagnosis. Only navigation, status checks and literal typo fixes
 are exempt. Global and repository rules still apply. Supply the architecture
 text to commissioned reviewers.
 
-## Find The Document For The Task
+## Find the document for the task
 
 Use this sole task router, one row per document or register entry; follow
 relevant pointers and combine routes for validation and safety.
@@ -53,7 +54,7 @@ retired-document retrieval, including offline Git commands.
 | Rebuild or cold start                                                | [bootstrap](bootstrap/README.md)                                           |
 | Find a retired document                                              | [docs/README](docs/README.md#retired-documents)                            |
 
-## Treat This Repository As Public
+## Treat this repository as public
 
 Issues, PRs, release notes and durable prose are public by default. Read the
 [writing guidance](CONTRIBUTING.md#write-for-the-record); do not infer house
@@ -68,7 +69,7 @@ style.
   Generated CI comments and status links may expose configured public
   hostnames when needed.
 
-## Safety Boundaries
+## Safety boundaries
 
 Use Git for managed changes. Imperative fixes require explicitly requested
 diagnostics and exact mutation approval.
@@ -101,14 +102,15 @@ Never:
 ### Imperative state is a lease, not a lock
 
 A controller can overwrite an imperative change to a field it manages,
-including on an apply you trigger through a merge.
-Before relying on a hold, identify its owning Git field, controller and next
-apply that can clear it. To survive that apply, put the hold in Git or
-suspend the responsible controller; check whether a parent can undo the
-suspension. Gate destructive steps on fresh, successful state reads.
+including on an apply you trigger through a merge. Before relying on a hold,
+identify its owning Git field, controller and next apply that can clear it.
+To survive that apply, put the hold in Git or suspend the responsible
+controller; check whether a parent can undo the suspension. Gate destructive
+steps on fresh, successful state reads.
 
-## Working Here
+## Working here
 
+- Keep each change independently reconcilable.
 - Follow nearby manifests and the [app pattern](.agents/skills/add-app/references/app-pattern.md);
   compare relevant [peer](docs/peers.md)/upstream patterns before introducing
   a new shape.
@@ -118,7 +120,7 @@ suspension. Gate destructive steps on fresh, successful state reads.
 - Use the smallest matching checks from [validation](CONTRIBUTING.md#validate-locally) and
   `mise exec -- <tool> ...` for pinned tools.
 
-## What You Learn
+## What you learn
 
 - Put enforceable instructions in the routed topic; use this file only for
   constraints on agent actions. Promote procedures to skills or operations
