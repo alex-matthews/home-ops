@@ -120,7 +120,8 @@ Coverage job; everything else advises or alarms.
   pull request's commits: gitleaks, and that every value in a `kind: Secret`
   manifest or SOPS file is encrypted or a 1Password reference. Values in other
   places, such as HelmRelease values, rely on gitleaks alone. The commits are
-  public by then, so it detects a leak rather than preventing one.
+  public by then, so it detects a leak rather than preventing one. Its Tests
+  job runs the script's regression cases when the script changes.
 - **Konflate**, hosted in the cluster, renders the pull request and posts the
   rendered diff. It is the pull request's render evidence, subject to
   completeness checks, and does not cover machine configuration or tooling.
