@@ -29,6 +29,8 @@ spec:
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
+              - secretRef:
+                  name: "{{ .Release.Name }}-litellm-key"
             args:
               - gateway
               - run
