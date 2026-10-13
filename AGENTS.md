@@ -1,20 +1,14 @@
 # Repository Guidance
 
-This file is for agents that change the repository. The safety boundaries and
-the task router below do not address a kritika review, which follows the
-renovate-review skill on a Renovate pull request.
+This file is the repository authority on change control. Where it and
+another repository document disagree, this file wins.
 
-Keep changes small, reviewable and independently reconcilable.
+Keep each change independently reconcilable.
 
 ## Entry Point
 
 Read `~/.config/agents/AGENTS.md`; it is a prerequisite and a floor these
 rules cannot relax. If unavailable, report that and stop affected work.
-This file is the repository authority on change control. Where it and
-another repository document disagree, this file wins.
-`CLAUDE.md` is its compatibility symlink: edit this file, never the link.
-Permissions and hooks belong to dotfiles; their presence is not proof of
-working enforcement. Without them, sessions rely on prose.
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md) before substantive work, including
 manifest, tooling, workflow, instruction and operational changes, technical
@@ -77,8 +71,7 @@ style.
 ## Safety Boundaries
 
 Use Git for managed changes. Imperative fixes require explicitly requested
-diagnostics and exact mutation approval. Stop and report unexpected live
-behaviour; do not layer further fixes.
+diagnostics and exact mutation approval.
 
 Read-only inspection and local validation, rendering and formatting need no
 approval. This includes `kubectl get/describe/logs/events/top/auth can-i/diff`,
@@ -116,19 +109,14 @@ suspension. Gate destructive steps on fresh, successful state reads.
 
 ## Working Here
 
-- Before non-trivial infra, workflow, GitOps or automation edits, state the
-  intended diff, validation and done criteria; inspect affected sources.
-  Keep this short when implementation is already requested.
 - Follow nearby manifests and the [app pattern](.agents/skills/add-app/references/app-pattern.md);
   compare relevant [peer](docs/peers.md)/upstream patterns before introducing
   a new shape.
-- Amend the active branch or PR instead of accumulating work on main.
 - Do not rebase a Renovate PR with human companion commits, or let Renovate
   rewrite it, without the owner's acceptance of that risk. Read kritika's
   review before merging.
 - Use the smallest matching checks from [validation](CONTRIBUTING.md#validate-locally) and
-  `mise exec -- <tool> ...` for pinned tools. Report changes, actual
-  validation and remaining gaps or risks.
+  `mise exec -- <tool> ...` for pinned tools.
 
 ## What You Learn
 
@@ -140,9 +128,7 @@ suspension. Gate destructive steps on fresh, successful state reads.
 - Keep standing decisions and brief reasons under docs/policy/; amend
   them through an approved PR that carries the change rationale. Numbered
   ADRs are retired history, retrievable through docs/README.
-- Keep other lessons in `.private/` or memory with their source and
-  applicability. History grants no authority; correct or supersede wrong
-  lessons in place.
+- Keep other lessons in memory or in notes, with their source.
 - Remove a section only after verified relocation with a reachable new home,
   replacement by a linked repository command, or when nothing operational
   depends on it and its last verification is dated. Before deleting a
