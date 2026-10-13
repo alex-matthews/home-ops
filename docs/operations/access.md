@@ -30,5 +30,18 @@ Worktrees inherit no credentials: mise resolves `KUBECONFIG` against the
 worktree, where the untracked credential files do not exist. Pass the main
 checkout's path explicitly; do not create or copy credential files.
 
+The administrative `talosconfig` and `kubeconfig` carry one-year client
+certificates, and entering the checkout warns once either has 30 days or less
+left. Renew the talosconfig first, because the kubeconfig is fetched with it:
+run `just talos cert-renew` and save the new `talosconfig` to 1Password. Then
+re-fetch the kubeconfig, as [bootstrap](../../bootstrap/mod.just) does:
+
+```bash
+mise exec -- talosctl --talosconfig talosconfig kubeconfig -n <node> -f --force-context-name main .
+```
+
+`just talos cert-renew reader` creates or replaces `talosconfig-readonly`
+from the administrative file; nothing warns before it expires.
+
 For lost credentials or DNS/router failure, follow
 [break-glass access](../recovery/break-glass.md).

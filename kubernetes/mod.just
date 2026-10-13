@@ -63,6 +63,18 @@ sync resource:
 view-secret ns secret:
     kubectl view-secret -n "{{ ns }}" "{{ secret }}"
 
+# Run by the mise enter hook: a local read, silent unless the administrative
+# kubeconfig's client certificate is due for renewal.
+[private]
+cert-reminder days="30":
+    kubeconfig="{{ justfile_dir() }}/kubeconfig"
+    if [[ -f "$kubeconfig" ]] \
+        && not_after="$(kubectl --kubeconfig "$kubeconfig" config view --raw --minify -o jsonpath='{.users[0].user.client-certificate-data}' | base64 -d | openssl x509 -noout -enddate 2>/dev/null)" \
+        && days_left="$(jq -nr --arg d "${not_after#notAfter=}" '(($d | strptime("%b %d %H:%M:%S %Y GMT") | mktime) - now) / 86400 | floor')" \
+        && (( days_left <= {{ days }} )); then
+        just log warn "Kubernetes admin certificate expires soon; re-fetch it, see docs/operations/access.md" daysLeft "$days_left"
+    fi
+
 [private]
 render-local-ks ns ks:
     flate build ks --namespace "{{ ns }}" --output yaml "{{ ks }}"

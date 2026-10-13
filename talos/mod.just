@@ -9,37 +9,47 @@ set shell := ['bash', '-euo', 'pipefail', '-c']
 apply-node node *args:
     just talos render-config "{{ node }}" | talosctl -n "{{ node }}" apply-config -f /dev/stdin {{ args }}
 
-[doc('Show Talos client certificate expiry')]
+[doc('Show the administrative Talos client certificate expiry')]
 cert-check:
-    days_left="$(just talos cert-days-left)"
-    not_after="$(talosctl config info -o yaml | yq -r '.certNotAfter')"
+    admin="{{ justfile_dir() }}/talosconfig"
+    [[ -f "$admin" ]] || just log fatal "The administrative talosconfig was not found" path "$admin"
+    days_left="$(just talos cert-days-left "$admin")"
+    not_after="$(talosctl --talosconfig "$admin" config info -o yaml | yq -r '.certNotAfter')"
     echo "certNotAfter=$not_after daysLeft=$days_left"
     (( days_left >= 0 )) || { echo "Talos client certificate has expired" >&2; exit 2; }
 
+[arg('role', pattern='admin|reader')]
 [confirm('Renew Talos client certificate [y|N] ?')]
-[doc('Renew Talos client certificate safely')]
-cert-renew:
-    days_left="$(just talos cert-days-left)"
-    if (( days_left > 30 )); then
-        echo "Skipping renewal: 30d threshold not reached ($days_left days left)"
-        exit 0
-    fi
-    endpoint="$(just talos talos-endpoint)"
+[doc('Renew a Talos client certificate from the administrative talosconfig: admin (talosconfig) or reader (talosconfig-readonly)')]
+cert-renew role="admin":
+    admin="{{ justfile_dir() }}/talosconfig"
+    out="$admin"
+    [[ "{{ role }}" == "reader" ]] && out="{{ justfile_dir() }}/talosconfig-readonly"
+    [[ -f "$admin" ]] || just log fatal "The administrative talosconfig mints both roles; not found" path "$admin"
+    info="$(talosctl --talosconfig "$admin" config info -o yaml)"
+    nodes=()
+    while IFS= read -r node; do nodes+=("$node"); done < <(yq -r '.nodes[]' <<<"$info")
+    endpoints=()
+    while IFS= read -r endpoint; do endpoints+=("$endpoint"); done < <(yq -r '.endpoints[]' <<<"$info")
+    endpoint="${endpoints[0]}"
     tmpd="$(mktemp -d)"
     trap 'rm -rf "$tmpd"' EXIT
     new="$tmpd/talosconfig.new"
-    nodes=()
-    while IFS= read -r node; do nodes+=("$node"); done < <(talosctl config info -o yaml | yq -r '.nodes[]')
-    endpoints=()
-    while IFS= read -r endpoint; do endpoints+=("$endpoint"); done < <(talosctl config info -o yaml | yq -r '.endpoints[]')
-    talosctl -n "$endpoint" config new "$new" \
-        --roles os:admin --crt-ttl "8760h"
+    # `config new` targets exactly one node and copies only the endpoints, so
+    # the new file gets every node and endpoint from the administrative one.
+    talosctl --talosconfig "$admin" -n "$endpoint" config new "$new" \
+        --roles "os:{{ role }}" --crt-ttl "8760h"
     talosctl --talosconfig "$new" config node "${nodes[@]}"
     talosctl --talosconfig "$new" config endpoint "${endpoints[@]}"
     talosctl --talosconfig "$new" -n "$endpoint" version >/dev/null
-    cp talosconfig "talosconfig.bak.$(date +%Y%m%d%H%M%S)"
-    mv "$new" talosconfig
-    talosctl config info -o yaml | yq -r '"certNotAfter=" + .certNotAfter'
+    if [[ -f "$out" ]]; then
+        cp "$out" "$out.bak.$(date +%Y%m%d%H%M%S)"
+    fi
+    mv "$new" "$out"
+    talosctl --talosconfig "$out" config info -o yaml | yq -r '"certNotAfter=" + .certNotAfter'
+    if [[ "{{ role }}" == "admin" ]]; then
+        just log warn "Save the new talosconfig to 1Password; a new Mac restores it from there"
+    fi
 
 [doc('Download Talos machine image')]
 download-image version node="":
@@ -121,9 +131,18 @@ upgrade-node node *args:
     talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image "{{ node }}")" --timeout=10m {{ args }}
 
 [private]
-cert-days-left:
-    not_after="$(talosctl config info -o yaml | yq -r '.certNotAfter')"
+cert-days-left file:
+    not_after="$(talosctl --talosconfig "{{ file }}" config info -o yaml | yq -r '.certNotAfter')"
     jq -nr --arg d "$not_after" '(($d + "T00:00:00Z" | fromdateiso8601) - now) / 86400 | floor'
+
+# Run by the mise enter hook: a local read, silent unless the administrative
+# talosconfig, which everything else is minted from, is due for renewal.
+[private]
+cert-reminder days="30":
+    talosconfig="{{ justfile_dir() }}/talosconfig"
+    if [[ -f "$talosconfig" ]] && days_left="$(just talos cert-days-left "$talosconfig" 2>/dev/null)" && (( days_left <= {{ days }} )); then
+        just log warn "Talos client certificate expires soon; run: just talos cert-renew" daysLeft "$days_left"
+    fi
 
 [private]
 machine-image node="":
