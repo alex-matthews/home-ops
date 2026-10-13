@@ -25,7 +25,7 @@ spec:
               MEMINI_EMBED_DIMS: "384"
               MEMINI_EMBED_QUERY_PREFIX: "Represent this sentence for searching relevant passages: "
               MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
-              MEMINI_LLM_MODEL: openrouter/gpt-6.1-sol
+              MEMINI_LLM_MODEL: chatgpt/gpt-6-luna
               MEMINI_LLM_API_KEY:
                 valueFrom:
                   secretKeyRef:

@@ -30,8 +30,9 @@ spec:
             summary: "memini has spent over half its weekly LiteLLM budget"
           labels:
             severity: warning
-        # Answers and query rewrites are refused from here until the budget
-        # resets; recall itself does not use the budget and keeps working.
+        # Calls to a charged model are refused from here until the budget
+        # resets. memini's models are all free, so only a charged model added
+        # to its key can spend it.
         - alert: MeminiBudgetSpent
           expr: |-
             litellm_remaining_api_key_budget_metric{api_key_alias="memini"} <= 0
