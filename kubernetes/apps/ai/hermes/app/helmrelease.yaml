@@ -31,10 +31,12 @@ spec:
                   name: "{{ .Release.Name }}-secret"
               - secretRef:
                   name: "{{ .Release.Name }}-litellm-key"
+            # The image supervises the gateway with s6 and restarts it on boot
+            # when its recorded state is running; an unsupervised gateway then
+            # collides with that one and exits.
             args:
               - gateway
               - run
-              - --no-supervise
             probes:
               readiness:
                 enabled: true
