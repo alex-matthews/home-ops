@@ -12,7 +12,6 @@ Read `~/.config/agents/AGENTS.md`; it is a prerequisite and a floor these
 rules cannot relax. If unavailable, report that and stop affected work.
 This file is the repository authority on change control. Where it and
 another repository document disagree, this file wins.
-`CLAUDE.md` is its compatibility symlink: edit this file, never the link.
 Permissions and hooks belong to dotfiles; their presence is not proof of
 working enforcement. Without them, sessions rely on prose.
 
