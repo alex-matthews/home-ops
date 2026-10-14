@@ -14,21 +14,12 @@ spec:
       reloader.stakater.com/auto: "true"
     config:
       webUrl: "https://kritika.${SECRET_DOMAIN}"
-      runnerRuntimeClass: gvisor
-      authAdminPassword:
-        valueFrom:
-          secretKeyRef:
-            name: kritika-secret
-            key: ADMIN_PASSWORD
-      reviewModel: plan/~sol-latest
-      reviewFallback: litellm/openrouter/gpt-6.1-sol
-      reviewEffort: high
-      triggerSettle: 2m
-      embeddingModel: litellm/openrouter/voyage-code-4
-      embeddingDims: 1024
       transcriptRetention: 2400h
       diffRetention: 2400h
-    configFile:
+      # ADMIN_PASSWORD and the GITHUB_APP_ values come from kritika-secret.
+      auth:
+        admin:
+          password: { env: ADMIN_PASSWORD }
       apps:
         github:
           accounts: [alex-matthews]
@@ -50,6 +41,13 @@ spec:
           pricing:
             openrouter/gpt-6.1-sol: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 }
             openrouter/voyage-code-4: { input: 0.12, output: 0 }
+      embedding:
+        model: litellm/openrouter/voyage-code-4
+        dims: 1024
+      review:
+        model: plan/~sol-latest
+        fallback: litellm/openrouter/gpt-6.1-sol
+        effort: high
       # The gateway already refuses names that resolve to private addresses;
       # deny repeats it for addresses given directly.
       egress:
@@ -61,6 +59,7 @@ spec:
       # enabled: false
       ignore: ["**/?*.sops.*"]
       trigger:
+        settle: 2m
         # .mise/ is an inclusion off Renovate branches because an exclusion
         # holds on any changed path, and the Talos, Kubernetes and Kopiur
         # groups move .mise/ with their manifests.
@@ -76,7 +75,7 @@ spec:
       limits:
         reviewsPerDay: 40
       agent:
-        commands: [gh, curl, jq, yq, rg, fd, flate]
+        commands: [gh, curl, crane, jq, yq, rg, fd, flate]
         commandTimeout: 2m
         timeout: 30m
     env:
@@ -96,6 +95,7 @@ spec:
       runner:
         existingSecret: kritika-postgres-runner
     runner:
+      runtimeClass: gvisor
       tools:
         - name: flate
           image: ghcr.io/home-operations/flate:0.6.5@sha256:e0e2d2de97539b3141977e8bb3bbb50ea5c5afe89477950e5fa972c9862478da
