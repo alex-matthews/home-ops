@@ -1,14 +1,15 @@
 ---
 name: renovate-review
-description: Review a Renovate dependency update in this Flux repository. Where to find a dependency's upstream history (charts from their OCIRepository, images, actions, mise tools), what counts as a breaking change, how to check what under kubernetes/ depends on it, how to write checked lines a second reader can verify, and where this repository's Renovate rules live. Read it for any pull request on a renovate/ branch.
+description: Review a Renovate dependency update in this Flux repository. Where to find a dependency's upstream history (charts from their OCIRepository, images, actions, mise tools), what counts as a breaking change, how to check what under kubernetes/ depends on it, how to write checked lines a second reader can verify, what Merge impact tells whoever merges, and where this repository's Renovate rules live. Read it for any pull request on a renovate/ branch.
 ---
 
 # Review a Renovate PR
 
-Judge whether the update is safe to merge: what changed upstream between the
-old and new versions, and whether anything in this repository depends on
-it. GitHub is read with `gh`; a project's own changelog or documentation
-site with `curl`.
+Judge whether the update is safe to merge, and tell whoever merges what it
+will do: what changed upstream between the old and new versions, whether
+anything in this repository depends on it, and what the merge reaches.
+GitHub is read with `gh`; a project's own changelog or documentation site
+with `curl`.
 
 ## The update
 
@@ -42,8 +43,13 @@ read every intermediate release, breaking changes land in the middle.
 - A repository that publishes many charts prefixes its release tags with
   the chart name (`<chart>-1.2.3`, not `v1.2.3`). When a release is not
   found, list releases and look for the chart name.
-- A digest-only update moved no version: say whether the tag was rebuilt
-  (a security rebuild or a `latest`-style pin).
+- A digest-only update moved no tag, but may have moved what the image
+  carries: a rebuilt tag installs whatever its packages resolve to on the
+  day. What a rebuilt image carries is read from the image or its
+  published SBOM and compared across the two digests, not inferred from
+  the tag, the Dockerfile or the source diff. Say what moved, or that
+  nothing relevant did, resting on that comparison; an image not compared
+  is reported as not compared, not as unchanged.
 - A release note that says "see #2785" is read with `gh issue view` or
   `gh pr view`, and an issue is taken to the merged PR that closed it
   (`gh pr list -R <repo> --search "#<n>" --state merged`): the PR says what
@@ -66,13 +72,20 @@ from the PR or the template, not the sentence.
 
 An update also moves images that appear nowhere in the diff: a chart or
 operator that changes its default images, or stops setting them and
-leaves them to another operator's built-in defaults. Name each such image
-with its old and new version, read from the chart's or operator's source
-at both versions. Nothing here pins them, so Renovate never raises them
-and the review is the only place they show. A version a chart sets by
-default, such as the image of a workload its operator manages, is the
-default in the chart's `values.yaml` at the new tag unless the
-HelmRelease values pin it.
+leaves them to another operator's built-in defaults. Read each such image
+at both versions from the chart's or operator's source: nothing here pins
+them, so Renovate never raises them and the review is the only place they
+show. The inventory of old and new versions goes to the checked lines; a
+note says what the change does. A version a chart sets by default, such
+as the image of a workload its operator manages, is the default in the
+chart's `values.yaml` at the new tag unless the HelmRelease values pin it.
+
+The reverse also happens: an image this repository pins is one a
+controller or operator here drives, and Renovate moves it apart from the
+controller. Check the new version against the versions that controller
+supports at the version this repository runs, from its compatibility
+matrix or release notes. An unsupported or untested pairing is a finding
+that names the pairing and its source, not a proven failure.
 
 ## Rendering a chart update
 
@@ -136,7 +149,8 @@ verify.
 Before prescribing a rename or a new value, confirm it from the upstream
 PR's diff or from the chart's template at the new tag, read raw with
 `gh api -H "Accept: application/vnd.github.raw+json" repos/<owner>/<repo>/contents/<path>?ref=<tag>`.
-Without that, make it a check to do after the merge rather than an edit; a
+Without that, make it a check rather than an edit: before the merge when
+the merge would break what depends on it, after the merge otherwise. A
 wrong edit that gets applied is worse than none.
 
 A finding anchors to the bumped line in the diff; name the dependent file
@@ -151,10 +165,14 @@ reader judges the review by. That reader has the description and the diff
 but no tools: it never sees the commands the review ran or what they
 printed.
 
-- Give every entry under the release notes' breaking changes and upgrade
-  notes, and every step the upgrade guide names, a checked line of its
-  own, including one that touches nothing here: name the entry, then why
-  it does not apply or what it changes.
+- kritika keeps ten checked lines of 200 bytes each, so capacity wins
+  over coverage. Spend them in this order: an entry under the release
+  notes' breaking changes or upgrade notes that produced a finding or a
+  note, one line each; the other entries that touch something here,
+  grouped when they must share; the entries that touch nothing, named
+  together on one line; the images an update moves outside the diff, on
+  one line that names those a note rests on and counts the rest. A line
+  names the entry, then why it does not apply or what it changes.
 - Put the evidence in the line: the value found and the file it came
   from, or the source that says so. "`auth.enabled: true` already set in
   the HelmRelease values" carries its proof; "auth checked" does not.
@@ -166,47 +184,64 @@ printed.
 - A version requirement is checked against the version this repository
   targets, read from where it pins it. A target in git is not proof that
   a rollout reached every node: say that the line rests on the target.
-- What the repository cannot show is not a check. It belongs in Merge
-  impact, as a check with its expected result, not in the checked lines.
+- What the repository cannot show is not a checked line. When it bears on
+  whether to merge, it is a Merge impact check with its expected result;
+  otherwise leave it out, as kritika's prompt bars generic caveats.
 
 ## Merge impact
 
-Merge impact (the summary's `impact`) tells whoever merges what will happen.
-One note for each of these that applies, in this order; nothing for one
-that does not.
+Merge impact (the summary's `impact`) tells whoever merges what will
+happen: what changes, what it reaches, and what to check. kritika keeps at
+most five notes; most updates need one or two, and a routine bump needs
+none. A note is a short paragraph that opens with its bold label from the
+list below, names the object, says what happens to it, and ends with its
+evidence in a few words: a file, or a linked source. The check a
+consequence calls for belongs in that consequence's note. Names of
+resources, files, settings and versions go in backticks.
 
-- Restarts: what restarts or rolls beyond the updated app's own pods, and
-  who notices. An operator rolls what it manages: a CloudNativePG image
-  change restarts every instance of each cluster that uses it, and a
-  single-instance cluster is down for that restart.
-- Revert: for an operator, CRD, storage or data change, whether a revert
-  undoes it: whether the upgrade guide documents a downgrade path (a guide
-  you read that has none is the evidence), what a revert runs over (the old
-  operator against what the new one wrote), and that a failed upgrade is
-  retried and then rolled back by Flux (`RemediateOnFailure` in
-  `kubernetes/flux/cluster/ks.yaml`), possibly after part of the roll. A
-  migration or data rewrite the new version runs at start goes here.
-- Behaviour: a changed default or behaviour of a feature this repository
-  uses that needs someone to act or to watch.
-- Permissions: RBAC or other permissions added or widened, with their scope
-  and what uses them.
-- Action: a manual step this update makes due, including removing a pin,
-  override or workaround it makes unnecessary; name the file.
-- Checks: before the merge, what must hold for it to be safe; after it, a
-  check a note above makes necessary, with its expected result; not that
-  the new version is running.
+- **Restarts**: what restarts or rolls beyond the updated app's own pods,
+  what that interrupts and for whom, and what carries on. The evidence is
+  a pod template that changes, in the render or in what an operator
+  generates at the new version, with the rollout policy that says when
+  pods are replaced; a version bump establishes no restart, an operator's
+  included. How a workload rolls, and whether a controller's dependants
+  wait, retry or fail while it is replaced, is read from the operator's
+  update strategy, this repository's settings and how each dependant
+  reaches it, not assumed.
+- **Revert**: what a revert does not undo, once something specific is
+  established: a one-way migration or data rewrite the new version runs,
+  or a downgrade the operator's documentation rules out. A downgrade the
+  documentation does not describe is unverified, not irreversible: when
+  it matters here, it is a Check.
+- **Behaviour**: a changed default or behaviour of a feature this
+  repository uses that needs someone to act or to watch: what changes and
+  for whom.
+- **Permissions**: RBAC or other permissions added or widened, with their
+  scope and what uses them; not an inventory.
+- **Action**: a manual step this update makes due, such as removing a pin,
+  override or workaround it makes unnecessary; name the file. One that
+  now blocks a fix the update brings is a defect, and a finding.
+- **Check**: a material check with no consequence above to attach to: a
+  condition that must hold before the merge, or one the repository cannot
+  show, stated as a check with its expected result, never as a claim.
 
-Each note is one sentence, two at most, that names the object and says what
-happens, never what does not, and rests on something you read. Lead with
-the consequence; name its evidence in a few words at the end (a file, or a
-linked source) and leave the rest to Sources consulted. Name a version only
-when the version is the consequence. A note is not a finding and does not
-repeat one.
+A check exercises the part that changed and states the expected result:
+not that the new version is running, nor that pods are Ready, which a
+replacement can pass while it serves nothing. One or two checks that
+reach the changed path beat a list.
+
+A note names a version only when the version is the consequence. This
+cluster's defaults, Flux's retry and rollback among them, are for your
+reasoning, not for a note: the reader set them. A defect is a finding, not
+a note, and a note does not repeat a finding.
 
 ## This repository
 
 - Flux reconciles `kubernetes/` from `main`: a merge rolls out within
   minutes.
+- A HelmRelease upgrade that fails is retried and then rolled back by Flux
+  (`RemediateOnFailure` in `kubernetes/flux/cluster/ks.yaml`), and the
+  Kustomizations there set how CRDs are upgraded.
 - `.renovaterc.json5` is the source for how Renovate treats this update:
   its `automerge` rules say whether the PR merges on its own, in which case
   the review is the last look before the merge; its `groupName` rules say
