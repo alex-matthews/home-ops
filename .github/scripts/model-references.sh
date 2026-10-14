@@ -87,9 +87,9 @@ check memini "$(key_for "$memini" "$env.MEMINI_RERANK_API_KEY.valueFrom.secretKe
 kritika=kubernetes/apps/kritika/kritika/app/helmrelease.yaml
 kritika_key="$(key_for "$kritika" '.spec.values.env.LITELLM_API_KEY.valueFrom.secretKeyRef')"
 check kritika "$kritika_key" "$kritika" \
-  '.spec.values.config | (.reviewModel, .reviewFallback, .embeddingModel)' litellm/
+  '.spec.values.config | (.review.model, .review.fallback, .embedding.model)' litellm/
 check "kritika pricing" "$kritika_key" "$kritika" \
-  '.spec.values.configFile.providers.litellm.pricing | keys | .[]'
+  '.spec.values.config.providers.litellm.pricing | keys | .[]'
 
 if [ -n "$failures" ]; then
   printf '%s' "$failures" | sort -u >&2
