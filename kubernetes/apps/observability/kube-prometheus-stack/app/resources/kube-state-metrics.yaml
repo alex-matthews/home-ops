@@ -21,6 +21,13 @@ kube-state-metrics:
         verbs:
           - list
           - watch
+      - apiGroups:
+          - toolhive.stacklok.dev
+        resources:
+          - virtualmcpservers
+        verbs:
+          - list
+          - watch
   customResourceState:
     enabled: true
     config:
@@ -362,3 +369,32 @@ kube-state-metrics:
                   webhook_path:
                     - status
                     - webhookPath
+          # ToolHive's own telemetry carries no backend health; the
+          # VirtualMCPServer reports it in its phase and Ready condition.
+          - groupVersionKind:
+              group: toolhive.stacklok.dev
+              version: v1beta1
+              kind: VirtualMCPServer
+            metricNamePrefix: toolhive
+            metrics:
+              - name: resource_info
+                help: The current state of a ToolHive VirtualMCPServer resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                        - metadata
+                        - name
+                labelsFromPath:
+                  exported_namespace:
+                    - metadata
+                    - namespace
+                  phase:
+                    - status
+                    - phase
+                  ready:
+                    - status
+                    - conditions
+                    - "[type=Ready]"
+                    - status
