@@ -9,15 +9,16 @@ spec:
     - name: toolhive.rules
       rules:
         # The phase turns Degraded whenever a backend fails its health
-        # check; 15 minutes rides out a rollout's restart.
+        # check; 15 minutes rides out a rollout's restart. Aggregating away
+        # the status labels keeps the timer running across phase changes.
         - alert: VirtualMCPServerNotReady
           expr: |-
-            toolhive_resource_info{customresource_kind="VirtualMCPServer", ready!="True"} == 1
+            max by (customresource_kind, exported_namespace, name) (toolhive_resource_info{customresource_kind="VirtualMCPServer", ready!="True"}) == 1
           for: 15m
           annotations:
             summary: >-
               VirtualMCPServer {{ $labels.exported_namespace }}/{{ $labels.name }}
-              is not ready (phase {{ $labels.phase }}); tools may be missing
+              is not ready; tools may be missing
           labels:
             severity: warning
 
