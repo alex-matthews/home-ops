@@ -88,6 +88,7 @@ rules:
       - helm.toolkit.fluxcd.io
       - kopiur.home-operations.com
       - kustomize.toolkit.fluxcd.io
+      - litellm.home-operations.com
       - metrics.k8s.io
       - monitoring.coreos.com
       - monitoring.giantswarm.io
