@@ -5,4 +5,5 @@ kind: Kustomization
 resources:
   - ./httproute.yaml
   - ./mcpgroup.yaml
+  - ./prometheusrule.yaml
   - ./virtualmcpserver.yaml
