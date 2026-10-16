@@ -9,3 +9,12 @@ exclude = ["?*.sops.yaml", "?*.sops.yml"]
 [pre-commit.commands.actionlint]
 glob = [".github/workflows/*.yaml"]
 run = "actionlint {staged_files}"
+
+[pre-commit.commands.secrets]
+run = ".github/scripts/secret-check.sh staged"
+
+# The shared config skips pre-commit during merges and rebases; pre-push
+# checks every outgoing commit regardless.
+[pre-push.commands.secrets]
+run = ".github/scripts/secret-check.sh push {1}"
+use_stdin = true
