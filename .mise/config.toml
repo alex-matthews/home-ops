@@ -20,7 +20,7 @@ flux2 = "2.9.6"
 "github:mitsuhiko/minijinja" = "2.24.0"
 gum = "2.0.2"
 helm = "4.3.1"
-helmfile = "1.8.1"
+helmfile = "1.8.2"
 jq = "1.8.2"
 just = "1.59.0"
 # Kopiur CLI. Tracks the v1alpha1 CRDs, so keep it on the operator's release;
