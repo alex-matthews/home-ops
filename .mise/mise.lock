@@ -335,9 +335,9 @@ url = "https://github.com/oras-project/oras/releases/download/v1.3.5/oras_1.3.5_
 url_api = "https://api.github.com/repos/oras-project/oras/releases/assets/654805951"
 
 [[tools.oxfmt]]
-version = "0.73.0"
+version = "0.74.0"
 backend = "npm:oxfmt"
-specifiers = ["0.73.0"]
+specifiers = ["0.74.0"]
 
 [[tools.shellcheck]]
 version = "0.11.0"
