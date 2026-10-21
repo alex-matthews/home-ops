@@ -40,7 +40,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
         containers:
           - name: runner
-            image: ghcr.io/home-operations/actions-runner:2.337.0@sha256:8b8e8326b5a08e658a0a41cfd2867afab69ca4194a152f986aa6fcd5430d09e7
+            image: ghcr.io/home-operations/actions-runner:2.338.0@sha256:7ece17219b5ce764fff8bd2206bf66a612580fdc82d84b0097fbe6f4e8729801
             command:
               - /home/runner/run.sh
             env:
