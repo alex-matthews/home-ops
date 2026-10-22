@@ -116,6 +116,12 @@ Coverage job; everything else advises or alarms.
 - **Lint** runs only for changed file classes: actionlint and zizmor on
   workflows, ShellCheck at warning level on shell scripts, and oxfmt on
   JSON, TOML, YAML and Markdown. It checks no links or prose.
+- **Secret Scan** repeats the pre-commit and pre-push secret checks over a
+  pull request's commits: gitleaks, and that every value in a `kind: Secret`
+  manifest or SOPS file is encrypted or a 1Password reference. Values in other
+  places, such as HelmRelease values, rely on gitleaks alone. The commits are
+  public by then, so it detects a leak rather than preventing one. Its Tests
+  job runs the script's regression cases when the script changes.
 - **Konflate**, hosted in the cluster, renders the pull request and posts the
   rendered diff. It is the pull request's render evidence, subject to
   completeness checks, and does not cover machine configuration or tooling.
