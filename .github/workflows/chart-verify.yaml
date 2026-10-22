@@ -42,7 +42,7 @@ jobs:
 
       - name: Setup Mise
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
           minimum_release_age: 3d
           cache: false
@@ -115,7 +115,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Mise
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
           minimum_release_age: 3d
           cache: false
@@ -149,7 +149,7 @@ jobs:
 
       - name: Setup Mise
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
-        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+        uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
           minimum_release_age: 3d
           cache: false
