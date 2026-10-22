@@ -69,6 +69,8 @@ spec:
     loadBalancer:
       algorithm: maglev
       mode: dsr
+      # Spegel's registry NodePort sets trafficDistribution: PreferSameNode,
+      # which Cilium honours only with service topology enabled.
       serviceTopology: true
     localRedirectPolicies:
       enabled: true
