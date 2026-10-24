@@ -1,4 +1,5 @@
-.claude/
+.claude/*
+!.claude/skills
 .codex/
 .private/
 .pytest_cache/
