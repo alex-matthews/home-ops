@@ -20,22 +20,24 @@ outside source-controller verification.
 
 Validate the pinned artifact cryptographically before adopting an identity.
 Observe its repository, workflow and ref; anchor issuer/subject regexes and
-use strict version-ref patterns. Inspect reusable-workflow reachability and
-untrusted triggers. Keyless verification requires `matchOIDCIdentity`;
-unconstrained identities and organisation-wide subjects are rejected. Keyed
-verification needs a validated pinned key and support in the signature check.
-Establish acceptance on the deployed verifier, not the CLI alone. Prove a
-verification change elsewhere before extending it to bootstrap-critical Flux.
+use strict version-ref patterns. A CircleCI subject names a project's pipeline
+definition but no ref, so pin both identifiers exactly. Inspect
+reusable-workflow reachability and untrusted triggers. Keyless verification
+requires `matchOIDCIdentity`; unconstrained identities and organisation-wide
+subjects are rejected. Keyed verification needs a validated pinned key and
+support in the signature check. Establish acceptance on the deployed verifier,
+not the CLI alone. Prove a verification change elsewhere before extending it
+to bootstrap-critical Flux.
 
 Five classes distinguish what is trusted:
 
-| Class                        | Meaning and accepted limitation                                                                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Direct upstream workflow     | Maintainer-triggered publisher workflow; certificate binds repository, workflow and ref.                                                          |
-| Reusable-workflow custody    | Certificate binds the called workflow; Flux cannot constrain its caller. Registry write access and workflow custody remain the accepted boundary. |
-| Mirror custody               | Reusable-workflow custody plus repackaging; this proves mirror publication, not upstream authorship.                                              |
-| Signed, verifier unsupported | The deployed verifier cannot accept the signature; track verifier/publisher changes rather than imply successful verification.                    |
-| Unsigned or unverifiable     | Explicit exclusion, without any claim that exclusion is safe.                                                                                     |
+| Class                        | Meaning and accepted limitation                                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct upstream workflow     | Maintainer-triggered publisher workflow; certificate binds repository, workflow and ref.                                                                                                                         |
+| Reusable-workflow custody    | Certificate binds the called workflow or a CircleCI pipeline definition; Flux cannot constrain the caller or, for CircleCI, the branch. Registry write access and workflow custody remain the accepted boundary. |
+| Mirror custody               | Reusable-workflow custody plus repackaging; this proves mirror publication, not upstream authorship.                                                                                                             |
+| Signed, verifier unsupported | The deployed verifier cannot accept the signature; track verifier/publisher changes rather than imply successful verification.                                                                                   |
+| Unsigned or unverifiable     | Explicit exclusion, without any claim that exclusion is safe.                                                                                                                                                    |
 
 Changing identities or removing/loosening verification, including by removing
 an app, requires fresh evidence, reasons and the `verify/declared` label.
