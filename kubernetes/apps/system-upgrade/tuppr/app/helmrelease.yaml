@@ -20,5 +20,7 @@ spec:
             dashboards: grafana
       prometheusRule:
         enabled: true
+        # Undocumented chart value: sets TalosUpgradeStuck's `for` (default 1h).
+        stuckDuration: 15m
       serviceMonitor:
         enabled: true

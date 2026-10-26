@@ -21,3 +21,13 @@ spec:
       kind: CephCluster
       expr: |-
         status.ceph.health in ['HEALTH_OK']
+    # CNPG can keep this phase while an instance is unready, so count them too.
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      expr: |-
+        status.phase in ['Cluster in healthy state'] && has(status.readyInstances) && status.readyInstances == object.spec.instances
+    # A cordoned node holds the upgrade, as it does the TalosUpgrade.
+    - apiVersion: v1
+      kind: Node
+      expr: |-
+        status.conditions.exists(c, c.type == 'Ready' && c.status == 'True') && !(has(object.spec.unschedulable) && object.spec.unschedulable)

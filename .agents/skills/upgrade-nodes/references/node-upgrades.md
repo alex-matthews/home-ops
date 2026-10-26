@@ -1,7 +1,8 @@
 # Node Upgrades
 
 Verified 2026-10-05 against the repository at `main`; not against a live
-rollout.
+rollout. The health checks and the stop procedure were re-checked on
+2026-10-26 against Tuppr 0.5.10 and talosctl v1.14.2 source.
 
 Tuppr owns Talos and Kubernetes version rollouts. Machine-configuration
 changes belong to [talos/README](../../../../talos/README.md); boot failures
@@ -11,15 +12,22 @@ to [node boot](../../../../docs/recovery/node-boot.md).
 
 Merging a bump under [tuppr/upgrades](../../../../kubernetes/apps/system-upgrade/tuppr/upgrades)
 requests the rollout. The current policy pre-pulls installers and upgrades
-one node at a time. Before each batch, its health checks require no Running
-Kopiur Snapshot, no Resolving or Restoring Restore, and Ceph `HEALTH_OK`.
-Read resource status and those conditions when progress stops. The gate
-delays upgrades; it does not suspend backup schedules or prevent a backup
-starting after the check. Inspect affected backups afterwards.
+one node at a time. Its health checks require no Running Kopiur Snapshot, no
+Resolving or Restoring Restore, Ceph `HEALTH_OK`, every CNPG cluster in its
+healthy phase with all instances ready, and every node Ready and not cordoned.
+They run before each Talos node, but for a Kubernetes upgrade only before its
+Job starts, not while it runs. A failing check holds the rollout rather than
+failing it. Read resource status and those conditions when progress stops.
+The gate delays upgrades; it does not suspend backup schedules or prevent a
+backup starting after the check. Inspect affected backups afterwards.
+
+The CNPG check is a readiness gate; it does not measure replication lag. A
+cordoned node, whether cordoned deliberately or left so by a failed Job, holds
+an upgrade at its next check until the owner decides whether to uncordon it.
 
 Check the declared policy before relying on this sequence: parallelism or
-pre-hooks can change it. The [controller](https://redirect.github.com/home-operations/tuppr/blob/2d0f0311a8fc2f3cdd639f441b88fe22efd7f32d/internal/controller/talosupgrade/upgrade.go)
-was checked at Tuppr 0.5.7; this is not a live rollout result.
+pre-hooks can change it. The [controller](https://redirect.github.com/home-operations/tuppr/blob/ca8bf1e1cfea73d6ebcbd0face6c73b75be46a73/internal/controller/talosupgrade/upgrade.go)
+was checked at Tuppr 0.5.10; this is not a live rollout result.
 
 ## Before merging
 
@@ -37,9 +45,9 @@ upgrade status and component health rather than relying on elapsed time.
 ## Completion
 
 Verify every node's intended version and component health, restored scheduling,
-Ceph health and affected backups before closing the rollout. When progress
-stops, follow [failed upgrades](#failed-upgrades); a retry is not itself
-recovery.
+Ceph and CNPG health and affected backups before closing the rollout. When
+progress stops, follow [failed upgrades](#failed-upgrades); a retry is not
+itself recovery.
 
 ## Failed upgrades
 
@@ -47,6 +55,19 @@ Inspect the failed upgrade, node, etcd and Ceph state and remaining redundancy.
 Hold further drains and storage changes until recovery. Kubernetes `Ready`
 does not establish etcd or Talos machine health. Stop and diagnose unexpected
 state; a previously successful cold boot is not an automatic remedy.
+
+To stop a Talos rollout before touching a node mid-run, get approval to
+suspend the TalosUpgrade and delete its upgrade Jobs. Add the
+`tuppr.home-operations.com/suspend` annotation (any value suspends; only
+removing it resumes) and wait until the TalosUpgrade shows phase `Pending`
+with reason `Suspended`: until then, a check already running can still start
+the next node. Then delete its upgrade Jobs in the foreground
+(`--cascade=foreground --wait=true`) and confirm their Pods have terminated;
+hold node work until they have. Deleting a Job does not cancel an upgrade
+Talos has already accepted. Before touching the node, establish its actual
+state. The annotation is not in Git: after Flux next applies
+`tuppr-upgrades`, confirm it remains and the TalosUpgrade still shows phase
+`Pending` with reason `Suspended`.
 
 Once the recovery is explicitly approved, recover the node, verify its
 running version and API/etcd health, check cordon/taint state, and restore
