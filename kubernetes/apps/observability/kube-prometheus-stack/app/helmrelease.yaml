@@ -62,10 +62,10 @@ spec:
         ruleSelectorNilUsesHelmValues: false
         scrapeConfigSelectorNilUsesHelmValues: false
         serviceMonitorSelectorNilUsesHelmValues: false
-        retention: 14d
+        retention: 30d
         # Parsed base-2, so an explicit GiB suffix keeps the next reader out of
         # the 50GB == 50GiB trap that put this guard above the volume capacity
-        retentionSize: 40GiB
+        retentionSize: 48GiB
         resources:
           requests:
             cpu: 250m
@@ -78,7 +78,7 @@ spec:
               storageClassName: ceph-block
               resources:
                 requests:
-                  storage: 50Gi
+                  storage: 60Gi
     prometheus-node-exporter:
       fullnameOverride: node-exporter
     kube-state-metrics:
