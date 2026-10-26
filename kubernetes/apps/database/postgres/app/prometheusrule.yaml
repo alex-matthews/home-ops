@@ -35,10 +35,10 @@ spec:
             severity: warning
         - alert: PostgresExtensionBehindImage
           expr: |-
-            max by (datname, extname) (cnpg_pg_extensions_update_available) > 0
+            max by (namespace, datname, extname) (cnpg_pg_extensions_update_available) > 0
           for: 1h
           annotations:
-            summary: "Extension {{ $labels.extname }} in database {{ $labels.datname }} trails its image; move its Database version pin"
+            summary: "Extension {{ $labels.extname }} in {{ $labels.namespace }}/{{ $labels.datname }} trails its image; move its Database version pin"
           labels:
             severity: warning
         - alert: PostgresDown
