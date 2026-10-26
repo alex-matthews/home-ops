@@ -12,6 +12,8 @@ spec:
   values:
     controllers:
       hermes:
+        # Held for CVE-2026-111497 until an image has brotlicffi >= 1.2.1.0
+        replicas: 0
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
