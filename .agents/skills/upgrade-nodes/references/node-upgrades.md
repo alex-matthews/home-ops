@@ -61,11 +61,13 @@ suspend the TalosUpgrade and delete its upgrade Jobs. Add the
 `tuppr.home-operations.com/suspend` annotation (any value suspends; only
 removing it resumes) and wait until the TalosUpgrade shows phase `Pending`
 with reason `Suspended`: until then, a check already running can still start
-the next node. Then delete its upgrade Jobs and confirm none remains.
-Deleting a Job does not cancel an upgrade Talos has already accepted. Before
-touching the node, establish its actual state. The annotation is not in Git:
-after Flux next applies `tuppr-upgrades`, confirm it remains and the
-TalosUpgrade still shows phase `Pending` with reason `Suspended`.
+the next node. Then delete its upgrade Jobs in the foreground
+(`--cascade=foreground --wait=true`) and confirm their Pods have terminated;
+hold node work until they have. Deleting a Job does not cancel an upgrade
+Talos has already accepted. Before touching the node, establish its actual
+state. The annotation is not in Git: after Flux next applies
+`tuppr-upgrades`, confirm it remains and the TalosUpgrade still shows phase
+`Pending` with reason `Suspended`.
 
 Once the recovery is explicitly approved, recover the node, verify its
 running version and API/etcd health, check cordon/taint state, and restore
