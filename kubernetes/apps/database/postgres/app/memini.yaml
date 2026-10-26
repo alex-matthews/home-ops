@@ -52,7 +52,7 @@ spec:
     # when the pgvector tag changes (.agents/skills/restore-data/references/postgresql.md#upgrades).
     - name: vector
       ensure: present
-      version: "0.8.6"
+      version: "0.8.7"
     - name: vchord
       ensure: present
       version: "1.1.1"

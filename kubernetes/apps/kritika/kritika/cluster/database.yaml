@@ -11,10 +11,11 @@ spec:
   owner: kritika
   databaseReclaimPolicy: retain
   extensions:
-    # vector follows the image's bundled pgvector; Renovate moves the vchord
-    # pin with its image (storage note, PostgreSQL section).
+    # Renovate moves the vchord pin with its image; move vector's when
+    # PostgresExtensionBehindImage fires (the operand image bundles pgvector).
     - name: vector
       ensure: present
+      version: "0.8.7"
     - name: vchord
       ensure: present
       version: "1.1.1"
