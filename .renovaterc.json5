@@ -46,6 +46,7 @@
       matchPackageNames: ["oxfmt"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
+      minimumReleaseAge: "3 days",
     },
     {
       description: "Auto-merge Grafana dashboards",
