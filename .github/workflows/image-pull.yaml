@@ -48,12 +48,15 @@ jobs:
           cache: false
           install_args: github:home-operations/flate
 
+      # Capture first, so a flate failure ends the step on its own error rather
+      # than leaving an unterminated output block.
       - name: Run Flate
         id: flate
         run: |
+          images="$(mise exec -- flate diff images -p ./kubernetes/flux/cluster -o json)"
           {
             echo 'images<<EOF'
-            mise exec -- flate diff images -p ./kubernetes/flux/cluster -o json
+            printf '%s\n' "$images"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 

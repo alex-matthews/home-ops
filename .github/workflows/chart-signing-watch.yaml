@@ -90,8 +90,10 @@ jobs:
             .github/scripts/chart-signing-inventory.sh
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # A finding is positive evidence, so it reaches the issue even when another
+      # source's lookup did not complete; the last step still fails the run.
       - name: Open or update the findings issue
-        if: ${{ steps.check.outputs.findings != '' && steps.check.outputs.errors == '' }}
+        if: ${{ steps.check.outputs.findings != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
