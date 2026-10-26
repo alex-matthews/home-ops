@@ -10,7 +10,7 @@ spec:
       rules:
         - alert: UnifiGatewayLoadHigh
           annotations:
-            summary: '{{ $labels.name }} 5-minute load average is {{ $value | printf "%.1f" }} — the gateway''s software state is grinding; an attended restart or the pending updates are the levers'
+            summary: '{{ $labels.name }} 5-minute load average has stayed above 8 for 15 minutes; now {{ $value | printf "%.1f" }}'
           expr: unpoller_device_load_average_5{type="udm"} > 8
           for: 15m
           labels:
