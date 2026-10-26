@@ -172,6 +172,12 @@
       matchCurrentValue: "/^pg\\d+-v/",
       allowedVersions: "/^pg18-v/",
     },
+    {
+      description: "Hold the Envoy proxy to 1.39, the line Envoy Gateway 1.9 supports; drop this when envoy.yaml switches to imageRepository",
+      matchDatasources: ["docker"],
+      matchDepNames: ["mirror.gcr.io/envoyproxy/envoy"],
+      allowedVersions: "/^v1\\.39\\./",
+    },
     // Labels: update type
     {
       matchUpdateTypes: ["major"],
