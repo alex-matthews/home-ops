@@ -41,6 +41,13 @@
       minimumReleaseAge: "3 days",
     },
     {
+      description: "Auto-merge oxfmt: Lint checks the whole tree with the new version, so one that would reformat a file fails",
+      matchManagers: ["mise"],
+      matchPackageNames: ["oxfmt"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+    },
+    {
       description: "Auto-merge Grafana dashboards",
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
