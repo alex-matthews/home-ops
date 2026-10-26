@@ -38,12 +38,17 @@ spec:
               # 1,500 tokens fit its pinned, facts, how-tos and recent items,
               # where the default 600 dropped about half of them.
               MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":true,"auto_save":true,"session_digest":false,"recall_limit":5,"inject_recall_max_tok":400,"inject_briefing_max_tok":1500,"inject_briefing_recent":6}'
-              # Keep captured history separate from explicitly authored lessons.
-              MEMINI_DISTILL_ON_WRITE: "false"
+              # Trial: new short-term writes are condensed into durable facts,
+              # a session's batch once it reaches about 1,024 tokens or its
+              # oldest capture is ten minutes old. The short-term cap stays at
+              # its default of 1,000 per namespace; a second stage lowers it.
+              # Luna is named so the answer model can change without moving
+              # condensing.
+              MEMINI_DISTILL_ON_WRITE: "true"
+              MEMINI_DISTILL_MODEL: chatgpt/gpt-6-luna
               # With an LLM configured these two rewrite stored memories:
               # consolidation merges or supersedes them on write, the
-              # assessment sweep scores them. Both stay off, so the LLM only
-              # answers questions and rewrites queries.
+              # assessment sweep scores them. Both stay off.
               MEMINI_CONSOLIDATE_MODE: "off"
               MEMINI_ASSESS_INTERVAL: "0s"
               MEMINI_PROMOTE_INTERVAL: "0s"
