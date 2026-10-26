@@ -4,8 +4,6 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
   name: silence-operator
-  annotations:
-    home-ops/chart-verify-exclusion-reason: unsigned
 spec:
   interval: 15m
   layerSelector:
@@ -14,3 +12,8 @@ spec:
   ref:
     tag: 0.21.1
   url: oci://gsoci.azurecr.io/charts/giantswarm/silence-operator
+  verify:
+    provider: cosign
+    matchOIDCIdentity:
+      - issuer: "^https://oidc\\.circleci\\.com$"
+        subject: "^https://circleci\\.com/api/v2/projects/c8f4d22e-ef11-47ef-ae72-71c531dbae88/pipeline-definitions/70bae409-80ea-5dae-b228-784922f660fa$"
