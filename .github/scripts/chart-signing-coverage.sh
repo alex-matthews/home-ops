@@ -71,11 +71,13 @@ while IFS=$'\t' read -r path name url reason verify documents; do
 done <<< "$head_sources"
 
 # Diff rules: match by identity (name and URL), then by path.
+# Readers that stop early (awk's exit, grep -q) take here-strings: fed from a
+# pipe, a printf still writing gets SIGPIPE and pipefail fails the run.
 find_base() { # name url path -> base path and verify field, or ABSENT
-  printf '%s\n' "$base_sources" | awk -F'\t' -v n="$1" -v u="$2" -v p="$3" '
+  awk -F'\t' -v n="$1" -v u="$2" -v p="$3" '
     $2 == n && $3 == u { print $1 "\t" $5; found = 1; exit }
     $1 == p { bypath = $1 "\t" $5 }
-    END { if (!found) print (bypath == "" ? "ABSENT" : bypath) }'
+    END { if (!found) print (bypath == "" ? "ABSENT" : bypath) }' <<< "$base_sources"
 }
 guard() {
   local path=$1 msg=$2
@@ -108,7 +110,7 @@ while IFS=$'\t' read -r path name url reason after _; do
 done <<< "$head_sources"
 while IFS=$'\t' read -r path name url _ before _; do
   [ -n "$path" ] || continue
-  if ! printf '%s' "$matched_base" | grep -Fxq -- "$path"; then
+  if ! grep -Fxq -- "$path" <<< "$matched_base"; then
     if [ "$before" != "$EMPTY_VERIFY" ]; then
       guard "$path" "verified source removed"
     else
