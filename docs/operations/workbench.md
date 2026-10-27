@@ -25,7 +25,7 @@ Before accepting a gateway, client or Hermes image change, verify:
   workaround for auxiliary calls; assess it when changing the gateway or
   adding a client rather than assuming every client needs the same setting.
   kritika reviews on a ChatGPT plan, signed in as its
-  [docs](https://redirect.github.com/home-operations/kritika/blob/0.0.56/docs/models.md#chatgpt-plans)
+  [docs](https://redirect.github.com/home-operations/kritika/blob/0.0.108/docs/src/content/docs/models.md#chatgpt-plans)
   describe, and falls back to models that LiteLLM serves on Chat
   Completions, with its own virtual key and weekly budget. LiteLLM also
   serves its embeddings.

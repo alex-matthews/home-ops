@@ -81,6 +81,15 @@
       schedule: ["before 6am on Monday"],
     },
     {
+      description: "flate Group: the mise pin and the tool kritika's runners install from .kritika.yaml",
+      groupName: "flate",
+      matchPackageNames: ["home-operations/flate"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      minimumGroupSize: 2,
+    },
+    {
       description: "Flux Operator Group",
       groupName: "flux-operator",
       matchDatasources: ["docker"],

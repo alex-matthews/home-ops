@@ -242,8 +242,11 @@ node-upgrade update.
 On 2026-10-09 the Renovate rule, its operator notes and the other
 repository rules were dropped for the kritika maintainer's renovate-review
 skill and repository configuration, which the maintainer runs and tests
-([#2363](https://github.com/alex-matthews/home-ops/pull/2363)). The counts
-above measured the rule, not the skill: the same revisit applies.
+([#2363](https://github.com/alex-matthews/home-ops/pull/2363)). On
+2026-10-27 that skill was replaced by reviewing-pull-requests, adapted from
+onedr0p's skill of that name, and reviews cover every pull request but a
+fork's. The counts above measured the rule, not either skill: the same
+revisit applies.
 
 ## Workbench and automation
 

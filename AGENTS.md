@@ -2,7 +2,7 @@
 
 This file is for agents that change the repository. The safety boundaries and
 the task router below do not address a kritika review, which follows the
-renovate-review skill on a Renovate pull request.
+reviewing-pull-requests skill.
 
 Keep changes small, reviewable and independently reconcilable.
 

@@ -83,3 +83,4 @@ Use each recorded commit and path for offline retrieval: search with
 | `docs/operations/talos-access-and-break-glass.md`           | `beb4f457`                | [access](operations/access.md), [break-glass](recovery/break-glass.md)                                                            |
 | `talos/README.md`                                           | `beb4f457`                | [Talos](../talos/README.md), rewritten at the same path                                                                           |
 | `.github/renovate-review-prompt.md`                         | `4794090b`                | [Renovate review](policy/decisions.md#renovate-review)                                                                            |
+| `.agents/skills/renovate-review/SKILL.md`                   | `0e299bdc`                | [reviewing-pull-requests](../.agents/skills/reviewing-pull-requests/SKILL.md)                                                     |
