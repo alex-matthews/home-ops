@@ -1,6 +1,6 @@
 ---
 name: add-app
-description: Scaffold a new Flux-managed application under kubernetes/apps/ — chart selection, manifests, registration, validation. Use when deploying a new app or service to the cluster.
+description: Scaffolds a new Flux-managed application under kubernetes/apps/, covering chart selection, manifests, registration and validation. Use when deploying a new app or service to the cluster.
 ---
 
 # Add a New Application
@@ -15,8 +15,9 @@ checking their current configuration and suitability before copying:
 | `kubernetes/apps/default/recyclarr` | Config files via `configMapGenerator` + `resources/`                              |
 | `kubernetes/apps/default/plex`      | Public route on `envoy-external`, Gatus endpoint annotation, LoadBalancer service |
 
-Read the [app pattern](references/app-pattern.md) first: layout, wiring,
-substitution, persistent state and YAML ordering.
+Read the [app pattern](references/app-pattern.md) first: layout, wiring, the
+`ks.yaml` and app-template HelmRelease shapes, substitution, persistent state
+and YAML ordering.
 
 ## Step 0: Pick the chart
 
@@ -85,20 +86,8 @@ kubernetes/apps/<namespace>/<app>/
 
 ### ks.yaml
 
-Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply:
-
-- `components` (kopiur): only with a Kopiur PVC. Check both repository
-  `allowedNamespaces` and the namespace's Kopiur secrets component;
-  a new namespace does not inherit these. Expanding access needs approval.
-- `postBuild.substitute.APP` is required by the Kopiur component; add
-  `PVC_CAPACITY` when the component default (5Gi) is wrong.
-- `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
-  and other substituted values, and it only works in namespaces whose
-  `kustomization.yaml` includes the SOPS component (`../../components/sops`) —
-  check before copying, because without the component the referenced Secret
-  does not exist there and reconciliation fails. Drop the block if the app
-  substitutes nothing.
-- `targetNamespace` matches the namespace directory.
+Copy atuin's `ks.yaml`. Keep the key order and drop what does not apply, as
+the [app pattern](references/app-pattern.md#flux-kustomization) lists.
 
 ### app/kustomization.yaml
 
@@ -127,40 +116,8 @@ Never copy another chart's identity; see [chart trust](../../../docs/policy/deci
 
 ### app/helmrelease.yaml
 
-Copy atuin's and adapt. Invariants to keep:
-
-- Schema comment pointing at the app-template helmrelease schema.
-- `spec.values` order: `controllers`, `defaultPodOptions`, `service`, `route`,
-  `configMaps`, `persistence` (see
-  [app pattern](references/app-pattern.md#yaml-ordering)).
-- `defaultPodOptions.securityContext` for Kopiur-backed apps only:
-  `runAsNonRoot: true`, `runAsUser: 1032`, `runAsGroup: 100`, `fsGroup: 100`,
-  `fsGroupChangePolicy: OnRootMismatch` — the identity the Kopiur movers and
-  the NAS convention expect; check [mover permissions](../restore-data/references/app-volumes.md#uidgid-and-mover-permissions). Apps
-  without backed-up persistence run whatever identity their image expects; keep
-  `runAsNonRoot: true` where the image allows it.
-- Container `securityContext`: `allowPrivilegeEscalation: false`,
-  `readOnlyRootFilesystem: true`, `capabilities: { drop: ["ALL"] }`. Add an
-  `emptyDir` at `/tmp` if the app needs scratch space (see sabnzbd).
-- Liveness, readiness, and startup probes like atuin; use a custom `httpGet`
-  readiness probe when the app has a health endpoint.
-- `resources`: start at `requests.cpu: 10m` with a memory limit sized to the
-  app; heavier apps in this repo run `100m`, so match a comparable app rather
-  than the minimum. Apps with a meaningful memory footprint also set an
-  explicit `requests.memory` below the limit (see the arr stack); match a
-  comparable app.
-- Route hostnames use `"{{ .Release.Name }}.${SECRET_DOMAIN}"`; never hardcode
-  the domain. Public routes get a Gatus endpoint annotation (see plex).
-- Kopiur-backed persistence mounts `existingClaim: "{{ .Release.Name }}"`.
-- Config files mount as `type: configMap` with
-  `name: "{{ .Release.Name }}-configmap"` (see recyclarr); SOPS-encrypted
-  config mounts as `type: secret`, as resolute did before its removal:
-  `git show 90e3da64^:kubernetes/apps/default/resolute/app/helmrelease.yaml`.
-- Secrets arrive via `envFrom` from `"{{ .Release.Name }}-secret"`, with
-  `reloader.stakater.com/auto: "true"` on the controller.
-- SQLite or other single-writer apps: `replicas: 1` with
-  `strategy: Recreate`, and a comment saying not to scale above one. Stopping
-  the workload still follows the maintenance-window procedure.
+Copy atuin's and adapt. Keep the
+[invariants](references/app-pattern.md#app-template-helmrelease).
 
 ### app/externalsecret.yaml
 
