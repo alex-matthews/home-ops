@@ -24,11 +24,12 @@ spec:
     bgpControlPlane:
       enabled: true
     cgroup:
-      automount:
+      autoMount:
         enabled: false
       hostRoot: /sys/fs/cgroup
     cni:
-      # Required for pairing with Multus CNI
+      # Leaves other CNI configs in /etc/cni/net.d alone, kept for a future
+      # Multus (Home Assistant)
       exclusive: false
     dashboards:
       enabled: true
