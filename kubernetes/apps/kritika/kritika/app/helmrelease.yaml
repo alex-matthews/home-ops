@@ -100,6 +100,7 @@ spec:
       podTemplate:
         spec:
           runtimeClassName: gvisor
+          runtimeClass: gvisor
           # Pod-level: flate renders charts in the runner. Kubernetes refuses
           # ephemeral-storage here, so there is no per-run disk cap: node
           # eviction and the Job's deadline are the only bounds.
