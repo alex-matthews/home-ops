@@ -75,6 +75,7 @@ spec:
 
         - title: Alerts
           id: cluster_alert_count
+          # Assumes neither helper is silenced: ALERTS ignores silences.
           query: max(alertmanager_alerts{state="active"}) - (count(ALERTS{alertstate="firing", alertname=~"Watchdog|InfoInhibitor"}) or vector(0)) # Ignore Watchdog and InfoInhibitor
           colorExpr: 'colorScale(result, [1.0], ["green", "red"])'
     httpRoute:
