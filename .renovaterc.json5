@@ -15,6 +15,17 @@
     enabled: true,
     schedule: ["before 6am on the first day of the month"],
   },
+  customManagers: [
+    {
+      description: "Process an annotated image reference with a tag and digest, such as the Grafana CR's version: the preset's annotated manager reads the whole reference as the version and skips it",
+      customType: "regex",
+      managerFilePatterns: ["/\\.ya?ml$/"],
+      matchStrings: [
+        "datasource=docker depName=(?<depName>\\S+)\\n.+:\\s[^@\\s]+:(?<currentValue>[^@\\s/]+)@(?<currentDigest>sha256:[a-f0-9]+)",
+      ],
+      datasourceTemplate: "docker",
+    },
+  ],
   packageRules: [
     // Automerge
     {
