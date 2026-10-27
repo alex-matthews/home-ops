@@ -164,7 +164,7 @@ Copy atuin's and adapt. Invariants to keep:
 
 ### app/externalsecret.yaml
 
-Copy autobrr's `externalsecret.yaml`: `ClusterSecretStore`
+Copy sonarr's `externalsecret.yaml`: `ClusterSecretStore`
 `onepassword-connect`, a `target.template.data` map from 1Password fields to
 the env names the app expects, and `dataFrom.extract` per 1Password item.
 
