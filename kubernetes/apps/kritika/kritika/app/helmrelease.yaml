@@ -4,11 +4,26 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: kritika
+  labels:
+    home-ops/remediation: forward-only
 spec:
   chartRef:
     kind: OCIRepository
     name: kritika
   interval: 1h
+  # Outside the parent patch in kubernetes/flux/cluster/ks.yaml: kritika's
+  # migrations have no down path, so a failed upgrade is retried forward and
+  # never rolled back onto a schema the old release cannot lead. No
+  # cleanupOnFail: a failed wait would delete the new admission and network
+  # policies while the old pod still starts runners.
+  install:
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure
+  upgrade:
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure
   values:
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
@@ -59,23 +74,10 @@ spec:
       # enabled: false
       ignore: ["**/?*.sops.*"]
       trigger:
-        settle: 2m
-        # .mise/ is an inclusion off Renovate branches because an exclusion
-        # holds on any changed path, and the Talos, Kubernetes and Kopiur
-        # groups move .mise/ with their manifests.
-        include:
-          - name: cluster
-            paths: ["kubernetes/**", "talos/**", "bootstrap/**", ".sops.yaml"]
-          - name: ci
-            paths: [".github/**", ".renovaterc.json5"]
-          - name: mise
-            expr: '!pr.headRef.startsWith("renovate/")'
-            paths: [".mise/**"]
         exclude: [{ name: forks, expr: pr.fork }]
       limits:
         reviewsPerDay: 40
       agent:
-        commands: [gh, curl, crane, jq, yq, rg, fd, flate]
         commandTimeout: 2m
         timeout: 30m
     env:
@@ -95,18 +97,21 @@ spec:
       runner:
         existingSecret: kritika-postgres-runner
     runner:
-      runtimeClass: gvisor
-      tools:
-        - name: flate
-          image: ghcr.io/home-operations/flate:0.6.5@sha256:e0e2d2de97539b3141977e8bb3bbb50ea5c5afe89477950e5fa972c9862478da
-      # flate renders charts in the runner.
-      resources:
-        requests:
-          cpu: 10m
-          memory: 512Mi
-        limits:
-          memory: 2Gi
-          ephemeral-storage: 2Gi
+      podTemplate:
+        spec:
+          runtimeClassName: gvisor
+          # Pod-level: flate renders charts in the runner. Kubernetes refuses
+          # ephemeral-storage here; the Job's deadline bounds disk use.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+    gatewayCache:
+      enabled: true
+      storage:
+        maxSize: 512Mi
     httpRoute:
       enabled: true
       parentRefs:
@@ -126,12 +131,14 @@ spec:
       serviceMonitor:
         enabled: true
     networkPolicy:
-      enabled: true
+      # Pinned: auto picks cilium live but the plain flavour in offline renders.
+      type: cilium
       # Cilium matches pod ports after service translation: 4000 is LiteLLM's.
       egressPorts: [443, 4000]
+      postgres:
+        podSelector:
+          cnpg.io/cluster: kritika-postgres
     resources:
       requests:
         cpu: 10m
         memory: 64Mi
-      limits:
-        memory: 512Mi

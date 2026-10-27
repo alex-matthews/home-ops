@@ -2,5 +2,25 @@
 # yaml-language-server: $schema=https://kritika.home-operations.com/kritika.schema.json
 skills:
   scope:
-    renovate-review:
-      when: [{ expr: pr.headRef.startsWith("renovate/") }]
+    reviewing-pull-requests:
+      load: true
+tools:
+  # renovate: datasource=github-releases depName=home-operations/flate
+  aqua:home-operations/flate: v0.6.5
+rules:
+  - id: no-secret-names
+    rule: >-
+      This repository and its review comments are public. Never quote a
+      1Password vault or item name, a secret key name, or a GitHub App,
+      client, installation or webhook identifier in a finding, the summary
+      or a checked line; refer to the value by its file and line instead.
+  - id: ceph-csi-lockstep
+    paths: ["kubernetes/apps/rook-ceph/**"]
+    rule: >-
+      The ceph-csi-drivers chart in kubernetes/apps/rook-ceph/ceph-csi-drivers
+      must stay compatible with the ceph-csi-operator bundled by the
+      rook-ceph chart that
+      kubernetes/apps/rook-ceph/rook-ceph/app/ocirepository.yaml pins. For a
+      change to either version, read the rook-ceph chart's Chart.yaml
+      dependencies at that tag and report any gap between the bundled
+      operator's version and the ceph-csi-drivers version.
