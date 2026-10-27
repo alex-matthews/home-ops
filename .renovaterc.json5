@@ -54,12 +54,6 @@
       matchUpdateTypes: ["major"],
       automerge: true,
     },
-    {
-      description: "Require review for Renovate presets",
-      matchManagers: ["renovate-config"],
-      matchUpdateTypes: ["minor", "patch"],
-      automerge: false,
-    },
     // Groups
     {
       description: "Actions Runner Controller Group",
@@ -215,7 +209,7 @@
       addLabels: ["renovate/github-release"],
     },
     {
-      matchDatasources: ["helm"],
+      matchDepTypes: ["HelmChart"],
       addLabels: ["renovate/helm"],
     },
     {
