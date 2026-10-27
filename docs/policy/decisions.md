@@ -98,35 +98,27 @@ show failure after release history is recorded, exhausting the [parent
 remediation budget](../../kubernetes/flux/cluster/ks.yaml). Check effective
 controller images and failure paths before changing an exception; chart pins
 alone do not establish controller versions. A manual retry/reset remains a
-live mutation requiring approval. The [edge table](#dependency-edges) is the
-resulting graph.
+live mutation requiring approval. [Dependency edges](#dependency-edges) lists
+the resulting graph.
 
 ## Dependency edges
 
-Verified 2026-10-05 against the repository at `main`.
+Verified 2026-10-28 against the repository at `main`.
 
-This table is the graph under the [ordering rule](#reconciliation-ordering),
-kept by hand for now. It is a candidate for generation from the `ks.yaml`
-files; until then, check it against them when an edge changes.
+The graph under the [ordering rule](#reconciliation-ordering) is the
+`dependsOn` of the Flux Kustomizations. List it with:
 
-| Edge                                                                                        | Reason                                                                                                                                                 |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `rook-ceph-cluster → rook-ceph`                                                             | Instance: CephCluster and pools                                                                                                                        |
-| `ceph-csi-drivers → rook-ceph`                                                              | Instance: Driver and OperatorConfig, shipped in the rook chart                                                                                         |
-| `toolhive-config → toolhive-operator`                                                       | Instance: MCPGroup, VirtualMCPServer                                                                                                                   |
-| `context7-mcp`, `flux-mcp`, `github-mcp`, `grafana-mcp`, `konflate-mcp → toolhive-operator` | Instance: MCPServer and registry entries                                                                                                               |
-| `litellm → litellm-operator`                                                                | Instance: LiteLLMProxy and LiteLLMModel                                                                                                                |
-| `kopiur-repositories → kopiur`                                                              | Instance: ClusterRepositories                                                                                                                          |
-| `tuppr-upgrades → tuppr`                                                                    | Instance: TalosUpgrade, KubernetesUpgrade                                                                                                              |
-| `silence-operator-silences → silence-operator`                                              | Instance: Silences                                                                                                                                     |
-| `actions-runner-controller-runners → actions-runner-controller`                             | Instance: AutoscalingRunnerSet                                                                                                                         |
-| `grafana-instance`, `grafana-dashboards → grafana`                                          | Instance: the Grafana CR, datasources, dashboards and folder                                                                                           |
-| `flux-instance → flux-operator`                                                             | Instance: the FluxInstance CR                                                                                                                          |
-| `postgres → cloudnative-pg`, `plugin-barman-cloud`                                          | Instance: the shared CNPG `Cluster` and its Barman `ObjectStore`                                                                                       |
-| `kritika-postgres → cloudnative-pg`                                                         | Instance: kritika's own CNPG `Cluster`                                                                                                                 |
-| `toolhive-operator → toolhive-operator-crds`                                                | Operator → CRD chart: the operator exits at startup without its CRDs                                                                                   |
-| `plex`, `drm-exporter → intel-gpu-resource-driver`                                          | Exception: unschedulable DRA consumers can exhaust the remediation budget                                                                              |
-| `kopiur-repositories → rook-ceph-cluster`                                                   | Exception: a population deadline failure can become terminal for the claiming PVC UID ([#1983](https://github.com/alex-matthews/home-ops/issues/1983)) |
+```bash
+mise exec -- yq -N 'select(.spec.dependsOn) | .metadata.name + " -> " + .spec.dependsOn[].name' $(git ls-files 'kubernetes/apps/*/ks.yaml')
+```
+
+Every edge links an operator's instances to the operator, or an operator to
+its CRD chart, except these:
+
+| Edge                                               | Reason                                                                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `plex`, `drm-exporter → intel-gpu-resource-driver` | Exception: unschedulable DRA consumers can exhaust the remediation budget                                                                              |
+| `kopiur-repositories → rook-ceph-cluster`          | Exception: a population deadline failure can become terminal for the claiming PVC UID ([#1983](https://github.com/alex-matthews/home-ops/issues/1983)) |
 
 ## CRD upgrades
 
