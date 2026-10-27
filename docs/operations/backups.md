@@ -1,7 +1,7 @@
 # Backups
 
-Verified 2026-10-05 against the repository at `main` (coverage table checked
-against the `ks.yaml` files); not against the live cluster.
+Verified 2026-10-05 against the repository at `main`; not against the live
+cluster.
 
 [Data-protection policy](../policy/decisions.md#data-protection) owns coverage
 and repository choices. Backup health does not prove restore readiness. For
@@ -10,42 +10,28 @@ restoration, follow the
 
 ## Coverage
 
-Derive protected claims from app `ks.yaml` inclusion of the [kopiur
-component](../../kubernetes/components/kopiur/kustomization.yaml). Only its
-claim is covered, in both repositories; extra caches and NAS mounts are not
-protected by association. Zeroscaler, an autoscaler that scales an app to
-zero while the NAS probe fails, protects runtime NAS consumers; it does not
-cover backup movers.
+An app's claim is protected when its `ks.yaml` includes the [kopiur
+component](../../kubernetes/components/kopiur/kustomization.yaml). Only that
+claim is covered, in both repositories; it is 5Gi unless the `ks.yaml` sets
+`PVC_CAPACITY`. Caches and other claims an app declares itself, and NAS
+mounts, are not protected by association. Zeroscaler, an autoscaler that
+scales an app to zero while the NAS probe fails, protects runtime NAS
+consumers; it does not cover backup movers.
 
-This table is a candidate for generation from the Kopiur objects; until then,
-the pull request that adds or removes the component updates it.
+List the protected apps and the Zeroscaler consumers with:
 
-| App           | App PVC | Runtime NAS | Zeroscaler | Other state or constraint          |
-| ------------- | ------- | ----------- | ---------- | ---------------------------------- |
-| `agregarr`    | 5Gi     | no          | no         | —                                  |
-| `atuin`       | 5Gi     | no          | no         | —                                  |
-| `autobrr`     | 5Gi     | no          | no         | —                                  |
-| `bazarr`      | 5Gi     | yes         | yes        | —                                  |
-| `brrpolice`   | 5Gi     | no          | no         | —                                  |
-| `maintainerr` | 5Gi     | no          | no         | —                                  |
-| `plex`        | 50Gi    | yes         | yes        | `plex-cache` 75Gi runtime PVC      |
-| `prowlarr`    | 5Gi     | no          | no         | —                                  |
-| `qbittorrent` | 5Gi     | yes         | yes        | —                                  |
-| `qui`         | 5Gi     | yes         | yes        | —                                  |
-| `radarr`      | 5Gi     | yes         | yes        | `radarr-cache` 10Gi runtime PVC    |
-| `radarr-se`   | 5Gi     | yes         | yes        | `radarr-se-cache` 10Gi runtime PVC |
-| `recyclarr`   | 5Gi     | no          | no         | CronJob                            |
-| `sabnzbd`     | 5Gi     | yes         | yes        | —                                  |
-| `seerr`       | 5Gi     | no          | no         | `seerr-cache` 15Gi runtime PVC     |
-| `sonarr`      | 5Gi     | yes         | yes        | `sonarr-cache` 10Gi runtime PVC    |
-| `tautulli`    | 5Gi     | no          | no         | `tautulli-cache` 15Gi runtime PVC  |
-| `thelounge`   | 5Gi     | no          | no         | —                                  |
+```bash
+# Apps whose claim is protected
+git grep -l 'components/kopiur' -- 'kubernetes/apps/*/ks.yaml'
+# NAS consumers that Zeroscaler scales to zero
+git grep -l 'components/zeroscaler' -- 'kubernetes/apps/*/ks.yaml'
+```
 
 Restore testing: the 2026-09-03 full rebuild restored the protected apps from
-the local repository. No row has an off-site restore test; PostgreSQL's R2
-drills do not fill that gap.
+the local repository. No protected app has an off-site restore test;
+PostgreSQL's R2 drills do not fill that gap.
 
-Outside the table by decision: observability claims; Hermes runtime state, on
+Outside coverage by decision: observability claims; Hermes runtime state, on
 a plain claim with no backup; `kritika-postgres`, under the [kritika
 database exception](../policy/decisions.md#kritika-database-exception). Garage
 setup and upgrades need the operator's NAS runbook, which is not tracked

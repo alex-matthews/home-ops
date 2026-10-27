@@ -11,10 +11,8 @@ for people browsing. Keep scratch notes and transcripts outside this tree.
   record, keep documents true.
 - [peers.md](peers.md): the peer cluster catalogue.
 - `policy/`: standing decisions.
-    - [decisions.md](policy/decisions.md): chart trust and exclusions,
-      reconciliation ordering and dependency edges, secrets, data protection,
-      PostgreSQL and the kritika database exception, the Renovate reviewer,
-      workbench, appliance certificates, bypass merges.
+    - [decisions.md](policy/decisions.md): the standing-decisions register,
+      one `##` entry per decision.
     - [public-surfaces.md](policy/public-surfaces.md): what is exposed, to
       whom, behind which control.
 - `operations/`: keeping a running cluster healthy.
@@ -48,7 +46,7 @@ its source:
 ## Retired Documents
 
 Use each recorded commit and path for offline retrieval: search with
-`git grep -n -e '<phrase>' <sha> -- docs .agents/skills` and read with
+`git grep -n -e '<phrase>' <sha> -- <path>` and read with
 `git show <sha>:<path>`.
 
 | Path                                                        | Last commit containing it | Replaced by                                                                                                                       |
