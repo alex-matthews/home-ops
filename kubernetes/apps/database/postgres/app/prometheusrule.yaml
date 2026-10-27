@@ -8,7 +8,33 @@ spec:
   groups:
     - name: postgres.rules
       rules:
-        # No base-backup age alert: the collector's backup timestamps are deprecated.
+        # The daily base backup at 00:00Z takes under a minute, so its age peaks
+        # just under 24h; 25h is one missed run. Zero means no backup yet.
+        - alert: PostgresBackupTooOld
+          expr: |-
+            time() - max by (namespace, job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 25 * 3600
+          for: 5m
+          annotations:
+            summary: "{{ $labels.job }} has no base backup from the last 25 hours"
+          labels:
+            severity: warning
+        - alert: PostgresBackupFailing
+          expr: |-
+            max by (namespace, job) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp)
+              > max by (namespace, job) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
+          for: 5m
+          annotations:
+            summary: "The latest base backup of {{ $labels.job }} failed"
+          labels:
+            severity: warning
+        - alert: PostgresBackupMetricsAbsent
+          expr: |-
+            absent(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{job="database/postgres"})
+          for: 1h
+          annotations:
+            summary: "Backup age for database/postgres is unknown: no instance reports it"
+          labels:
+            severity: warning
         - alert: PostgresArchivingFailing
           expr: |-
             (cnpg_pg_stat_archiver_last_failed_time - cnpg_pg_stat_archiver_last_archived_time) > 1
