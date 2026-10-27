@@ -25,6 +25,7 @@ spec:
       news_feed_enabled: "false"
     plugins:
       plugin_admin_enabled: "false"
+      preinstall_auto_update: "false"
     security:
       angular_support_enabled: "true"
     server:
@@ -77,3 +78,5 @@ spec:
           storage: 10Gi
       storageClassName: ceph-block
   disableDefaultSecurityContext: All
+  # renovate: datasource=docker depName=mirror.gcr.io/grafana/grafana
+  version: mirror.gcr.io/grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205
