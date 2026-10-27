@@ -37,10 +37,6 @@
     "sops": "folder_security"
   },
   "sops.defaults.ageKeyFile": "age.key",
-  "vs-kubernetes": {
-    "vs-kubernetes.kubeconfig": "./kubeconfig",
-    "vs-kubernetes.knownKubeconfigs": ["./kubeconfig"]
-  },
   "yaml.schemaStore.enable": true,
   "yaml.schemas": {
     "kubernetes": "./kubernetes/**/*.yaml"
