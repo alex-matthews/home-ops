@@ -1,13 +1,11 @@
 {
   "workbench.iconTheme": "catppuccin-mocha",
-  "oxc.fmt.configPath": ".oxfmtrc.json",
   "catppuccin-icons.associations.extensions": {
     "gotmpl": "go-template",
     "sops.yaml": "lock",
     "sops.yml": "lock"
   },
   "catppuccin-icons.associations.files": {
-    "helmfile.yaml": "helm",
     "kubeconfig": "config",
     "talosconfig": "config"
   },

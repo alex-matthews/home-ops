@@ -2,10 +2,3 @@
 git_url = "https://github.com/home-operations/.github"
 ref = "main"
 configs = ["lefthook.common.toml"]
-
-[pre-commit.commands.format-yaml]
-exclude = ["?*.sops.yaml", "?*.sops.yml"]
-
-[pre-commit.commands.actionlint]
-glob = [".github/workflows/*.yaml"]
-run = "actionlint {staged_files}"
