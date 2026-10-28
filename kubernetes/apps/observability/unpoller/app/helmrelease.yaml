@@ -75,3 +75,4 @@ spec:
       app:
         endpoints:
           - port: http
+            interval: 1m
