@@ -24,26 +24,21 @@ spec:
               MEMINI_EMBED_MODEL: BAAI/bge-small-en-v1.5
               MEMINI_EMBED_DIMS: "384"
               MEMINI_EMBED_QUERY_PREFIX: "Represent this sentence for searching relevant passages: "
-              MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
-              MEMINI_LLM_MODEL: chatgpt/gpt-6-luna
-              MEMINI_LLM_API_KEY:
-                valueFrom:
-                  secretKeyRef:
-                    name: memini-litellm-key
-                    key: LITELLM_API_KEY
-                    # Same key and reason as MEMINI_RERANK_API_KEY below.
-                    optional: true
-              # Locks the client defaults; the UI cannot change them. Recall
-              # injects five one-line pointers per prompt; the briefing's
-              # 1,500 tokens fit its pinned, facts, how-tos and recent items,
-              # where the default 600 dropped about half of them.
-              MEMINI_CLIENT_DEFAULTS: '{"capture_turns":true,"inline_extract":true,"auto_save":true,"session_digest":false,"recall_limit":5,"inject_recall_max_tok":400,"inject_briefing_max_tok":1500,"inject_briefing_recent":6}'
-              # Keep captured history separate from explicitly authored lessons.
+              # Locks the client defaults; the UI cannot change them. Memory
+              # is explicit: agents save and search on purpose. Automatic
+              # recall is off for prompts and file reads alike: it fired on
+              # other sessions' messages and rarely served anything relevant.
+              # Turn capture is off, and so are the plugin's save directive
+              # and save nudge, which ask agents to save decisions and to omit
+              # the tier. The briefing keeps the pins and the three facts most
+              # used; its how-tos and recent items came by access count, not
+              # relevance.
+              MEMINI_CLIENT_DEFAULTS: '{"recall":false,"capture_turns":false,"inline_extract":false,"auto_save":false,"session_digest":false,"inject_briefing_pinned":5,"inject_briefing_facts":3,"inject_briefing_procedures":0,"inject_briefing_recent":0,"inject_briefing_max_tok":1500}'
+              # No LLM: it was all but idle, and condensing, the one job it was
+              # about to take, failed offline tests and has nothing to work on
+              # with capture off. The jobs memini can still run without one,
+              # with heuristics, stay off as well.
               MEMINI_DISTILL_ON_WRITE: "false"
-              # With an LLM configured these two rewrite stored memories:
-              # consolidation merges or supersedes them on write, the
-              # assessment sweep scores them. Both stay off, so the LLM only
-              # answers questions and rewrites queries.
               MEMINI_CONSOLIDATE_MODE: "off"
               MEMINI_ASSESS_INTERVAL: "0s"
               MEMINI_PROMOTE_INTERVAL: "0s"

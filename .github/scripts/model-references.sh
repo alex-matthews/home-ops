@@ -81,7 +81,6 @@ check hermes "$(key_for "$hermes" '.spec.values.controllers.hermes.containers.ap
 
 memini=kubernetes/apps/ai/memini/app/helmrelease.yaml
 env=.spec.values.controllers.main.containers.main.env
-check memini "$(key_for "$memini" "$env.MEMINI_LLM_API_KEY.valueFrom.secretKeyRef")" "$memini" "$env.MEMINI_LLM_MODEL"
 check memini "$(key_for "$memini" "$env.MEMINI_RERANK_API_KEY.valueFrom.secretKeyRef")" "$memini" "$env.MEMINI_RERANK_MODEL"
 
 kritika=kubernetes/apps/kritika/kritika/app/helmrelease.yaml
