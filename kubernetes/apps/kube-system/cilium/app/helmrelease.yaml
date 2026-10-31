@@ -39,6 +39,9 @@ spec:
       enabled: true
     envoy:
       enabled: false
+      # Takes the key the 2026-09-03 install set to ADS; split is the 1.20
+      # default since the ADS regression fix (cilium/cilium#49383)
+      xdsMode: split
     hubble:
       enabled: true
       metrics:
