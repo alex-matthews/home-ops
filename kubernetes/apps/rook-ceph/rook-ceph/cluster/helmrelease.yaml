@@ -20,8 +20,6 @@ spec:
       dashboard:
         host:
           name: rook.${SECRET_DOMAIN}
-          path: /
-          pathType: PathPrefix
         parentRefs:
           - name: envoy-internal
             namespace: network
@@ -38,13 +36,10 @@ spec:
           mon_cluster_log_level: info # default debug; DBG is 80% of mon output
       cleanupPolicy:
         wipeDevicesFromOtherClusters: true
-      crashCollector:
-        disable: false
       csi:
         readAffinity:
           enabled: true
       dashboard:
-        enabled: true
         urlPrefix: /
         ssl: false
         prometheusEndpoint: http://prometheus-operated.observability.svc.cluster.local:9090
@@ -79,7 +74,6 @@ spec:
             keyRotationPolicy: KeyGeneration
             keyGeneration: 2
       storage:
-        useAllNodes: true
         useAllDevices: false
         devicePathFilter: nvme0n1
         config:
@@ -94,9 +88,6 @@ spec:
           enabled: true
           name: ceph-block
           isDefault: true
-          reclaimPolicy: Delete
-          allowVolumeExpansion: true
-          volumeBindingMode: Immediate
           mountOptions:
             - discard
           parameters:
@@ -115,8 +106,6 @@ spec:
     cephBlockPoolsVolumeSnapshotClass:
       enabled: true
       name: csi-ceph-blockpool
-      isDefault: false
-      deletionPolicy: Delete
     # NOTE: After disabling the filesystem, the filesystem can be removed with the following commands:
     # ceph fs fail ceph-filesystem && ceph fs rm ceph-filesystem --yes-i-really-mean-it
     cephFileSystems: []

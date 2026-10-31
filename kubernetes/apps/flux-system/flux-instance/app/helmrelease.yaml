@@ -21,7 +21,6 @@ spec:
         - helm-controller
         - notification-controller
       sync:
-        kind: GitRepository
         url: https://github.com/alex-matthews/home-ops
         ref: refs/heads/main
         path: kubernetes/flux/cluster
