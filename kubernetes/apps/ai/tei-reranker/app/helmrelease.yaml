@@ -54,7 +54,6 @@ spec:
                 spec:
                   # Twice the usual budget: the first start downloads the model.
                   failureThreshold: 60
-                  periodSeconds: 10
             resources:
               requests:
                 cpu: 100m

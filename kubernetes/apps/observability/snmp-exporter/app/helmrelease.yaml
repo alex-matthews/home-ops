@@ -36,7 +36,6 @@ spec:
           target: nas.internal
           auth:
             - synology_v3
-      scrapeTimeout: 10s
       relabelings:
         - sourceLabels:
             - __param_target
