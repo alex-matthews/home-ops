@@ -60,6 +60,12 @@
       minimumReleaseAge: "3 days",
     },
     {
+      description: "mise generates the package.json in its lock sidecars and regenerates them on mise updates; npm updates there would desync them",
+      matchManagers: ["npm"],
+      matchFileNames: [".mise/locks/**"],
+      enabled: false,
+    },
+    {
       description: "Auto-merge Grafana dashboards",
       matchDatasources: ["custom.grafana-dashboards"],
       matchUpdateTypes: ["major"],
