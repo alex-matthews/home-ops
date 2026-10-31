@@ -8,12 +8,11 @@ spec:
   chartRef:
     kind: OCIRepository
     name: toolhive-operator
-  interval: 30m
+  interval: 1h
   values:
     operator:
       features:
         storageVersionMigrator: false
-      replicaCount: 1
       resources:
         requests:
           cpu: 10m
@@ -22,7 +21,6 @@ spec:
           memory: 256Mi
       gc:
         gomemlimit: 230MiB
-        gogc: 75
       rbac:
         scope: namespace
         allowedNamespaces:

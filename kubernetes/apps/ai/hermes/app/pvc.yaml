@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: hermes
-# Deliberately outside the backup set; the storage note says why.
+# Deliberately outside the backup set: docs/policy/decisions.md#data-protection
 spec:
   accessModes:
     - ReadWriteOnce
