@@ -39,10 +39,12 @@ here; obtain it before a recovery window needs it.
 
 ## Maintenance and health
 
-Read the current state first:
+Read the current state first. `kopiur status` shows the repositories, each
+policy's last snapshot and verification, schedule failures, work in flight
+and anything stalled:
 
 ```bash
-mise exec -- kubectl get clusterrepository,snapshotpolicy -A
+mise exec -- kopiur status -A
 mise exec -- kubectl -n kopiur-system get maintenance,job
 mise exec -- kubectl describe clusterrepository local
 ```
