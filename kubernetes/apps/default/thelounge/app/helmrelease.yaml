@@ -12,8 +12,6 @@ spec:
   values:
     controllers:
       thelounge:
-        annotations:
-          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -23,8 +21,6 @@ spec:
               # Already this image's default, kept explicit so a future image
               # bump cannot relocate the data path silently
               THELOUNGE_HOME: /config/thelounge
-              # Set explicitly rather than left to the image default: a Kubernetes
-              # service-link variable of the same name would otherwise override it
               THELOUNGE_PORT: &port 80
               # Adopting this image's storage policy: sqlite only, and a background
               # task deleting every message older than 30 days. These four are the
