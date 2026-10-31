@@ -80,7 +80,7 @@ jobs:
           WORKFLOW_FILES: ${{ steps.workflow-files.outputs.changed_files }}
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            echo "install_args=actionlint oxfmt shellcheck zizmor" >> "$GITHUB_OUTPUT"
+            echo "install_args=actionlint node oxfmt shellcheck zizmor" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -95,7 +95,7 @@ jobs:
           fi
 
           if [ "${FORMATTED_FILES}" != "[]" ]; then
-            tools+=(oxfmt)
+            tools+=(node oxfmt)
           fi
 
           if [ "${WORKFLOW_FILES}" != "[]" ]; then
