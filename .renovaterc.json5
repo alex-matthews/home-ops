@@ -140,6 +140,7 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 6,
+      separateMinorPatch: true,
     },
     {
       description: "Rook-Ceph Group",
@@ -159,6 +160,7 @@
         commitMessageTopic: "{{{groupName}}} group",
       },
       minimumGroupSize: 2,
+      separateMinorPatch: true,
     },
     {
       description: "ToolHive Group",
