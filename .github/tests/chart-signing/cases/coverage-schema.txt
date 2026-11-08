@@ -247,7 +247,7 @@ HEAD
 --- exit
 2
 --- expected
-Error: bad file 'kubernetes/apps/demo/app/ocirepository.yaml': go-yaml load error in parser (while parsing a flow node) at L2.C1: did not find expected node content
+Error: bad file 'kubernetes/apps/demo/app/ocirepository.yaml': yaml: line 2: did not find expected node content
 ::error::could not parse the manifests at 'HEAD'
 --- head .keep
 --- head kubernetes/apps/demo/app/ocirepository.yaml
