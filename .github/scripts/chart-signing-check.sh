@@ -31,7 +31,9 @@ lookup() {
   for attempt in 1 2; do
     if "$@" > "$work/response" 2> "$work/error"; then LOOKUP=present; return 0; fi
     if [ "$allow_absent" = true ] && absent_text < "$work/error"; then LOOKUP=absent; return 0; fi
-    LOOKUP_ERR="$name: $(esc "$(tail -1 "$work/error")")"
+    # Registry errors quote the request URL before the status code; drop the
+    # URL so the length limit keeps the status.
+    LOOKUP_ERR="$name: $(esc "$(tail -1 "$work/error" | sed -E 's/ "https?:[^"]*"//g')")"
     if [ "$attempt" = 1 ]; then sleep 5; fi
   done
   return 0
