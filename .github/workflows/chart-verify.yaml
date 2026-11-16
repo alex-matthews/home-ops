@@ -140,6 +140,8 @@ jobs:
             .github/scripts/chart-signing-*.sh
             .github/workflows/chart-*.yaml
             .github/tests/chart-signing/**
+            .mise/config.toml
+            .mise/mise.lock
 
       - name: Checkout
         if: ${{ steps.changed-files.outputs.changed_files != '[]' }}
