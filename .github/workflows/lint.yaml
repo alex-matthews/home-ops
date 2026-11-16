@@ -48,6 +48,8 @@ jobs:
             **/*.sh
             .github/tests/chart-signing/bin/_fake
 
+      # The action keeps a file that matches any one pattern, so a negated
+      # pattern would match every file; oxfmt skips SOPS files itself.
       - name: Get changed formatted files
         id: formatted-files
         if: ${{ github.event_name == 'pull_request' }}
@@ -60,8 +62,6 @@ jobs:
             **/*.toml
             **/*.yaml
             **/*.yml
-            !**/*.sops.yaml
-            !**/*.sops.yml
 
       - name: Plan lint tools
         id: lint-tools
