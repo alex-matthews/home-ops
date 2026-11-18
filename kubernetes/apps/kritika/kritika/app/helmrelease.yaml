@@ -109,7 +109,6 @@ spec:
     networkPolicy:
       # Pinned: auto picks cilium live but the plain flavour in offline renders.
       type: cilium
-      egressPorts: [443, 4000]
       postgres:
         podSelector:
           cnpg.io/cluster: kritika-postgres
