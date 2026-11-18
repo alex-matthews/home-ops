@@ -83,13 +83,6 @@ memini=kubernetes/apps/ai/memini/app/helmrelease.yaml
 env=.spec.values.controllers.main.containers.main.env
 check memini "$(key_for "$memini" "$env.MEMINI_RERANK_API_KEY.valueFrom.secretKeyRef")" "$memini" "$env.MEMINI_RERANK_MODEL"
 
-kritika=kubernetes/apps/kritika/kritika/app/helmrelease.yaml
-kritika_key="$(key_for "$kritika" '.spec.values.env.LITELLM_API_KEY.valueFrom.secretKeyRef')"
-check kritika "$kritika_key" "$kritika" \
-  '.spec.values.config | (.review.model, .review.fallback, .embedding.model)' litellm/
-check "kritika pricing" "$kritika_key" "$kritika" \
-  '.spec.values.config.providers.litellm.pricing | keys | .[]'
-
 if [ -n "$failures" ]; then
   printf '%s' "$failures" | sort -u >&2
   exit 1
