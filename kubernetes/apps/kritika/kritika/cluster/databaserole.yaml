@@ -25,4 +25,4 @@ spec:
   login: true
   passwordSecret:
     name: kritika-postgres-runner
-  databaseRoleReclaimPolicy: retain
+  databaseRoleReclaimPolicy: delete
