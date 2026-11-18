@@ -5,7 +5,8 @@ kind: HelmRelease
 metadata:
   name: kritika
   labels:
-    # Migrations are one-way: retry a failed upgrade, never roll it back.
+    # Migrations are one-way: retry a failed upgrade, never roll it back, and
+    # keep cleanupOnFail off so a failed wait leaves the new runner policies.
     home-ops/remediation: forward-only
 spec:
   chartRef:
@@ -90,6 +91,7 @@ spec:
     runner:
       podTemplate:
         spec:
+          # Pod-level resources: Kubernetes refuses ephemeral-storage here.
           resources:
             requests:
               cpu: 10m
