@@ -30,9 +30,13 @@ spec:
         admin:
           password: { env: KRITIKA_AUTH_ADMIN_PASSWORD }
       review:
-        model: plan/~sol-latest
+        model: plan/~astra-latest
         fallback: openrouter/~openai/gpt-sol-latest
         effort: high
+        approve: true
+      confidence:
+        model: anthropic/~opus-latest
+        fallback: openrouter/~anthropic/claude-sonnet-latest
       embedding:
         model: openrouter/voyageai/voyage-code-4
         dims: 1024
@@ -46,6 +50,11 @@ spec:
           privateKey: { env: KRITIKA_GITHUB_PRIVATE_KEY }
           webhookSecret: { env: KRITIKA_GITHUB_WEBHOOK_SECRET }
       providers:
+        anthropic:
+          type: anthropic
+          apiKey: { env: KRITIKA_ANTHROPIC_API_KEY }
+          pricing:
+            ~opus-latest: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 }
         plan: { type: chatgpt }
         openrouter: { type: openrouter, apiKey: { env: KRITIKA_OPENROUTER_API_KEY } }
       egress:
