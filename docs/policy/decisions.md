@@ -191,16 +191,15 @@ prerequisites](../../.agents/skills/restore-data/references/postgresql.md#admiss
 
 ## kritika database exception
 
-Decided 2026-10-04.
+Decided 2026-10-04, amended 2026-11-18.
 
-kritika runs its own `Cluster`, `kritika-postgres`, in the
-`kritika` namespace, with one instance on `openebs-hostpath` pinned to m1, no
-backup and no PodDisruptionBudget. Its history is accepted as losable for a
-trial of four to eight weeks: reviews and findings remain on GitHub. A
-separate cluster can be upgraded or reset on its own while kritika promises
-no schema upgrade path. Revisit at the end of the trial, when kritika ships
-supported migrations, or if that history becomes worth keeping. A second
-instance would use synchronous replication with `dataDurability: preferred`.
+kritika runs its own `Cluster`, `kritika-postgres`, in the `kritika`
+namespace, with two instances on `openebs-hostpath`, synchronous replication
+with `dataDurability: preferred`, and no backup. The second instance keeps
+kritika's database up through node drains and upgrades. Its history is
+accepted as losable: reviews and findings remain on GitHub. A separate
+cluster can be upgraded or reset on its own. Revisit if that history becomes
+worth keeping.
 
 ## Renovate review
 
