@@ -26,9 +26,8 @@ Before accepting a gateway, client or Hermes image change, verify:
   adding a client rather than assuming every client needs the same setting.
   kritika reviews on a ChatGPT plan, signed in as its
   [docs](https://redirect.github.com/home-operations/kritika/blob/0.0.108/docs/src/content/docs/models.md#chatgpt-plans)
-  describe, and falls back to models that LiteLLM serves on Chat
-  Completions, with its own virtual key and weekly budget. LiteLLM also
-  serves its embeddings.
+  describe, and calls OpenRouter directly for its fallback and embeddings,
+  so a gateway change does not reach it.
 - For a new Hermes image, check provider resolution, configuration defaults
   and migrations. Update the read-only ConfigMap deliberately in Git; startup
   cannot repair it. Keep migration checks enabled and preserve dashboard

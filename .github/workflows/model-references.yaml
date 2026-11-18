@@ -9,7 +9,6 @@ on:
       - main
     paths:
       - kubernetes/apps/ai/**
-      - kubernetes/apps/kritika/**
       - .github/scripts/model-references.sh
       - .github/workflows/model-references.yaml
 
