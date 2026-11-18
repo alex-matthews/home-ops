@@ -1,10 +1,10 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    "github>home-operations/renovate-presets#11.0.0",
-    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#11.0.0",
-    "github>home-operations/renovate-presets//apps/talosFactory.json5#11.0.0",
-    "github>home-operations/renovate-presets//apps/cnpg.json5#11.0.0",
+    "github>home-operations/renovate-presets#12.0.0",
+    "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#12.0.0",
+    "github>home-operations/renovate-presets//apps/talosFactory.json5#12.0.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#12.0.0",
     ":timezone(Pacific/Auckland)",
   ],
   // Override, not a default: the preset extends :automergeBranch, and a branch
@@ -194,13 +194,6 @@
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/cloudnative-pg/postgresql"],
       allowedVersions: "/^18\\./",
-    },
-    {
-      description: "Hold vchord-scratch to PostgreSQL 18 builds: the preset's versioning ranks pg<N> builds of one release as equal; matchCurrentValue spares the Database pin",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["ghcr.io/tensorchord/vchord-scratch"],
-      matchCurrentValue: "/^pg\\d+-v/",
-      allowedVersions: "/^pg18-v/",
     },
     // Labels: update type
     {
