@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./objectstore.yaml
+  - ./imagecatalog.yaml
   - ./cluster.yaml
   - ./scheduledbackup.yaml
   - ./prometheusrule.yaml

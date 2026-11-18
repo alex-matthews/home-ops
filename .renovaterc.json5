@@ -4,7 +4,6 @@
     "github>home-operations/renovate-presets#12.0.0",
     "github>home-operations/renovate-presets//apps/grafanaDashboards.json5#12.0.0",
     "github>home-operations/renovate-presets//apps/talosFactory.json5#12.0.0",
-    "github>home-operations/renovate-presets//apps/cnpg.json5#12.0.0",
     ":timezone(Pacific/Auckland)",
   ],
   // Override, not a default: the preset extends :automergeBranch, and a branch
@@ -16,6 +15,15 @@
     schedule: ["before 6am on the first day of the month"],
   },
   customManagers: [
+    {
+      description: "Process CNPG ImageCatalog extension image references",
+      customType: "regex",
+      managerFilePatterns: ["/\\.ya?ml$/"],
+      matchStrings: [
+        "reference:\\s+(?<depName>[^@\\s]+):(?<currentValue>[^@\\s/]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?",
+      ],
+      datasourceTemplate: "docker",
+    },
     {
       description: "Process an annotated image reference with a tag and digest, such as the Grafana CR's version: the preset's annotated manager reads the whole reference as the version and skips it",
       customType: "regex",
@@ -83,19 +91,16 @@
       minimumGroupSize: 2,
     },
     {
-      description: "CNPG Postgres Group: weekly digest bumps of the operand, pgvector and vchord images",
+      description: "CNPG Postgres Group: one weekly PR for operand and vchord rebuilds, merged by hand because it restarts both database clusters",
       groupName: "cnpg-postgres",
       matchDatasources: ["docker"],
-      matchPackageNames: [
-        "ghcr.io/cloudnative-pg/postgresql",
-        "ghcr.io/cloudnative-pg/pgvector",
-        "ghcr.io/tensorchord/vchord-scratch",
-      ],
+      matchPackageNames: ["ghcr.io/cloudnative-pg/postgresql", "ghcr.io/home-operations/vchord"],
       matchUpdateTypes: ["digest"],
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
       schedule: ["before 6am on Monday"],
+      automerge: false,
     },
     {
       description: "flate Group: the mise pin and the tool kritika's runners install from .kritika.yaml",
