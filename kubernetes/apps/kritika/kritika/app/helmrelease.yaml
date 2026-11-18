@@ -5,17 +5,14 @@ kind: HelmRelease
 metadata:
   name: kritika
   labels:
+    # Migrations are one-way: retry a failed upgrade, never roll it back, and
+    # keep cleanupOnFail off so a failed wait leaves the new runner policies.
     home-ops/remediation: forward-only
 spec:
   chartRef:
     kind: OCIRepository
     name: kritika
   interval: 1h
-  # Outside the parent patch in kubernetes/flux/cluster/ks.yaml: kritika's
-  # migrations have no down path, so a failed upgrade is retried forward and
-  # never rolled back onto a schema the old release cannot lead. No
-  # cleanupOnFail: a failed wait would delete the new admission and network
-  # policies while the old pod still starts runners.
   install:
     crds: CreateReplace
     strategy:
@@ -28,13 +25,17 @@ spec:
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
     config:
-      webUrl: "https://kritika.${SECRET_DOMAIN}"
-      transcriptRetention: 2400h
-      diffRetention: 2400h
-      # ADMIN_PASSWORD and the GITHUB_APP_ values come from kritika-secret.
+      webUrl: https://{{ .Release.Name }}.${SECRET_DOMAIN}
       auth:
         admin:
           password: { env: ADMIN_PASSWORD }
+      review:
+        model: plan/~sol-latest
+        fallback: litellm/openrouter/gpt-6.1-sol
+        effort: high
+      embedding:
+        model: litellm/openrouter/voyage-code-4
+        dims: 1024
       apps:
         github:
           accounts: [alex-matthews]
@@ -42,44 +43,31 @@ spec:
           privateKey: { env: GITHUB_APP_PRIVATE_KEY }
           webhookSecret: { env: GITHUB_APP_WEBHOOK_SECRET }
       providers:
-        # Signed in from a running pod with `kritika chatgpt login plan`.
-        # Until then, and while the plan's limit holds, reviews fall back to
-        # LiteLLM.
-        plan:
-          type: chatgpt
+        plan: { type: chatgpt }
         litellm:
           type: openai
           baseUrl: http://litellm.ai.svc.cluster.local:4000/v1
           apiKey: { env: LITELLM_API_KEY }
-          # Dollars per million tokens, for kritika's own cost metric when
-          # LiteLLM reports none.
           pricing:
             openrouter/gpt-6.1-sol: { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 }
             openrouter/voyage-code-4: { input: 0.12, output: 0 }
-      embedding:
-        model: litellm/openrouter/voyage-code-4
-        dims: 1024
-      review:
-        model: plan/~sol-latest
-        fallback: litellm/openrouter/gpt-6.1-sol
-        effort: high
-      # The gateway already refuses names that resolve to private addresses;
-      # deny repeats it for addresses given directly.
       egress:
         allow: ["*"]
         deny: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, "*.internal"]
-      # Pause switch: uncomment to stop every review, poll and index run
-      # without undeploying. Never toggle home-ops in the dashboard: that
-      # choice overrides this one.
-      # enabled: false
-      ignore: ["**/?*.sops.*"]
       trigger:
-        exclude: [{ name: forks, expr: pr.fork }]
+        exclude:
+          - { name: forks, expr: pr.fork }
+      ignore: ["**/?*.sops.*"]
       limits:
         reviewsPerDay: 40
       agent:
         commandTimeout: 2m
         timeout: 30m
+      transcriptRetention: 2400h
+      diffRetention: 2400h
+      # To pause kritika, uncomment this. Never toggle home-ops in the
+      # dashboard: that choice overrides this one.
+      # enabled: false
     env:
       LITELLM_API_KEY:
         valueFrom:
@@ -96,30 +84,28 @@ spec:
         existingSecret: kritika-postgres-owner
       runner:
         existingSecret: kritika-postgres-runner
+    gatewayCache:
+      enabled: true
+      storage:
+        maxSize: 512Mi
     runner:
       podTemplate:
         spec:
-          runtimeClassName: gvisor
-          # Pod-level: flate renders charts in the runner. Kubernetes refuses
-          # ephemeral-storage here, so there is no per-run disk cap: node
-          # eviction and the Job's deadline are the only bounds.
+          # Pod-level resources: Kubernetes refuses ephemeral-storage here.
           resources:
             requests:
               cpu: 10m
               memory: 512Mi
             limits:
               memory: 2Gi
-    gatewayCache:
-      enabled: true
-      storage:
-        maxSize: 512Mi
+          runtimeClassName: gvisor
     httpRoute:
       enabled: true
       parentRefs:
         - name: envoy-internal
           namespace: network
       hostnames:
-        - "kritika.${SECRET_DOMAIN}"
+        - "{{ .Release.Name }}.${SECRET_DOMAIN}"
     monitoring:
       dashboards:
         enabled: true
@@ -134,7 +120,6 @@ spec:
     networkPolicy:
       # Pinned: auto picks cilium live but the plain flavour in offline renders.
       type: cilium
-      # Cilium matches pod ports after service translation: 4000 is LiteLLM's.
       egressPorts: [443, 4000]
       postgres:
         podSelector:
