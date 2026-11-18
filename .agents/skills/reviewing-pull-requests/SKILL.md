@@ -194,8 +194,8 @@ the release notes' breaking changes and upgrade steps, grouping entries
 that share a reason, and make a material problem a finding. A search that
 found nothing goes in a checked line, never the take.
 
-When scoring is on, the scorer reads the checked lines, and a release-note
-entry no line covers lowers the score; it is off here.
+The scorer reads the checked lines, and a release-note entry no line covers
+lowers the score.
 
 kritika's checkout has no git history, so only the head renders, as
 `references/rendering.md` says.
