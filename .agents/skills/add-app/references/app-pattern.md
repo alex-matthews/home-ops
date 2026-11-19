@@ -73,8 +73,8 @@ An app's `ks.yaml` keeps atuin's key order; drop what does not apply:
   a new namespace does not inherit these. Expanding access needs approval.
 - `postBuild.substitute.APP` is required by the Kopiur component; add
   `PVC_CAPACITY` when the component default (5Gi) is wrong. It also sizes the
-  app's kopia cache volumes, so keep it at 5Gi or more; `ceph-block` is
-  thin-provisioned, so a larger claim costs only what the app writes.
+  app's kopia cache volumes, so keep it at 5Gi or more. `ceph-block` is
+  thin-provisioned: the app and its movers consume space as they write.
 - `postBuild.substituteFrom: cluster-secrets`: needed for `${SECRET_DOMAIN}`
   and other substituted values, and it only works in namespaces whose
   `kustomization.yaml` includes the SOPS component (`../../components/sops`) —
