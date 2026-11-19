@@ -10,15 +10,10 @@ spec:
     name: rook-ceph
   interval: 1h
   values:
-    csi:
-      serviceMonitor:
-        enabled: true
     image:
       repository: ghcr.io/rook/ceph
     monitoring:
       enabled: true
     resources:
       requests:
-        memory: 128Mi # unchangeable
         cpu: 100m # unchangeable
-      limits: {}

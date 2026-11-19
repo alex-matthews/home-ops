@@ -49,8 +49,6 @@ spec:
             enabled: true
           - name: insights
             enabled: true
-          - name: pg_autoscaler
-            enabled: true
       network:
         provider: host
       resources:
