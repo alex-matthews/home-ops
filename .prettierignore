@@ -1,6 +1,3 @@
 # SOPS-encrypted files should keep their existing encrypted document shape.
 **/?*.sops.yaml
 **/?*.sops.yml
-
-# mise pins these generated dependency graphs by digest.
-.mise/locks/
