@@ -36,7 +36,7 @@ metadata:
     # dashboard at this gateway. dnsendpoint.yaml publishes the public record.
     external-dns.kubernetes.io/controller: none
     gatus.home-operations.com/endpoint: |-
-      url: https://kritika.${SECRET_DOMAIN}/badges/p1.svg
+      path: /badges/p1.svg
       conditions: ["[STATUS] == 200", "[BODY] == pat(*<svg*)"]
 spec:
   hostnames:
@@ -51,8 +51,8 @@ spec:
         - name: kritika
           port: 8080
       filters:
-        # A public request never carries a session: kritika resolves any
-        # session cookie it receives.
+        # Keep dashboard session cookies out of the requests that reach
+        # kritika, which resolves any session cookie it receives.
         - type: RequestHeaderModifier
           requestHeaderModifier:
             remove:

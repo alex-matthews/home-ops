@@ -103,11 +103,14 @@ spec:
       annotations:
         # The badges route publishes this hostname, so the internal gateway's
         # DNS guard would page. Probe the public side instead: it serves only
-        # badges, so the root must answer 404.
+        # badges, so the root must answer 404 itself, not after a redirect.
         gatus.home-operations.com/endpoint: |-
+          name: kritika-public-root-404
+          group: external
           guarded: false
           client:
             dns-resolver: tcp://1.1.1.1:53
+            ignore-redirect: true
           conditions: ["[STATUS] == 404"]
       parentRefs:
         - name: envoy-internal
