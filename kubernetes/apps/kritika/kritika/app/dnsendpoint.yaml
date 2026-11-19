@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/externaldns.k8s.io/dnsendpoint_v1alpha1.json
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: kritika-badges
+spec:
+  # The public record for the dashboard's hostname, which only the badges
+  # route serves externally (httproute.yaml). Only cloudflare-dns reads
+  # DNSEndpoints, so the router keeps answering with the internal gateway.
+  endpoints:
+    - dnsName: kritika.${SECRET_DOMAIN}
+      recordType: CNAME
+      targets:
+        - external.${SECRET_DOMAIN}

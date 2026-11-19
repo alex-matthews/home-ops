@@ -24,3 +24,41 @@ spec:
           path:
             type: PathPrefix
             value: /hooks/
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kritika-badges
+  annotations:
+    # The dashboard's own hostname on the external gateway. Neither
+    # ExternalDNS instance may read this route: unifi-dns would point the
+    # dashboard at this gateway. dnsendpoint.yaml publishes the public record.
+    external-dns.kubernetes.io/controller: none
+    gatus.home-operations.com/endpoint: |-
+      url: https://kritika.${SECRET_DOMAIN}/badges/p1.svg
+      conditions: ["[STATUS] == 200"]
+spec:
+  hostnames:
+    - kritika.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+  rules:
+    # The static images that review comments embed, which GitHub's image
+    # proxy fetches from the internet. The dashboard stays internal.
+    - backendRefs:
+        - name: kritika
+          port: 8080
+      filters:
+        # A public request never carries a session: kritika resolves any
+        # session cookie it receives.
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            remove:
+              - Cookie
+      matches:
+        - method: GET
+          path:
+            type: PathPrefix
+            value: /badges/
