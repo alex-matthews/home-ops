@@ -13,7 +13,7 @@ spec:
         resourceFieldRef:
           resource: limits.memory
           divisor: 1Mi
-  # The version check stays on; ciliumnetworkpolicy.yaml blocks it.
+  # The version check stays on; networkpolicy.yaml blocks it.
   args:
     - --maxmemory=$(MAX_MEMORY)Mi
     - --proactor_threads=2
