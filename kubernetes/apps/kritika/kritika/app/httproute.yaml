@@ -31,9 +31,9 @@ kind: HTTPRoute
 metadata:
   name: kritika-badges
   annotations:
-    # The dashboard's own hostname on the external gateway. Neither
-    # ExternalDNS instance may read this route: unifi-dns would point the
-    # dashboard at this gateway. dnsendpoint.yaml publishes the public record.
+    # Badges only, on the dashboard's hostname, for GitHub's image proxy.
+    # Hidden from ExternalDNS, which would repoint the dashboard on the LAN;
+    # dnsendpoint.yaml publishes the public record.
     external-dns.kubernetes.io/controller: none
     gatus.home-operations.com/endpoint: |-
       path: /badges/p1.svg
@@ -45,14 +45,11 @@ spec:
     - name: envoy-external
       namespace: network
   rules:
-    # The static images that review comments embed, which GitHub's image
-    # proxy fetches from the internet. The dashboard stays internal.
     - backendRefs:
         - name: kritika
           port: 8080
       filters:
-        # Keep dashboard session cookies out of the requests that reach
-        # kritika, which resolves any session cookie it receives.
+        # Badges never need a session.
         - type: RequestHeaderModifier
           requestHeaderModifier:
             remove:

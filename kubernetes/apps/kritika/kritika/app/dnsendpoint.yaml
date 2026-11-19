@@ -5,9 +5,7 @@ kind: DNSEndpoint
 metadata:
   name: kritika-badges
 spec:
-  # The public record for the dashboard's hostname, which only the badges
-  # route serves externally (httproute.yaml). Only cloudflare-dns reads
-  # DNSEndpoints, so the router keeps answering with the internal gateway.
+  # The badges route's public record; unifi-dns ignores DNSEndpoints.
   endpoints:
     - dnsName: kritika.${SECRET_DOMAIN}
       recordType: CNAME

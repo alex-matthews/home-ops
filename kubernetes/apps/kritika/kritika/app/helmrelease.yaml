@@ -101,9 +101,7 @@ spec:
     httpRoute:
       enabled: true
       annotations:
-        # The badges route publishes this hostname, so the internal gateway's
-        # DNS guard would page. Probe the public side instead: it serves only
-        # badges, so the root must answer 404 itself, not after a redirect.
+        # The badges route makes this name public: check its root answers 404.
         gatus.home-operations.com/endpoint: |-
           name: kritika-public-root-404
           group: external
