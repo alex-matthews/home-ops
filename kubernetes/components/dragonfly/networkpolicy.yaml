@@ -1,7 +1,11 @@
 ---
 # The operator stopped managing this policy in v1.7.0. Dragonfly runs without
 # a password, so this is what keeps it private to its namespace and its admin
-# port to the operator.
+# port to the operator. Its only outbound traffic is replication: a replica
+# connects to its master's admin port by pod IP. Everything else is dropped,
+# DNS included, so the version check, which reports deployment details
+# upstream, cannot leave the pod. From v2.1 the licence bars switching the
+# check off but allows filtering outbound traffic (DSAL sections 4(b) and 6).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -14,6 +18,7 @@ spec:
       app.kubernetes.io/part-of: dragonfly
   policyTypes:
     - Ingress
+    - Egress
   ingress:
     - from:
         - podSelector: {}
@@ -27,6 +32,16 @@ spec:
           podSelector:
             matchLabels:
               control-plane: controller-manager
+        - podSelector:
+            matchLabels:
+              app: ${APP}-dragonfly
+              app.kubernetes.io/name: dragonfly
+              app.kubernetes.io/part-of: dragonfly
+      ports:
+        - port: 9999
+          protocol: TCP
+  egress:
+    - to:
         - podSelector:
             matchLabels:
               app: ${APP}-dragonfly
