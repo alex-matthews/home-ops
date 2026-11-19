@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/cilium.io/ciliumnetworkpolicy_v2.json
+# Dragonfly's only outbound traffic is replication: a replica connects to its
+# master's admin port by pod IP. Everything else is dropped, DNS included, so
+# the version check, which reports deployment details upstream 30 s after start
+# and daily, cannot leave the pod. From v2.1 the licence bars switching the
+# check off but allows filtering outbound traffic (DSAL sections 4(b) and 6).
+# Inbound traffic is networkpolicy.yaml's.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ${APP}-dragonfly
+spec:
+  endpointSelector:
+    matchLabels:
+      app: ${APP}-dragonfly
+      app.kubernetes.io/name: dragonfly
+      app.kubernetes.io/part-of: dragonfly
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: ${APP}-dragonfly
+            app.kubernetes.io/name: dragonfly
+            app.kubernetes.io/part-of: dragonfly
+      toPorts:
+        - ports:
+            - port: "9999"
+              protocol: TCP
