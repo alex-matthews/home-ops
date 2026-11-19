@@ -37,7 +37,7 @@ metadata:
     external-dns.kubernetes.io/controller: none
     gatus.home-operations.com/endpoint: |-
       url: https://kritika.${SECRET_DOMAIN}/badges/p1.svg
-      conditions: ["[STATUS] == 200"]
+      conditions: ["[STATUS] == 200", "[BODY] == pat(*<svg*)"]
 spec:
   hostnames:
     - kritika.${SECRET_DOMAIN}

@@ -100,6 +100,15 @@ spec:
           runtimeClassName: gvisor
     httpRoute:
       enabled: true
+      annotations:
+        # The badges route publishes this hostname, so the internal gateway's
+        # DNS guard would page. Probe the public side instead: it serves only
+        # badges, so the root must answer 404.
+        gatus.home-operations.com/endpoint: |-
+          guarded: false
+          client:
+            dns-resolver: tcp://1.1.1.1:53
+          conditions: ["[STATUS] == 404"]
       parentRefs:
         - name: envoy-internal
           namespace: network
