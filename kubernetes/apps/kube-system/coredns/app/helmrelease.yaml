@@ -13,6 +13,18 @@ spec:
     image:
       repository: mirror.gcr.io/coredns/coredns
     replicaCount: 2
+    # Keep one replica serving through updates and drains: a surge pod
+    # starts before an old one stops, the PDB holds the last Ready replica
+    # back from eviction, and the two replicas never share a node. The surge
+    # pod needs the third control-plane node; with only two schedulable the
+    # rollout stalls, and once the Helm upgrade times out Flux rolls it back
+    # and retries.
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+    podDisruptionBudget:
+      minAvailable: 1
+      unhealthyPodEvictionPolicy: AlwaysAllow
     k8sAppLabelOverride: kube-dns
     service:
       name: kube-dns
@@ -82,6 +94,13 @@ spec:
             - matchExpressions:
                 - key: node-role.kubernetes.io/control-plane
                   operator: Exists
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: coredns
+                app.kubernetes.io/name: coredns
+            topologyKey: kubernetes.io/hostname
     tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
