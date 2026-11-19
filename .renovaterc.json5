@@ -62,16 +62,10 @@
     {
       description: "Auto-merge oxfmt: Lint checks the whole tree with the new version, so one that would reformat a file fails",
       matchManagers: ["mise"],
-      matchPackageNames: ["oxfmt"],
+      matchDepNames: ["github:oxc-project/oxc"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
       minimumReleaseAge: "3 days",
-    },
-    {
-      description: "mise generates the package.json in its lock sidecars and regenerates them on mise updates; npm updates there would desync them",
-      matchManagers: ["npm"],
-      matchFileNames: [".mise/locks/**"],
-      enabled: false,
     },
     {
       description: "Auto-merge Grafana dashboards",
