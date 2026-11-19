@@ -12,7 +12,7 @@ spec:
       - kind: Secret
         name: cloudflare-tunnel-id-secret
         # Bootstrap creates this, so offline renders cannot read it. Optional
-        # keeps them passing; live, a missing Secret empties the tunnel ID.
+        # keeps them passing; live, strict substitution still fails the build.
         optional: true
       - kind: Secret
         name: cluster-secrets
