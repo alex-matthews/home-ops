@@ -8,7 +8,7 @@ other clusters through the [peers catalogue](docs/peers.md).
 
 ## Validate locally
 
-Verified 2026-11-17 on the flate 0.7.3 upgrade (#2643) with flate 0.7.3; not
+Verified 2026-11-19 on the flate 0.7.3 upgrade (#2643) with flate 0.7.3; not
 against the live cluster.
 
 Run the smallest set of checks that matches the change, read what they print,
@@ -39,8 +39,12 @@ mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/test
 # One app's own resources; its components and parent patches are not applied
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 # Every Kustomization, HelmRelease and Flux source renders
-mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-kinds Secret --disable-chart-digest-tracking
+mise exec -- flate test all -p ./kubernetes/flux/cluster
 ```
+
+Run flate through `mise exec`: `.mise/config.toml` sets its
+`--allow-missing-kinds Secret` and `--disable-chart-digest-tracking` as
+`FLATE_*` variables.
 
 Keep `test all` full-tree: adding `--base` switches it to changed-only mode.
 
