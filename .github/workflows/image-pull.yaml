@@ -46,7 +46,7 @@ jobs:
         with:
           minimum_release_age: 3d
           cache: false
-          install_args: github:home-operations/flate
+          install_args: aqua:home-operations/flate
 
       # Capture first, so a flate failure ends the step on its own error rather
       # than leaving an unterminated output block.

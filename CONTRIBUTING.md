@@ -8,7 +8,7 @@ other clusters through the [peers catalogue](docs/peers.md).
 
 ## Validate locally
 
-Verified 2026-10-05 against the repository at `main` with flate 0.6.5; not
+Verified 2026-11-19 on the flate 0.7.3 upgrade (#2643) with flate 0.7.3; not
 against the live cluster.
 
 Run the smallest set of checks that matches the change, read what they print,
@@ -39,8 +39,12 @@ mise exec --no-deps -- shellcheck -S warning $(git ls-files '*.sh' '.github/test
 # One app's own resources; its components and parent patches are not applied
 mise exec -- kubectl kustomize kubernetes/apps/<namespace>/<app>/app
 # Every Kustomization, HelmRelease and Flux source renders
-mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
+mise exec -- flate test all -p ./kubernetes/flux/cluster
 ```
+
+Run flate through `mise exec`: `.mise/config.toml` sets its
+`--allow-missing-kinds Secret` and `--disable-chart-digest-tracking` as
+`FLATE_*` variables.
 
 Keep `test all` full-tree: adding `--base` switches it to changed-only mode.
 
@@ -56,14 +60,17 @@ mise exec -- flate diff images -p ./kubernetes/flux/cluster --base origin/main -
 ### What a local render proves
 
 flate renders the working tree without a cluster
-([behaviour and limits](https://redirect.github.com/home-operations/flate/blob/631b76b69c4e58c6f4d1cb01e23616fa61aebafa/README.md#behaviors)).
+([behaviour and limits](https://redirect.github.com/home-operations/flate/blob/bbb6ebc344da051752dbdb1b413860ceffcfb63d/README.md#differences-from-a-live-cluster)).
 Read the rendered objects, the base and the warnings, not only the pass count.
 A clean run does not cover:
 
-- substitution values held only in the live cluster, which render empty and
-  appear as warnings;
-- SOPS values, which render as placeholders;
-- sources and consumers that `--allow-missing-secrets` skipped;
+- substitution values flate cannot read, held only in the live cluster or
+  SOPS-encrypted: a variable takes its default or renders empty, or stays
+  literal when nothing its Kustomization substitutes is readable, with an
+  `UnresolvedSubstitution` warning;
+- SOPS-encrypted values, which flate leaves out with a `SOPSUnreadable`
+  warning;
+- sources and Helm values that `--allow-missing-kinds Secret` skipped;
 - Secrets and CRDs, which are left out of the output by default;
 - chart signatures, decryption, admission or runtime health.
 
