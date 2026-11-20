@@ -32,6 +32,11 @@ jobs:
     needs: filter
     name: Image Pull - Flate Diff
     runs-on: ubuntu-latest
+    env:
+      # Run only flate, which this job installs; mise exec would otherwise
+      # install every pinned tool first. The pull job keeps the default: it
+      # relies on mise exec to install the talosctl it names.
+      MISE_EXEC_AUTO_INSTALL: "false"
     outputs:
       images: ${{ steps.flate.outputs.images }}
     steps:
