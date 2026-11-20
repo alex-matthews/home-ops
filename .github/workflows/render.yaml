@@ -9,6 +9,8 @@ on:
       - main
     paths:
       - kubernetes/**
+      - .mise/config.toml
+      - .mise/mise.lock
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
