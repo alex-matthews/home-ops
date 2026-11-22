@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.flate.outputs.images }}
+      talosctl-version: ${{ steps.talosctl.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -47,6 +48,18 @@ jobs:
           minimum_release_age: 3d
           cache: false
           install_args: github:home-operations/flate
+
+      # The pull job reads no files from the pull request, so it takes the
+      # talosctl pin from here, checked to be a plain version.
+      - name: Read talosctl version
+        id: talosctl
+        run: |
+          version="$(awk -F'"' '$1 == "talosctl = " { print $2 }' .mise/config.toml)"
+          if ! [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error file=.mise/config.toml::talosctl is not pinned to a plain version"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       # Capture first, so a flate failure ends the step on its own error rather
       # than leaving an unterminated output block.
@@ -76,11 +89,8 @@ jobs:
       max-parallel: 4
       fail-fast: false
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
+      # No checkout: this runner has Talos access, so no file from the pull
+      # request reaches it. mise is installed only to fetch talosctl.
       - name: Setup Mise
         uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
         with:
@@ -91,14 +101,8 @@ jobs:
       - name: Pull image
         env:
           IMAGE: ${{ matrix.image }}
-        run: |
-          TALOSCTL_VERSION="$(awk -F'"' '$1 == "talosctl = " { print $2 }' .mise/config.toml)"
-          if [ -z "${TALOSCTL_VERSION}" ]; then
-            echo "::error::Could not read talosctl version from .mise/config.toml"
-            exit 1
-          fi
-
-          mise exec -C /tmp "talosctl@${TALOSCTL_VERSION}" -- talosctl --nodes "${NODE}" image pull "${IMAGE}"
+          TALOSCTL_VERSION: ${{ needs.diff.outputs.talosctl-version }}
+        run: mise exec "talosctl@${TALOSCTL_VERSION}" -- talosctl --nodes "${NODE}" image pull "${IMAGE}"
 
   success:
     if: ${{ !cancelled() }}
