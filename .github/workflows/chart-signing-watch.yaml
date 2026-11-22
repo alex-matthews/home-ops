@@ -17,6 +17,11 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Run only the tools each job installs; mise exec would otherwise install
+  # every pinned tool first.
+  MISE_EXEC_AUTO_INSTALL: "false"
+
 jobs:
   watch:
     name: Chart Signing Watch
