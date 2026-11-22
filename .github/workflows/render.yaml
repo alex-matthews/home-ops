@@ -32,7 +32,7 @@ jobs:
         with:
           minimum_release_age: 3d
           cache: false
-          install_args: github:home-operations/flate
+          install_args: aqua:home-operations/flate
 
       - name: Render cluster
-        run: mise exec -- flate test all -p ./kubernetes/flux/cluster --allow-missing-secrets
+        run: mise exec -- flate test all -p ./kubernetes/flux/cluster
