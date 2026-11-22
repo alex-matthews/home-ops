@@ -25,7 +25,10 @@ jobs:
         id: changed-files
         uses: bjw-s-labs/action-changed-files@147be9638332cf68fd60714a610509d7a9360d60 # v0.7.0
         with:
-          patterns: kubernetes/**/*
+          patterns: |
+            kubernetes/**/*
+            .mise/config.toml
+            .mise/mise.lock
 
   diff:
     if: ${{ needs.filter.outputs.changed-files != '[]' }}
