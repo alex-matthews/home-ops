@@ -19,4 +19,4 @@ spec:
     - name: vchord
       ensure: present
       # renovate: datasource=docker depName=ghcr.io/home-operations/vchord
-      version: "1.3.0"
+      version: "1.5.0"
