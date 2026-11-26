@@ -32,7 +32,7 @@ just = "1.59.0"
 "github:home-operations/kopiur" = "0.11.1"
 kubectl = "1.37.2"
 kustomize = "5.8.3"
-lefthook = "2.2.2"
+lefthook = "2.2.4"
 # oxc's standalone oxfmt binary: no Node. version_prefix keeps mise and
 # Renovate on oxfmt_v* tags; rename_exe installs it as `oxfmt`.
 "github:oxc-project/oxc" = { version = "0.79.0", version_prefix = "oxfmt_v", matching_regex = "^oxfmt-", rename_exe = "oxfmt" }
