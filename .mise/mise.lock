@@ -228,25 +228,25 @@ checksum = "sha256:6f3421de3a8cc2ac578c8cfb33b8edde290dde2871bc1bab12e24f2e5caea
 url = "https://get.helm.sh/helm-v4.3.2-darwin-arm64.tar.gz"
 
 [[tools.helmfile]]
-version = "1.8.4"
+version = "1.8.6"
 backend = "packslip:github.com/helmfile/helmfile"
-specifiers = ["1.8.4"]
+specifiers = ["1.8.6"]
 
 [tools.helmfile."platforms.linux-arm64"]
-checksum = "sha256:96f898a9faf236e06c5e65bf39a7f4ca727f5e911be1b28e2c2f80adabc132ed"
-url = "https://github.com/helmfile/helmfile/releases/download/v1.8.4/helmfile_1.8.4_linux_arm64.tar.gz"
+checksum = "sha256:99badd01aeff4e0478e925f2d10c3307a4e9ce0630033c4a77629bdcaf27760d"
+url = "https://github.com/helmfile/helmfile/releases/download/v1.8.6/helmfile_1.8.6_linux_arm64.tar.gz"
 signer = "sigstore-oidc:https://github.com/helmfile/helmfile/.github/workflows/releaser.yaml"
 repository_ids = { repository = "474521466" }
 
 [tools.helmfile."platforms.linux-x64"]
-checksum = "sha256:1f19ced8adb0cdf2350e94ca598cf64e390d8c21d0d9b4bdc1c9f246d4591c9d"
-url = "https://github.com/helmfile/helmfile/releases/download/v1.8.4/helmfile_1.8.4_linux_amd64.tar.gz"
+checksum = "sha256:2018c1c2a9a5f113f298565ad65199bde2a9c8f9b417a5237d998e55a8fd157b"
+url = "https://github.com/helmfile/helmfile/releases/download/v1.8.6/helmfile_1.8.6_linux_amd64.tar.gz"
 signer = "sigstore-oidc:https://github.com/helmfile/helmfile/.github/workflows/releaser.yaml"
 repository_ids = { repository = "474521466" }
 
 [tools.helmfile."platforms.macos-arm64"]
-checksum = "sha256:61e7fa5401269785d6ee7bc1eac21e614371c00c705fda6e2e9f9d02c0fbc7b3"
-url = "https://github.com/helmfile/helmfile/releases/download/v1.8.4/helmfile_1.8.4_darwin_arm64.tar.gz"
+checksum = "sha256:1f36688ab92407f2eaf0fdd2f2daeefadc202d62790e56f629c833c794c751e8"
+url = "https://github.com/helmfile/helmfile/releases/download/v1.8.6/helmfile_1.8.6_darwin_arm64.tar.gz"
 signer = "sigstore-oidc:https://github.com/helmfile/helmfile/.github/workflows/releaser.yaml"
 repository_ids = { repository = "474521466" }
 
